@@ -15,7 +15,7 @@ require(chron)
 #' @param floatname hexa name of the float
 #' @param CycleNumber numeric : number of the cycle to decode
 #' @param PatternNumber numeric : number of the Pattern to decode
-#' @param sensors list of sensor to decode
+#' @param sensors list of sensor to decode. From the list "sbe41","sbeph,"do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"
 #' @param subdir subdir where to put .csv ASCII files
 #' 
 #' @return No return. This function create ASCII files in the subdir directory

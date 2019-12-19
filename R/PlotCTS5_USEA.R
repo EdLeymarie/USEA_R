@@ -1,0 +1,506 @@
+require(oce)
+require(plotuti)
+require(fields)
+
+Sys.setenv(TZ = "utc") #pour imposer timezone = UTC
+cat("WARNING: environment variable TZ (timezone is set to utc)\n")
+
+## RunMedian Pour ISA
+RunMedian<-function(x){
+  result<-NULL
+  for (i in 1:length(x)){
+    result<-c(result,median(x[1:i]))}
+  return(result)
+}
+
+#**************************************************
+plotCTD<-function(data,ylim=NULL){  
+if (!is.null(data)){
+
+#density
+data<-cbind(data,swRho(data[,"Salinity [PSU]"],data[,"Temperature [deg. C.]"],data[,"Pressure [dbar]"]))
+dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"Density"
+#swSigmaT
+data<-cbind(data,swSigmaT(data[,"Salinity [PSU]"], temperature=data[,"Temperature [deg. C.]"], pressure=data[,"Pressure [dbar]"]))
+dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
+
+  for (ph in unique(data[,"Number Phase"])){        
+    ind<-data[,"Number Phase"]==ph
+    plot(data$swSigmaT[ind],-data[ind,"Pressure [dbar]"],type="l",col=1,xlab="potential density anomaly",ylab="Depth",ylim=ylim)
+    par(new=TRUE)
+    plot(data[ind,"Salinity [PSU]"],-data[ind,"Pressure [dbar]"],type="l",axes=FALSE,col=4,xlab="",ylab="")
+    axis(3,col=4,col.axis=4)
+    par(new=TRUE)
+    plot(data[ind,"Temperature [deg. C.]"],-data[ind,"Pressure [dbar]"],type="l",axes=FALSE,col=2,xlab="",ylab="")
+    axis(3,col=2,col.axis=2,line=2)
+    par(new=FALSE)
+    legend("bottomleft",legend=paste("CTD:",ph))
+    
+    ## ISA
+    if ((ph=="ASC") & (dim(data)[1]>1)){
+      #ISA Antarctique
+      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],50:1)
+      RunM<-RunMedian(InterpT$y)
+      ISA_Antarctique<-min(RunM[InterpT$x<=20],na.rm=TRUE)
+      
+      #ISA Baffin
+      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],30:1)
+      RunM<-RunMedian(InterpT$y)
+      ISA_Baffin<-min(RunM[InterpT$x<=10],na.rm=TRUE)
+      
+      #Legend
+      if ((!is.na(ISA_Antarctique)) & (!is.na(ISA_Baffin))){
+        if ((ISA_Antarctique<0.5)|(ISA_Baffin<0.5)) {
+          l<-c(paste("ISA 50-20:",formatC(ISA_Antarctique,digit=3)),paste("ISA 30-10:",formatC(ISA_Baffin,digit=3)))
+          legend("topright",legend=l,cex=0.75)
+        }
+      }
+    }
+    
+    
+    }
+  }
+}
+
+# ############################
+#Plot Eco Standard 
+
+PlotEcoStd<-function(data,technical=TRUE){
+  
+  #Plot technical
+  if (technical){
+    
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("EcoPuck",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"Number Phase"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$`Pressure [dbar]`[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta ECO",xlab="delta [db]",ylab="depth [db]")
+    }
+    
+  }
+  
+  #Plot Chla
+  Chla<-data[,"chlorophyll_a, [ug/l]"]
+  plot(NULL,NULL,xlim=range(Chla,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="Chla [ug/l]",ylab="depth")
+  for (i in unique(data[,"Number Phase"])){
+    lines(Chla[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+  
+  #Plot BB
+  bb<-data[,"beta_theta, [1/m.sr]"]
+  plot(NULL,NULL,xlim=range(bb,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="bb [1/m.sr]",ylab="depth")
+  for (i in unique (data[,"Number Phase"])){
+    lines(bb[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+  
+  #Plot CDOM
+  cdom<-data[,"colored_dissolved_organic_matter, [ppb]"]
+  plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
+  for (i in unique (data[,"Number Phase"])){
+    lines(cdom[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+  
+}
+
+# ############################
+#Plot OCR4 
+PlotOCR4<-function(data,meta,technical=TRUE){
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("OCR",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"Number Phase"] == "ASC")
+    if (length(ind)>2){   
+      depth<-data$`Pressure [dbar]`[ind]
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta OCR",xlab="delta [db]",ylab="depth [db]")
+      }
+  }
+  
+  #Plot Radio
+  for (rad in c("Downwelling_irradiance_380nm","Downwelling_irradiance_412nm","Downwelling_irradiance_490nm","Photosynthetic_Active_Radiation")){
+    temp<-data[,rad]
+    temp<-temp-min(temp,na.rm=TRUE) #normalisation au minimum
+    #temp[temp<0]<-NA
+    
+    xlim=range(temp,na.rm = TRUE, finite = TRUE)
+    if (xlim[2]<=0){xlim[2]<-1}  
+    if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
+    plot(NULL,NULL,xlim=xlim,ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab=rad,ylab="depth",log="x")
+    for (i in unique (data[,"Number Phase"])){
+      lines(temp[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+      }
+  }
+  
+}
+
+
+
+# ############################
+#Plot Optode
+
+
+###
+
+PlotOptode<-function(data,technical=TRUE){
+
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("DO",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"Number Phase"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$`Pressure [dbar]`[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta DO",xlab="delta [db]",ylab="depth [db]")
+    }
+  }    
+
+  
+  #PlotDO
+  if (dim(data)[1]>5){
+  
+    plot(NULL,NULL,xlim=range(data[,"doxy_uncalibrated"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="doxy_uncalibrated",ylab="depth")
+    for (i in unique (data[,"Number Phase"])){
+      lines(data[data[,"Number Phase"]==i,"doxy_uncalibrated"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    }
+  }
+  
+}
+
+# ############################
+#Plot SUNA
+
+
+###
+
+PlotSUNA<-function(data,technical=TRUE){
+  
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("SUNA",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"Number Phase"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$`Pressure [dbar]`[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta SUNA",xlab="delta [db]",ylab="depth [db]")
+    }
+  }    
+  
+  
+  #PlotSUNA
+  if (dim(data)[1]>=5){
+    
+    plot(NULL,NULL,xlim=range(data[,"nitrate_concentration, [micoMol/l]"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="nitrate_concentration, [micoMol/l]",ylab="depth")
+    for (i in unique (data[,"Number Phase"])){
+      lines(data[data[,"Number Phase"]==i,"nitrate_concentration, [micoMol/l]"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    }
+    
+    
+    ##Spectre
+    indSpec<-grep("OutSpectrum",colnames(data))
+    temp<-data[,indSpec]
+    temp<-temp[,temp[1,]>0]
+    
+    
+    depth_breaks <- pretty(data$`Pressure [dbar]`, n = 50)
+    cs <- list(cols = tim.colors(length(depth_breaks) - 1),breaks = depth_breaks,name = "",unit = "",labels = seq(1,length(depth_breaks), 5))
+    cols <- cs.use(depth_breaks, cs)
+    
+    matplot(t(temp),lty=1,type="l",xlab="pixel",ylab="Suna counts",col=cols) #
+    
+    cs.draw(cs,horiz=T,width = 0.25,pos=1,side = 1)
+    
+  }
+  
+  
+  
+  
+}
+
+# ############################
+#Plot PlotSbepH
+
+PlotSbepH<-function(data,technical=TRUE){
+  
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("pH",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"Number Phase"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$`Pressure [dbar]`[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta pH",xlab="delta [db]",ylab="depth [db]")
+    }
+  }    
+  
+  
+  #PlotpH
+  if (dim(data)[1]>5){
+    
+    plot(NULL,NULL,xlim=range(data[,"pH_Uncal"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="pH_uncalibrated",ylab="depth")
+    for (i in unique (data[,"Number Phase"])){
+      lines(data[data[,"Number Phase"]==i,"pH_Uncal"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    }
+  }
+  
+}
+
+# ############################
+#Plot OCTOPUS
+PlotUVP_lpm<-function(data,technical=TRUE){
+  
+  #Plot Chronologie
+  if (technical){
+    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Files"],unique(data[,"Files"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("UVP6",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+  }
+  
+  #Plot Ecart
+  ind<-which(data[,"Number Phase"] == "ASC")
+  if (length(ind)>2){  
+    depth<-data$`Pressure [dbar]`[ind]
+    
+    delta<-depth[-length(depth)]-depth[-1]
+    plot(delta,-depth[-1],log="x",main="delta UVP",xlab="delta [db]",ylab="depth [db]")
+  }
+  
+  
+  #### Class
+  title_list<-c("Octopus NPart_Class1-6","Octopus NPart_Class7-12","Octopus NPart_Class13-18")
+  class_list<-rbind(5:10,11:16,17:22)
+  
+  for (i in 1:length(title_list)){
+    temp<-data[,class_list[i,]]
+    if (sum(temp>0) > 2){
+      temp.min<-min(temp[temp>0])
+      temp.max<-max(temp)
+      
+      plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
+      title(main=title_list[i])
+      for (j in 1:6){
+        if (sum(temp[,j]>0)>4){
+          for (i in unique (data[,"Files"])){
+            lines(temp[data[,"Files"]==i,j],-data[data[,"Files"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Files"])),lty=j)}
+        }
+      }
+      
+      legend("bottomright",col=1,lty=1:6,legend=colnames(temp))
+    }
+  }
+  
+  
+}
+
+# ############################
+#Plot OCTOPUS
+PlotUVP_blk<-function(data,technical=TRUE){
+  
+  #Plot Chronologie
+  if (technical){
+    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Files"],unique(data[,"Files"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("UVP6 Black",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+  }
+  
+  #Plot Ecart
+  ind<-which(data[,"Number Phase"] == "ASC")
+  if (length(ind)>2){  
+    depth<-data$`Pressure [dbar]`[ind]
+    
+    delta<-depth[-length(depth)]-depth[-1]
+    plot(delta,-depth[-1],log="x",main="delta UVP black",xlab="delta [db]",ylab="depth [db]")
+  }
+  
+  
+  #### Class
+    temp<-data[,6:10]
+    if (sum(temp>0) > 2){
+      temp.min<-min(temp[temp>0])
+      temp.max<-max(temp)
+      
+      plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
+      title(main="UVP black count")
+      for (j in 1:5){
+        if (sum(temp[,j]>0)>4){
+          for (i in unique (data[,"Files"])){
+            lines(temp[data[,"Files"]==i,j],-data[data[,"Files"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Files"])),lty=j)}
+        }
+      }
+      
+      legend("bottomright",col=1,lty=1:6,legend=colnames(temp))
+    }
+  
+  
+}
+
+################################################################
+
+## Concatenation plots
+
+################################################################
+#' PlotCTS5 : Plot a profile
+#'
+#' @description
+#' PlotCTS5 : create a pdf file with profile plots
+#'
+#'
+#' @param login identifiant used at the beginning of the pdf filename
+#' @param dataMerged data.frame obtained by \code{\link{usea_concatProfile}} after
+#' processing by \code{\link{usea_ProcessData}}
+#' @param PhaseToPlot
+#' @param add if false a new pdf will be created. if true all plots will be generated in the 
+#' current open device
+#' @param technical if true, technical information will be plotted
+#'  
+#' 
+#' @export
+#'
+PlotCTS5<-function(login="lov",dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2)){
+
+
+if (!is.null(dim(dataMerged))){   
+
+  CycleNumber<-unique(dataMerged[,"Number Cycle"])[1]
+  ProfilNumber<-unique(dataMerged[,"Number Profil"])[1]
+  
+  #Ouverture du pdf
+  if (!add){
+      filename<-paste(login,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(ProfilNumber,width=2,flag="0"),".pdf",sep="")
+      cat("create:",filename,"\n",sep="")
+      pdf(file=filename,paper = paper, width = 0, height = 0)
+      par(mfrow=mfrow)
+  }
+  
+  
+    
+  #CTD
+  ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,"Number Phase"] %in% c("DES","ASC"))
+  if (sum(ind)>0){
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Temperature [deg. C.]","Salinity [PSU]")]
+    plotCTD(data)
+  }
+  
+  mydate<-max(as.POSIXct(dataMerged[,"Date"],origin = "1970-01-01",tz="UTC"))
+  if (sum(ind)>0){
+    mtext(paste("float:",login,", cycle:",CycleNumber,", profil:",ProfilNumber,", date:",mydate),side=3,line=-1,outer=T,cex=0.6,adj=0.95)}
+  
+  
+  #PlotEcoStd
+  ind<-(dataMerged[,"SensorType"]==9) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if ((sum(ind)>0) & ("chlorophyll_a, [ug/l]" %in% colnames(dataMerged))){
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","chlorophyll_a, [ug/l]","beta_theta, [1/m.sr]","colored_dissolved_organic_matter, [ppb]")]
+    PlotEcoStd(data,technical=technical)
+  }
+  
+  #PlotOCR504
+  ind<-(dataMerged[,"SensorType"]==12) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if ((sum(ind)>0) & ("Downwelling_irradiance_380nm" %in% colnames(dataMerged))){
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","Downwelling_irradiance_380nm",
+                         "Downwelling_irradiance_412nm","Downwelling_irradiance_490nm","Photosynthetic_Active_Radiation")]
+    PlotOCR4(data,meta,technical=technical)
+  }
+  
+
+  #PlotOptode
+  ind<-(dataMerged[,"SensorType"]==3) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if ((sum(ind)>0) & ("doxy_uncalibrated" %in% colnames(dataMerged))){
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","c1phase_doxy [deg]","c2phase_doxy [deg]","temp_doxy [deg. C.]","doxy_uncalibrated")]
+    PlotOptode(data,technical=technical)
+  }
+  
+  #PlotSuna
+  ind<-(dataMerged[,"SensorType"]==21) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if (sum(ind)>0){
+    indSpec<-grep("OutSpectrum",colnames(dataMerged))
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","nitrate_concentration, [micoMol/l]",colnames(dataMerged)[indSpec])]
+    PlotSUNA(data,technical=technical)
+  }
+  
+  #PlotsbepH
+  ind<-(dataMerged[,"SensorType"]==22) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if ((sum(ind)>0) & ("pH_Uncal" %in% colnames(dataMerged))){
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","pH_Uncal")]
+    PlotSbepH(data,technical=technical)
+  }
+  
+  #PlotUVP_lpm
+  ind<-(dataMerged[,"SensorType"]==109) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if (sum(ind)>0){
+    indOct<-grep("NP_.*(um)",colnames(dataMerged))
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files",colnames(dataMerged)[indOct])]
+    PlotUVP_lpm(data,technical=technical)
+  }
+  
+  #PlotUVP_blk
+  ind<-(dataMerged[,"SensorType"]==110) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if (sum(ind)>0){
+    induvp_blk<-grep("uvp-blk",colnames(dataMerged))
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files",colnames(dataMerged)[induvp_blk])]
+    PlotUVP_blk(data,technical=technical)
+  }
+  
+  if (!add){
+    cat("Close pdf","\n")
+    dev.off()
+  }
+}
+}

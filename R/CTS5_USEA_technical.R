@@ -410,7 +410,7 @@ list_time_as_character<-function(list){
 #' read all _technical.txt files and return results in a data.frame
 #'
 #' @param pattern pattern used to select files
-#' @param startdate not used
+#' @param CycleNumber vector of cycle number to read. If Null, all technical files are read.
 #' @param include_tech0 not used
 #' 
 #' @return a data.frame 
@@ -419,75 +419,95 @@ list_time_as_character<-function(list){
 #' @export
 #'
 
-CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",startdate="",include_tech0=FALSE){
+CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,include_tech0=FALSE){
   
   filenames<-list.files(pattern=pattern)
   
+  if (!is.null(CycleNumber)){
+    CycleV<-as.numeric(matrix(unlist(strsplit(filenames,split="_")),ncol=4,byrow = T)[,2])
+    
+    ind<-CycleV %in% CycleNumber
+    
+    filenames<-filenames[ind]
+  }
+  
   result<-NULL
   
-  for (filename in filenames){ #filename<-filenames[3]
-    
-    #cat("open:",filename,"\n")
-    dataTech<-cts5_readtechnical(filename)
-    
-    dataTech<-list_time_as_character(dataTech)
-    
-    dataTech<-c(filename,unlist(dataTech))
-    
-    dataTech<-as.data.frame(t(dataTech),stringsAsFactors = F)
-    
-    names(dataTech)[1]<-"filename"
-    
-    if (is.null(result)){
-      result<-dataTech
-    }
-    else {
+  if (length(filenames)>1){
+  
+    for (filename in filenames){ #filename<-filenames[9]
       
-      ### New list of names
-      if (! all(names(dataTech) %in% names(result))){
-        NewNames<-unique(c(names(result),names(dataTech)))
-        
-        #agrandissement de result
-        temp<-matrix("",nrow=dim(result)[1],ncol=length(NewNames))
-        colnames(temp)<-NewNames
-        temp<-data.frame(temp,stringsAsFactors = F,check.names =F)
-        
-        temp[,names(temp) %in% names(result)]<-result[match(names(temp)[names(temp) %in% names(result)],names(result))]
-        
-        result<-temp
-        
+      #cat("open:",filename,"\n")
+      dataTech<-cts5_readtechnical(filename)
+      
+      dataTech<-list_time_as_character(dataTech)
+      
+      dataTech<-c(filename,unlist(dataTech))
+      
+      dataTech<-as.data.frame(t(dataTech),stringsAsFactors = F)
+      
+      names(dataTech)[1]<-"filename"
+      
+      #Forcage du nom Alarm a Alarm1
+      ind<-names(dataTech) == "ALARM"
+      if (sum(ind)==1){
+        names(dataTech)[ind]<-"ALARM1"
       }
-    
-      # Merge avec dataTech
-      dataTechtoMerge<-rep("",times=length(result[1,]))
-      names(dataTechtoMerge)<-names(result)
-      dataTechtoMerge[names(dataTechtoMerge) %in% names(dataTech)] <- dataTech[match(names(dataTechtoMerge)[names(dataTechtoMerge) %in% names(dataTech)],names(dataTech))]
-      result<-rbind(result,dataTechtoMerge)
+      
+      if (is.null(result)){
+        result<-dataTech
+      }
+      else {
         
-
-        
+        ### New list of names
+        if (! all(names(dataTech) %in% names(result))){
+          NewNames<-unique(c(names(result),names(dataTech)))
+          
+          #agrandissement de result
+          temp<-matrix("",nrow=dim(result)[1],ncol=length(NewNames))
+          colnames(temp)<-NewNames
+          temp<-data.frame(temp,stringsAsFactors = F,check.names =F)
+          
+          temp[,names(temp) %in% names(result)]<-result[match(names(temp)[names(temp) %in% names(result)],names(result))]
+          
+          result<-temp
+          
+        }
+      
+        # Merge avec dataTech
+        dataTechtoMerge<-rep("",times=length(result[1,]))
+        names(dataTechtoMerge)<-names(result)
+        dataTechtoMerge[names(dataTechtoMerge) %in% names(dataTech)] <- dataTech[match(names(dataTechtoMerge)[names(dataTechtoMerge) %in% names(dataTech)],names(dataTech))]
+        result<-rbind(result,dataTechtoMerge)
+          
+  
+          
+      }
+      
     }
     
-  }
-  
-  
-  ######################### Format
-  #ordre Alpha
-  result<-result[order(names(result))]
-  
-  ## alarm at the end
-  indAlarm<-grep("ALARM",names(result))
-  if (length(indAlarm)>0){
-    result<-cbind(result[-indAlarm],result[indAlarm])
-  }
-  
-  ## Conversion in numeric
-  toConvert<-c("GPS.lat (deg)","GPS.lon (deg)")
-  
-  for (label in toConvert){
-    if (label %in% names(result)){
-      result[[label]]<-as.numeric(result[[label]])
+    
+    ######################### Format
+    #ordre Alpha
+    result<-result[order(names(result))]
+    
+    ## alarm at the end
+    indAlarm<-grep("ALARM",names(result))
+    if (length(indAlarm)>0){
+      result<-cbind(result[-indAlarm],result[indAlarm])
     }
+    
+    ## Conversion in numeric
+    toConvert<-c("GPS.lat (deg)","GPS.lon (deg)")
+    
+    for (label in toConvert){
+      if (label %in% names(result)){
+        result[[label]]<-as.numeric(result[[label]])
+      }
+    }
+  }
+  else {
+    warning("no technical file")
   }
   
   

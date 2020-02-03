@@ -4,7 +4,8 @@
 \alias{cts5_readMetaSensor}
 \title{cts5_readMetaSensor : read APMT technical file.}
 \usage{
-cts5_readMetaSensor(floatname = ".*", CycleNumber = NA, PatternNumber = 0)
+cts5_readMetaSensor(floatname = ".*", CycleNumber = NA, PatternNumber = 0,
+  filename = NULL)
 }
 \arguments{
 \item{floatname}{hexa name of the float or .* to select all float name}
@@ -13,6 +14,8 @@ cts5_readMetaSensor(floatname = ".*", CycleNumber = NA, PatternNumber = 0)
 the last file is decoded}
 
 \item{PatternNumber}{numeric : number of the Pattern to decode}
+
+\item{filename}{if not null, used as meta file filename}
 }
 \value{
 list containing the Meta data

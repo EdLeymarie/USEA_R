@@ -5,7 +5,8 @@
 \title{cts5_concatProfile : Concat .csv files to one data.frame}
 \usage{
 cts5_concatProfile(floatname = "ffff", CycleNumber, PatternNumber = 1,
-  sensors = c("sbe41", "do", "eco", "ocr", "suna"), dec = ".")
+  sensors = c("sbe41", "do", "eco", "ocr", "suna", "sbeph", "uvp6_lpm",
+  "uvp6_blk"), dec = ".")
 }
 \arguments{
 \item{floatname}{hexa name of the float}

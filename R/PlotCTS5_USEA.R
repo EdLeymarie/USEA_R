@@ -92,22 +92,25 @@ PlotEcoStd<-function(data,technical=TRUE){
   
   #Plot Chla
   Chla<-data[,"chlorophyll_a, [ug/l]"]
-  plot(NULL,NULL,xlim=range(Chla,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="Chla [ug/l]",ylab="depth")
-  for (i in unique(data[,"Number Phase"])){
-    lines(Chla[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
-  
+  if (sum(!is.na(Chla))>2){ 
+    plot(NULL,NULL,xlim=range(Chla,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="Chla [ug/l]",ylab="depth")
+    for (i in unique(data[,"Number Phase"])){
+      lines(Chla[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+  }
   #Plot BB
   bb<-data[,"beta_theta, [1/m.sr]"]
-  plot(NULL,NULL,xlim=range(bb,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="bb [1/m.sr]",ylab="depth")
-  for (i in unique (data[,"Number Phase"])){
-    lines(bb[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
-  
+  if (sum(!is.na(bb))>2){
+    plot(NULL,NULL,xlim=range(bb,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="bb [1/m.sr]",ylab="depth")
+    for (i in unique (data[,"Number Phase"])){
+      lines(bb[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+  }
   #Plot CDOM
   cdom<-data[,"colored_dissolved_organic_matter, [ppb]"]
-  plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
-  for (i in unique (data[,"Number Phase"])){
-    lines(cdom[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
-  
+  if (sum(!is.na(cdom))>2){
+    plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
+    for (i in unique (data[,"Number Phase"])){
+      lines(cdom[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+  }
 }
 
 # ############################

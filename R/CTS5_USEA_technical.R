@@ -536,9 +536,10 @@ CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,inclu
 #'
 #' @return a KML file
 #' 
-#' @example
-#'  
+#' @details 
+#' 
 #' CTS5_create_kml()
+#'  
 #' 
 #' @export
 #'

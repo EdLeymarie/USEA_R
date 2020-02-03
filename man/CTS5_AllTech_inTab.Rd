@@ -4,13 +4,13 @@
 \alias{CTS5_AllTech_inTab}
 \title{CTS5_AllTech_inTab}
 \usage{
-CTS5_AllTech_inTab(pattern = ".*_technical.*.txt", startdate = "",
+CTS5_AllTech_inTab(pattern = ".*_technical.*.txt", CycleNumber = NULL,
   include_tech0 = FALSE)
 }
 \arguments{
 \item{pattern}{pattern used to select files}
 
-\item{startdate}{not used}
+\item{CycleNumber}{vector of cycle number to read. If Null, all technical files are read.}
 
 \item{include_tech0}{not used}
 }

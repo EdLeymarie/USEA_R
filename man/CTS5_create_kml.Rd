@@ -22,3 +22,6 @@ a KML file
 \description{
 read  _technical.txt files and create a KML file to be read with Google Earth
 }
+\details{
+CTS5_create_kml()
+}

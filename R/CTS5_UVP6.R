@@ -54,16 +54,12 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
     
     UVP6SN<-UVP6_HW_CONF[1]
     
+    UVP6_Meta<-cbind(UVP6_MetaNames,UVP6_HW_CONF)
     
     #####################################################################
     ## 1- data LPM
     ind<-(dataTemp[,"SensorType"]==109)
     if (sum(ind)>0){
-      
-      ### Fichier META que si il y a des données.
-      UVP6_Meta<-cbind(UVP6_MetaNames,UVP6_HW_CONF)
-      cat("writing:",paste(NAME,"_",UVP6SN,"_DEPTH_META.txt",sep=""),"\n")
-      write.table(UVP6_Meta,file = paste(NAME,"_",UVP6SN,"_DEPTH_META.txt",sep=""),col.names = F,row.names = F,quote = F,sep="\t")
       
       
       indcol<-c(1:4,7,grep("NSamples",colnames(dataTemp)),grep("UVP6_Temp",colnames(dataTemp))
@@ -76,7 +72,7 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       
       colnames(dataUVP)[6:7]<-c("IMAGE_NUMBER_PARTICLES","TEMP_PARTICLES")
       
-      colnames(dataUVP)[8:(8+17)]<-paste("AB_SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
+      colnames(dataUVP)[8:(8+17)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
       colnames(dataUVP)[(8+18):(8+35)]<-paste("GREY_ SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
 
       ## LPM Ascent
@@ -84,14 +80,26 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_LPM.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
-      }
+      
+        ### Fichier META que si il y a des données.
+        cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_META.txt",sep=""),"\n")
+        write.table(UVP6_Meta,file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_META.txt",sep=""),col.names = F,row.names = F,quote = F,sep="\t")
+        
+        
+        }
       
       ## LPM Parking
       ind<-dataUVP$`Number Phase`=="PAR"
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_LPM.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-PAR_",UVP6SN,"_TIME_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
-      }
+      
+        ### Fichier META que si il y a des données.
+        cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_META.txt",sep=""),"\n")
+        write.table(UVP6_Meta,file = paste(NAME,"-PAR_",UVP6SN,"_TIME_META.txt",sep=""),col.names = F,row.names = F,quote = F,sep="\t")
+        
+        
+        }
       
     }
     
@@ -112,7 +120,7 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       
       #Names
       colnames(dataUVP)[6:7]<-c("IMAGE_NUMBER_PARTICLES","TEMP_PARTICLES")
-      colnames(dataUVP)[8:(8+4)]<-paste("AB_SIZE_SPECTRA_PARTICLES_class_",1:5,sep="")
+      colnames(dataUVP)[8:(8+4)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:5,sep="")
       
       ## Black Ascent
       ind<-dataUVP$`Number Phase`=="ASC"

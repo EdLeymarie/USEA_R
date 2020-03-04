@@ -20,3 +20,9 @@ identical as \code{\link{ScanPosition2Recover}}
 \description{
 This function read technical/default files and write the Potions file to be called by \code{\link{ScanPosition2Recover}}
 }
+\examples{
+ScanDefault2Recover()
+
+
+
+}

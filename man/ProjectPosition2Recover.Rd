@@ -22,6 +22,7 @@ by \code{\link{ScanPosition2Recover}} or \code{\link{ScanDefault2Recover}}
 }
 \examples{
 data<-ScanDefault2Recover()
+ProjectPosition2Recover(nextMin=1,data=data) estimate the position in 1 min from now
 
 
 

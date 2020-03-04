@@ -12,7 +12,7 @@ CTS5_create_kml(pattern = ".*technical.*.txt", output = "PositionAPMT.kml",
 
 \item{output}{name of the KML file}
 
-\item{start}{}
+\item{start}{First Cycle number to process.}
 
 \item{CycleToProcess}{vector of float cycle to include in the KML file. If Null, all cycle will be included}
 }

@@ -532,7 +532,7 @@ CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,inclu
 #' @param pattern pattern used to select files
 #' @param output name of the KML file
 #' @param CycleToProcess vector of float cycle to include in the KML file. If Null, all cycle will be included
-#' @param start 
+#' @param start First Cycle number to process. 
 #'
 #' @return a KML file
 #' 

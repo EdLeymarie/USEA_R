@@ -73,8 +73,28 @@ return(result)
   
 }
 
-#*************
-ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml"){
+################################################################
+#' ScanPosition2Recover : read Position file to recover the float.
+#'
+#' @description
+#' This function read the position of the float during a recovering. Positions are entered by hand in a text file or 
+#' read from default files by \code{\link{ScanDefault2Recover}}. 
+#'
+#' @param filename name of the text file which contains the positions.
+#' @param KMLfile name of the KML file generated
+#' 
+#' @return a data frame which contains the positions in various format and the speed and course of the float.
+#' 
+#' @examples The positions must be entered in a text file by copying the [GPS] line of the technical/default file as follow :
+#' UTC=19-11-25 08:02:00 Lat=4315.57717N Long=00658.52514E Clock drift=+0.032 s
+#' UTC=19-11-25 08:16:35 Lat=4315.27231N Long=00657.97657E Clock drift=+0.000 s
+#' 
+#' 
+#' 
+#' @export
+#'
+#'
+ScanPosition2Recover<-function(filename="Positions.txt",KMLfile="Positions.kml"){
   datatemp<-read.table(filename,header=FALSE,sep=" ",stringsAsFactors=FALSE)
   
   #lecture date
@@ -112,15 +132,15 @@ ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml"){
   #distance / temps
   dist_nm<-NA
   tempsvect<-NA
-  capvect<-NA
+  course<-NA
   for (i in 2:length(data[,1])){
     dist_nm<-c(dist_nm,dist.2pts(data[i-1,3],data[i-1,2],data[i,3],data[i,2]))
     tempsvect<-c(tempsvect,difftime(date[i],date[i-1],units="hours"))
-    capvect<-c(capvect,cap.2pts(data[i-1,3],data[i-1,2],data[i,3],data[i,2]))
+    course<-c(course,cap.2pts(data[i-1,3],data[i-1,2],data[i,3],data[i,2]))
   }
   speed_kts<-dist_nm/tempsvect #en noeuds
   
-  data<-cbind(data,dist_nm,speed_kts,capvect)
+  data<-cbind(data,dist_nm,speed_kts,course)
   
 
   #Creation du fichier KML
@@ -138,7 +158,25 @@ ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml"){
   
 }
 
-#****************************
+################################################################
+#' ScanDefault2Recover : read technical/default files to recover the float.
+#'
+#' @description
+#' This function read technical/default files and write the Potions file to be called by \code{\link{ScanPosition2Recover}}
+#'
+#' @param pattern pattern of the technical/default files
+#' @param Outputfilename filename of the Positions file
+#' @param KMLfile name of the KML file generated
+#' 
+#' @return identical as \code{\link{ScanPosition2Recover}}
+#' 
+#' @examples ScanDefault2Recover()
+#' 
+#' 
+#' 
+#' @export
+#'
+#'
 ScanDefault2Recover<-function(pattern=".*_default_.*.txt",Outputfilename="Positions.txt",KMLfile="Positions.kml"){
  
 filenames<-list.files(pattern = pattern)   
@@ -158,16 +196,34 @@ for (filename in filenames){
 cat("write:",Outputfilename,"\n")
 write(Positions,file = Outputfilename)
 
-ScanPosition(filename=Outputfilename,KMLfile=KMLfile)
+ScanPosition2Recover(filename=Outputfilename,KMLfile=KMLfile)
 
 }
 
 
-#****************************
+################################################################
+#' ProjectPosition2Recover : project position based on previous Positions
+#'
+#' @description
+#' ProjectPosition2Recover project the futur position of the float in nextMin minutes based on previous positions read 
+#' by \code{\link{ScanPosition2Recover}} or \code{\link{ScanDefault2Recover}}
+#'
+#' @param nextMin Number of minutes from now to project the position
+#' @param data Positions read from \code{\link{ScanPosition2Recover}} or \code{\link{ScanDefault2Recover}}
+#' @param ind The drift of the float is estimated between the last position and the position [Last-ind]
+#' 
+#' @return projected position
+#' 
+#' @examples data<-ScanDefault2Recover()
+#' ProjectPosition2Recover(nextMin=1,data=data) estimate the position in 1 min from now
+#' 
+#' 
+#' 
+#' @export
+#'
+#'
 
-# predict
-
-Predict<-function(nextMin=0,data=data,ind=1){
+ProjectPosition2Recover<-function(nextMin=0,data=data,ind=1){
 
 date<-strptime(data[,1],format="%y-%m-%d %H:%M:%S",tz="UTC")
 

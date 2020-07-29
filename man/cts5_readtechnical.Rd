@@ -2,10 +2,14 @@
 % Please edit documentation in R/CTS5_USEA_technical.R
 \name{cts5_readtechnical}
 \alias{cts5_readtechnical}
-\title{cts5_readtechnical : read APMT technical file.}
+\title{read and parse CTS5 technical file.}
 \usage{
-cts5_readtechnical(filename = "", floatname = "ffff", CycleNumber,
-  PatternNumber = 1)
+cts5_readtechnical(
+  filename = "",
+  floatname = "ffff",
+  CycleNumber,
+  PatternNumber = 1
+)
 }
 \arguments{
 \item{filename}{file to open. If exist, will replace the automatic name provided by Cycle
@@ -21,5 +25,5 @@ and Pattern number.}
 list containing the technical data
 }
 \description{
-read APMT _technical.txt
+read and parse CTS5 technical file (_tecnical.txt)
 }

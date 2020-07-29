@@ -2,13 +2,17 @@
 % Please edit documentation in R/CTS5_USEA.R
 \name{cts5_decode}
 \alias{cts5_decode}
-\title{cts5_decode : Use NKE routine to decode .hex data files}
+\title{Use NKE routine to decode .hex data files}
 \usage{
-cts5_decode(floatname = "ffff", CycleNumber, PatternNumber = 1,
-  sensors = c("sbe41", "do", "eco", "ocr", "suna", "sbeph", "uvp6_lpm",
-  "uvp6_blk"), subdir = ".",
+cts5_decode(
+  floatname = "ffff",
+  CycleNumber,
+  PatternNumber = 1,
+  sensors = c("sbe41", "do", "eco", "ocr", "suna", "sbeph", "uvp6_lpm", "uvp6_blk"),
+  subdir = ".",
   OS_windows_progpath = "D:/Data/Provor_USEA/USEA_R/",
-  OS_Linux_progpath = "/home/edouard/Documents/APMT-USEA-decod")
+  OS_Linux_progpath = "/home/edouard/Documents/APMT-USEA-decod"
+)
 }
 \arguments{
 \item{floatname}{hexa name of the float}

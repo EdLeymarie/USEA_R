@@ -12,10 +12,13 @@
 
 Process_DO_Bittig <- function(C1phase,C2phase,temp, Pres,tempCTD,salCTD, PRESCTD,COEF=NULL) {
   
-  tempCTD <- approx(PRESCTD, tempCTD, Pres, rule=2)$y #Approx tempCTD on DO pressure
-  salCTD <- approx(PRESCTD, salCTD, Pres, rule=2)$y #Approx tempCTD on DO pressure
-  
+  #tempCTD <- approx(PRESCTD, tempCTD, Pres, rule=2)$y #Approx tempCTD on DO pressure
   tempCTD <- temp #We use the temperature from the Optode
+  
+  #Approx tempCTD on DO pressure
+  salCTD <- approx(PRESCTD,salCTD, Pres, rule=2,ties = "mean")$y 
+  
+  
   
   #COEF if NULL (for plotting)
   if (is.null(COEF)){

@@ -4,8 +4,12 @@
 \alias{cts5_create_command}
 \title{create a _command.txt files by comparing inifiles}
 \usage{
-cts5_create_command(newini = "apmt_update.ini", oldini = "",
-  sections = c("PATTERN", "SENSOR"), output = "_command.txt")
+cts5_create_command(
+  newini = "apmt_update.ini",
+  oldini = "",
+  sections = c("PATTERN", "SENSOR"),
+  output = "_command.txt"
+)
 }
 \arguments{
 \item{newini}{filename of the new ini file}

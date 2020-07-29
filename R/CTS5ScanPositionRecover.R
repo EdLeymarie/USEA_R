@@ -73,12 +73,12 @@ return(result)
   
 }
 
-################################################################
-#' ScanPosition2Recover : read Position file to recover the float.
+#***************************************************************************
+#' read Position file to recover the float.
 #'
 #' @description
 #' This function read the position of the float during a recovering. Positions are entered by hand in a text file or 
-#' read from default files by \code{\link{ScanDefault2Recover}}. 
+#' read from default files by \code{\link{Recover_ScanDefault}}. 
 #'
 #' @param filename name of the text file which contains the positions.
 #' @param KMLfile name of the KML file generated
@@ -94,7 +94,7 @@ return(result)
 #' @export
 #'
 #'
-ScanPosition2Recover<-function(filename="Positions.txt",KMLfile="Positions.kml"){
+Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml"){
   datatemp<-read.table(filename,header=FALSE,sep=" ",stringsAsFactors=FALSE)
   
   #lecture date
@@ -158,8 +158,8 @@ ScanPosition2Recover<-function(filename="Positions.txt",KMLfile="Positions.kml")
   
 }
 
-################################################################
-#' ScanDefault2Recover : read technical/default files to recover the float.
+#***************************************************************************
+#' read technical/default files to recover the float.
 #'
 #' @description
 #' This function read technical/default files and write the Potions file to be called by \code{\link{ScanPosition2Recover}}
@@ -177,7 +177,7 @@ ScanPosition2Recover<-function(filename="Positions.txt",KMLfile="Positions.kml")
 #' @export
 #'
 #'
-ScanDefault2Recover<-function(pattern=".*_default_.*.txt",Outputfilename="Positions.txt",KMLfile="Positions.kml"){
+Recover_ScanDefault<-function(pattern=".*_default_.*.txt",Outputfilename="Positions.txt",KMLfile="Positions.kml"){
  
 filenames<-list.files(pattern = pattern)   
 
@@ -196,26 +196,26 @@ for (filename in filenames){
 cat("write:",Outputfilename,"\n")
 write(Positions,file = Outputfilename)
 
-ScanPosition2Recover(filename=Outputfilename,KMLfile=KMLfile)
+Recover_ScanPosition(filename=Outputfilename,KMLfile=KMLfile)
 
 }
 
 
-################################################################
-#' ProjectPosition2Recover : project position based on previous Positions
+#***************************************************************************
+#' Predict position based on previous Positions
 #'
 #' @description
-#' ProjectPosition2Recover project the futur position of the float in nextMin minutes based on previous positions read 
-#' by \code{\link{ScanPosition2Recover}} or \code{\link{ScanDefault2Recover}}
+#' extrapolates the futur position of the float in nextMin minutes based on previous positions read 
+#' by \code{\link{Recover_ScanPosition}} or \code{\link{Recover_ScanDefault}}
 #'
 #' @param nextMin Number of minutes from now to project the position
-#' @param data Positions read from \code{\link{ScanPosition2Recover}} or \code{\link{ScanDefault2Recover}}
+#' @param data Positions read from \code{\link{Recover_ScanPosition}} or \code{\link{Recover_ScanDefault}}
 #' @param ind The drift of the float is estimated between the last position and the position [Last-ind]
 #' 
 #' @return projected position
 #' 
-#' @examples data<-ScanDefault2Recover()
-#' ProjectPosition2Recover(nextMin=1,data=data) estimate the position in 1 min from now
+#' @examples data<-Recover_ScanDefault()
+#' Recover_PredictPosition(nextMin=1,data=data) estimate the position in 1 min from now
 #' 
 #' 
 #' 
@@ -223,7 +223,7 @@ ScanPosition2Recover(filename=Outputfilename,KMLfile=KMLfile)
 #'
 #'
 
-ProjectPosition2Recover<-function(nextMin=0,data=data,ind=1){
+Recover_PredictPosition<-function(nextMin=0,data=data,ind=1){
 
 date<-strptime(data[,1],format="%y-%m-%d %H:%M:%S",tz="UTC")
 
@@ -250,7 +250,7 @@ return(result)
 }
 
 
-##################################################
+#***************************************************************************
 
 ## Utilisation
 

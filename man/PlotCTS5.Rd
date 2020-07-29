@@ -4,9 +4,15 @@
 \alias{PlotCTS5}
 \title{PlotCTS5 : Plot a profile}
 \usage{
-PlotCTS5(login = "lov", dataMerged, PhaseToPlot = c("PRE", "DES", "PAR",
-  "ASC", "SUR"), add = FALSE, technical = TRUE, paper = "A4",
-  mfrow = c(3, 2))
+PlotCTS5(
+  login = "lov",
+  dataMerged,
+  PhaseToPlot = c("PRE", "DES", "PAR", "ASC", "SUR"),
+  add = FALSE,
+  technical = TRUE,
+  paper = "A4",
+  mfrow = c(3, 2)
+)
 }
 \arguments{
 \item{login}{identifiant used at the beginning of the pdf filename}
@@ -14,10 +20,16 @@ PlotCTS5(login = "lov", dataMerged, PhaseToPlot = c("PRE", "DES", "PAR",
 \item{dataMerged}{data.frame obtained by \code{\link{usea_concatProfile}} after
 processing by \code{\link{usea_ProcessData}}}
 
+\item{PhaseToPlot}{list of phase to plot}
+
 \item{add}{if false a new pdf will be created. if true all plots will be generated in the 
 current open device}
 
 \item{technical}{if true, technical information will be plotted}
+
+\item{paper}{paper size}
+
+\item{mfrow}{mfrow}
 }
 \description{
 PlotCTS5 : create a pdf file with profile plots

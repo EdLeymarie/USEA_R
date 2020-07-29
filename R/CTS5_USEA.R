@@ -7,7 +7,7 @@ require(chron)
 # Decod USEA
 
 #**************************************************
-#' cts5_decode : Use NKE routine to decode .hex data files
+#' Use NKE routine to decode .hex data files
 #'
 #' @description
 #' call apmtdecoder.exe routine to decode .hex data files and create NKE .csv ASCII files.
@@ -130,7 +130,7 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sb
 # read USEA data file (generic)
 
 #**************************************************
-#' cts5_readcsv : read USEA .csv data file
+#' read USEA .csv data file
 #'
 #' @description
 #' read NKE .csv ASCII files obtained from \code{\link{cts5_decode}} .
@@ -164,6 +164,7 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sb
 #' 110 : Octopus blk
 #' 
 #' Phase
+#' [DESCENT]->"DES"
 #' [PARK]->"PAR"
 #' [DEEP_PROFILE]->"DEE"
 #' [SHORT_PARK]->"SHP"
@@ -317,7 +318,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
       
     }
     
-    colnames(Dataclean)[3:7]<-c("Number Cycle","Number Profil","Number Phase","Files","SensorType")
+    colnames(Dataclean)[3:7]<-c("Number Cycle","Number Pattern","Number Phase","Files","SensorType")
     
     if (sensor %in% c("uvp6_lpm")){
       Dataclean<-cbind(Dataclean[,2],Dataclean[,9],Dataclean[,3:8],Dataclean[,1],Dataclean[,-(1:9)])
@@ -395,7 +396,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
 
 cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sbe41","do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"),dec="."){
   
-EnTeteCom<-c("Pressure [dbar]","Date","Number Cycle","Number Profil","Number Phase","Files","SensorType","processing")
+EnTeteCom<-c("Pressure [dbar]","Date","Number Cycle","Number Pattern","Number Phase","Files","SensorType","processing")
 
 dataMerged<-cts5_readcsv(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber,sensor=sensors[1],dec=dec)  
 
@@ -438,7 +439,7 @@ return(dataMerged)
 
 
 #**************************************************
-#' cts5_ProcessData : Process data to physical values
+#' Process data to physical values
 #'
 #' @description
 #' apply processing to raw values in order to compute physical values
@@ -548,7 +549,7 @@ cts5_ProcessData<-function(metadata,dataMerged,sensor=c("eco","ocr","do","suna",
   
 }
 
-###########################################
+#**************************************************
 #' save data to CTS5 csv format
 #'
 #' @description
@@ -568,7 +569,7 @@ SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
   
   if (!is.null(dim(dataMerged))){  
     filename<-paste(subdir,"/",login,"_",formatC(unique(dataMerged[,"Number Cycle"]),width=3,flag="0"),"_",
-                    formatC(unique(dataMerged[,"Number Profil"]),width=2,flag="0"),".csv",sep="")
+                    formatC(unique(dataMerged[,"Number Pattern"]),width=2,flag="0"),".csv",sep="")
     cat("save data : ",filename,"\n")
     
     if (!is.null(GPS)){

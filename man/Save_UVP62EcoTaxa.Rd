@@ -4,8 +4,13 @@
 \alias{Save_UVP62EcoTaxa}
 \title{save UVP6 data to EcoPart csv format}
 \usage{
-Save_UVP62EcoTaxa(login, dataMerged, UVP6_HW_CONF = NULL, subdir = ".",
-  GPS = NULL)
+Save_UVP62EcoTaxa(
+  login,
+  dataMerged,
+  UVP6_HW_CONF = NULL,
+  subdir = ".",
+  GPS = NULL
+)
 }
 \arguments{
 \item{login}{login of the float used as prefix}

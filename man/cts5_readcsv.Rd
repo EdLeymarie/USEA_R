@@ -2,10 +2,15 @@
 % Please edit documentation in R/CTS5_USEA.R
 \name{cts5_readcsv}
 \alias{cts5_readcsv}
-\title{cts5_readcsv : read USEA .csv data file}
+\title{read USEA .csv data file}
 \usage{
-cts5_readcsv(floatname = "ffff", CycleNumber, PatternNumber = 1,
-  sensor = "sbe41", dec = ".")
+cts5_readcsv(
+  floatname = "ffff",
+  CycleNumber,
+  PatternNumber = 1,
+  sensor = "sbe41",
+  dec = "."
+)
 }
 \arguments{
 \item{floatname}{hexa name of the float}
@@ -46,6 +51,7 @@ this function add an identification for the sensorType and acquisition phase.
 110 : Octopus blk
 
 Phase
+[DESCENT]->"DES"
 [PARK]->"PAR"
 [DEEP_PROFILE]->"DEE"
 [SHORT_PARK]->"SHP"

@@ -2,10 +2,13 @@
 % Please edit documentation in R/CTS5_USEA.R
 \name{cts5_ProcessData}
 \alias{cts5_ProcessData}
-\title{cts5_ProcessData : Process data to physical values}
+\title{Process data to physical values}
 \usage{
-cts5_ProcessData(metadata, dataMerged, sensor = c("eco", "ocr", "do", "suna",
-  "sbeph"))
+cts5_ProcessData(
+  metadata,
+  dataMerged,
+  sensor = c("eco", "ocr", "do", "suna", "sbeph")
+)
 }
 \arguments{
 \item{metadata}{is a list containing technical data including calibration coefficients 

@@ -25,11 +25,11 @@ ConvDeg<-function(str){
 }
 
 
-################################################################
+#**************************************************
 
 ## fonctions de split
 
-################################################################
+#**************************************************
 
 split_One_Key<-function(string){
   s<-strsplit(string,split="=")
@@ -59,11 +59,11 @@ split_One_value<-function(string,value.as.numeric=T){
 
 
 
-################################################################
-#' cts5_readtechnical : read APMT technical file.
+#**************************************************
+#' read and parse CTS5 technical file.
 #'
 #' @description
-#' read APMT _technical.txt
+#' read and parse CTS5 technical file (_tecnical.txt)
 #'
 #' @param filename file to open. If exist, will replace the automatic name provided by Cycle
 #' and Pattern number.
@@ -206,11 +206,18 @@ cts5_readtechnical<-function(filename="",floatname="ffff",CycleNumber,PatternNum
           technical$DATA[[i]]$Nsessions<-as.numeric(s3[10])
         }
         
+        if (key == "Download"){
+          s3<-strsplit(s2,split=" ")[[1]]
+          technical$DATA[[i]]<-list(cmd_accepted=as.numeric(substr(s3[3],2,10)))
+          technical$DATA[[i]]$cmd_refused<-as.numeric(s3[5])
+          technical$DATA[[i]]$cmd_unknown<-as.numeric(s3[7])
+        }
+        
         if (key == "Pattern"){
           technical$DATA[[i]]<-as.numeric(strsplit(s2,split=" ")[[1]][1])
         }
         
-        if (key %in% c("SBE41","DO","OCR","ECO","SBEPH","SUNA")){
+        if (!(key %in% c("Upload","Pattern","Download"))){
           technical$DATA[[i]]<-as.numeric(strsplit(strsplit(s2,split=" ")[[1]][1],split="\\/")[[1]])
         }
       }
@@ -284,11 +291,121 @@ cts5_readtechnical<-function(filename="",floatname="ffff",CycleNumber,PatternNum
 }
       
 
-################################################################
-#' cts5_readMetaSensor : read APMT technical file.
+#**************************************************
+#' Compare the number of available data point
 #'
 #' @description
-#' read APMT xml files with sensor meta data
+#' cts5_CheckDataCount compare the number of data point per sensor and per phase
+#' between the technical file and the dataMerged file
+#'
+#' @param technical technical file read from \code{\link{cts5_readtechnical}}
+#' @param dataMerged merged data read from \code{\link{cts5_concatProfile}}
+#' 
+#' @return list containing check (= True if the number of data point are the same);
+#' and DataCheck a data.frame with the full comparison.
+#' 
+#' 
+#' @examples 
+#' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV",sensors=c("sbe41","do","eco","ocr"))
+#'
+#' tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#'
+#' setwd("./CSV")
+#'
+#' dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p,
+#'                               sensors=c("sbe41","do","eco","ocr"))
+#'
+#' dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+#' 
+#' if (!cts5_CheckDataCount(tech,dataMerged)$check){
+#'  cat("!! Warning, data count error \n")
+#' }
+#' 
+#' PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
+#' 
+#' @export
+#'
+
+
+cts5_CheckDataCount<-function(technical,dataMerged){
+
+if (!is.null(technical) & !is.null(dataMerged)){  
+    
+  DataCheck<-NULL
+  DataInfile<-NULL
+  
+  sensorList<-names(technical$DATA)
+  
+  sensorList<-sensorList[!(sensorList %in% c("Upload","Pattern","Download"))]
+    
+  for (sensor in sensorList){ #sensor<-"SBE41"
+    DataCount<-technical$DATA[[sensor]]
+    
+    #On élimine le cas subsurface
+    if (sensor == "SBE41"){
+      DataCount[5]<-sum(DataCount[c(5,7)])
+      DataCount<-DataCount[1:6]
+    }
+    
+    #correspondance SensorType
+    SensorType <- -1
+    switch(sensor,
+           "SBE41" = {SensorType <- 0},
+           "DO" = {SensorType <- 3},
+           "ECO" = {SensorType <- 9},
+           "OCR" = {SensorType <- 12},
+           "SUNA" = {SensorType <- 21},
+           "UVP6-LPM" = {SensorType <- 109},
+           "UVP6-BLK" = {SensorType <- 110})
+    
+    if (SensorType == -1){warning(paste("Sensor type not defined for:",sensor))}
+    
+    temp<-dataMerged[dataMerged$SensorType == SensorType,]
+    
+    DataLine<-c(DataCount[1]-nrow(temp[temp$`Number Phase`=="DES",]),
+                DataCount[2]-nrow(temp[temp$`Number Phase`=="PAR",]),
+                DataCount[3]-nrow(temp[temp$`Number Phase`=="DEE",]),
+                DataCount[4]-nrow(temp[temp$`Number Phase`=="SHP",]),
+                DataCount[5]-nrow(temp[temp$`Number Phase`=="ASC",]),
+                DataCount[6]-nrow(temp[temp$`Number Phase`=="SUR",]))
+    
+    #DataCheck<-rbind(DataCheck,c(sensor,DataLine))
+    DataCheck<-rbind(DataCheck,DataLine)
+    
+    temp<-c(nrow(temp[temp$`Number Phase`=="DES",]),
+                  nrow(temp[temp$`Number Phase`=="PAR",]),
+                  nrow(temp[temp$`Number Phase`=="DEE",]),
+                  nrow(temp[temp$`Number Phase`=="SHP",]),
+                  nrow(temp[temp$`Number Phase`=="ASC",]),
+                  nrow(temp[temp$`Number Phase`=="SUR",]))
+    
+    names(temp)<-paste(sensor,c("DES","PAR","DEE","SHP","ASC","SUR"),sep = "_")
+    
+    DataInfile<-c(DataInfile,temp)
+    }
+  
+  DataCheck<-data.frame(DataCheck,stringsAsFactors = F)
+  
+  colnames(DataCheck)<-c("DES","PAR","DEE","SHP","ASC","SUR")
+  rownames(DataCheck)<-sensorList
+  
+  DataInfile<-c(dataMerged$`Number Cycle`[1],dataMerged$`Number Pattern`[1],DataInfile)
+  
+  names(DataInfile)[1:2]<-c("Cycle_Number","Pattern_Number")
+  
+  return(list(check=sum(abs(DataCheck)) == 0,DataCheck=DataCheck,DataInfile=DataInfile))
+}
+else {
+  
+  return(list(check=is.null(technical) & is.null(dataMerged),DataCheck=NULL,DataInfile=NULL))
+  
+  }
+}
+#**************************************************
+#' read CTS5 Metadata file.
+#'
+#' @description
+#' read CTS5 xml files with float and sensors meta data
 #'
 #' @param floatname hexa name of the float or .* to select all float name
 #' @param CycleNumber numeric : number of the cycle to decode. If NA, 
@@ -332,7 +449,7 @@ cts5_readMetaSensor<-function(floatname=".*",CycleNumber=NA,PatternNumber=0,file
     
     ##elimination padding
     ind<-grep("</FLOAT>",xml)
-    xml<-xml[1:ind]
+    xml<-xml[1:ind[1]]
     
     xml<-xmlParse(xml)
     L<-xmlToList(xml)
@@ -368,7 +485,7 @@ return(L)
   
 }
 
-#######################################
+#**************************************************
 
 read_list_splitfromstr<-function(list,key){
 key_split<-strsplit(key,split="\\$")[[1]]
@@ -383,7 +500,7 @@ return(result)
 
 }
 
-#######################################
+#**************************************************
 list_time_as_character<-function(list){
   for (i in 1:length(list)){
     
@@ -403,8 +520,8 @@ list_time_as_character<-function(list){
 }
 
 
-################################################################
-#' CTS5_AllTech_inTab
+#**************************************************
+#' All technical file in a data Frame
 #'
 #' @description
 #' read all _technical.txt files and return results in a data.frame
@@ -419,7 +536,7 @@ list_time_as_character<-function(list){
 #' @export
 #'
 
-CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,include_tech0=FALSE){
+cts5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,include_tech0=FALSE){
   
   filenames<-list.files(pattern=pattern)
   
@@ -442,11 +559,12 @@ CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,inclu
       
       dataTech<-list_time_as_character(dataTech)
       
-      dataTech<-c(filename,unlist(dataTech))
+      dataTech<-c(filename,as.numeric(strsplit(filename,split="_")[[1]][2:3]),
+                  unlist(dataTech))
       
       dataTech<-as.data.frame(t(dataTech),stringsAsFactors = F)
       
-      names(dataTech)[1]<-"filename"
+      names(dataTech)[1:3]<-c("filename","Cycle_Number","Pattern_Number")
       
       #Forcage du nom Alarm a Alarm1
       ind<-names(dataTech) == "ALARM"
@@ -517,14 +635,14 @@ CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,inclu
   
 }
 
-#######################################
+#**************************************************
 
 ##### KML
 
-#######################################
+#**************************************************
 
-################################################################
-#' CTS5_create_kml : create a KML file
+#**************************************************
+#' create a KML file from technical files
 #'
 #' @description
 #' read  _technical.txt files and create a KML file to be read with Google Earth
@@ -545,7 +663,7 @@ CTS5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,inclu
 #'
 
 
-CTS5_create_kml<-function(pattern=".*technical.*.txt",output="PositionAPMT.kml",start=1,CycleToProcess=NULL,path=".",id="cycle"){
+cts5_create_kml<-function(pattern=".*technical.*.txt",output="PositionAPMT.kml",start=1,CycleToProcess=NULL,path=".",id="cycle"){
   setwd(path)
   filenamelist<-list.files(pattern=pattern)
   

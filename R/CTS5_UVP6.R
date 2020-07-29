@@ -1,4 +1,4 @@
-###########################################
+#***************************************************************************
 #' save UVP6 data to EcoPart csv format
 #'
 #' @description
@@ -25,7 +25,7 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
     
     ## Enregistrement 
     NAME<-paste(login,formatC(unique(dataMerged$`Number Cycle`),width=3,flag="0"),
-                formatC(unique(dataMerged$`Number Profil`),width=2,flag="0"),sep="-")
+                formatC(unique(dataMerged$`Number Pattern`),width=2,flag="0"),sep="-")
     
     
     ## Ajout GPS
@@ -56,7 +56,7 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
     
     UVP6_Meta<-cbind(UVP6_MetaNames,UVP6_HW_CONF)
     
-    #####################################################################
+    #**************************************************************
     ## 1- data LPM
     ind<-(dataTemp[,"SensorType"]==109)
     if (sum(ind)>0){
@@ -103,7 +103,7 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       
     }
     
-    #####################################################################
+    #**************************************************************
     ## 2- data BLACK
     ind<-(dataTemp[,"SensorType"]==110)
     if (sum(ind)>0){

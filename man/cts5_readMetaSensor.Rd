@@ -2,10 +2,14 @@
 % Please edit documentation in R/CTS5_USEA_technical.R
 \name{cts5_readMetaSensor}
 \alias{cts5_readMetaSensor}
-\title{cts5_readMetaSensor : read APMT technical file.}
+\title{read CTS5 Metadata file.}
 \usage{
-cts5_readMetaSensor(floatname = ".*", CycleNumber = NA, PatternNumber = 0,
-  filename = NULL)
+cts5_readMetaSensor(
+  floatname = ".*",
+  CycleNumber = NA,
+  PatternNumber = 0,
+  filename = NULL
+)
 }
 \arguments{
 \item{floatname}{hexa name of the float or .* to select all float name}
@@ -21,7 +25,7 @@ the last file is decoded}
 list containing the Meta data
 }
 \description{
-read APMT xml files with sensor meta data
+read CTS5 xml files with float and sensors meta data
 }
 \examples{
 

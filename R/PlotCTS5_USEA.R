@@ -39,12 +39,12 @@ dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
     ## ISA
     if ((ph=="ASC") & (dim(data)[1]>1)){
       #ISA Antarctique
-      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],50:1)
+      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],50:1,ties = "mean")
       RunM<-RunMedian(InterpT$y)
       ISA_Antarctique<-min(RunM[InterpT$x<=20],na.rm=TRUE)
       
       #ISA Baffin
-      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],30:1)
+      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],30:1,ties = "mean")
       RunM<-RunMedian(InterpT$y)
       ISA_Baffin<-min(RunM[InterpT$x<=10],na.rm=TRUE)
       
@@ -62,7 +62,7 @@ dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
   }
 }
 
-# ############################
+#**************************************************
 #Plot Eco Standard 
 
 PlotEcoStd<-function(data,technical=TRUE){
@@ -113,7 +113,7 @@ PlotEcoStd<-function(data,technical=TRUE){
   }
 }
 
-# ############################
+#**************************************************
 #Plot OCR4 
 PlotOCR4<-function(data,meta,technical=TRUE){
   
@@ -156,7 +156,7 @@ PlotOCR4<-function(data,meta,technical=TRUE){
 
 
 
-# ############################
+#**************************************************
 #Plot Optode
 
 
@@ -198,7 +198,7 @@ PlotOptode<-function(data,technical=TRUE){
   
 }
 
-# ############################
+#**************************************************
 #Plot SUNA
 
 
@@ -259,7 +259,7 @@ PlotSUNA<-function(data,technical=TRUE){
   
 }
 
-# ############################
+#**************************************************
 #Plot PlotSbepH
 
 PlotSbepH<-function(data,technical=TRUE){
@@ -298,7 +298,7 @@ PlotSbepH<-function(data,technical=TRUE){
   
 }
 
-# ############################
+#**************************************************
 #Plot OCTOPUS
 PlotUVP_lpm<-function(data,technical=TRUE){
   
@@ -349,7 +349,7 @@ PlotUVP_lpm<-function(data,technical=TRUE){
   
 }
 
-# ############################
+#**************************************************
 #Plot OCTOPUS
 PlotUVP_blk<-function(data,technical=TRUE){
   
@@ -395,11 +395,11 @@ PlotUVP_blk<-function(data,technical=TRUE){
   
 }
 
-################################################################
+#**************************************************
 
 ## Concatenation plots
 
-################################################################
+#**************************************************
 #' PlotCTS5 : Plot a profile
 #'
 #' @description
@@ -409,10 +409,12 @@ PlotUVP_blk<-function(data,technical=TRUE){
 #' @param login identifiant used at the beginning of the pdf filename
 #' @param dataMerged data.frame obtained by \code{\link{usea_concatProfile}} after
 #' processing by \code{\link{usea_ProcessData}}
-#' @param PhaseToPlot
+#' @param PhaseToPlot list of phase to plot
 #' @param add if false a new pdf will be created. if true all plots will be generated in the 
 #' current open device
 #' @param technical if true, technical information will be plotted
+#' @param paper paper size
+#' @param mfrow mfrow
 #'  
 #' 
 #' @export
@@ -423,11 +425,11 @@ PlotCTS5<-function(login="lov",dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC",
 if (!is.null(dim(dataMerged))){   
 
   CycleNumber<-unique(dataMerged[,"Number Cycle"])[1]
-  ProfilNumber<-unique(dataMerged[,"Number Profil"])[1]
+  PatternNumber<-unique(dataMerged[,"Number Pattern"])[1]
   
   #Ouverture du pdf
   if (!add){
-      filename<-paste(login,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(ProfilNumber,width=2,flag="0"),".pdf",sep="")
+      filename<-paste(login,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),".pdf",sep="")
       cat("create:",filename,"\n",sep="")
       pdf(file=filename,paper = paper, width = 0, height = 0)
       par(mfrow=mfrow)
@@ -444,7 +446,7 @@ if (!is.null(dim(dataMerged))){
   
   mydate<-max(as.POSIXct(dataMerged[,"Date"],origin = "1970-01-01",tz="UTC"))
   if (sum(ind)>0){
-    mtext(paste("float:",login,", cycle:",CycleNumber,", profil:",ProfilNumber,", date:",mydate),side=3,line=-1,outer=T,cex=0.6,adj=0.95)}
+    mtext(paste("float:",login,", cycle:",CycleNumber,", pattern:",PatternNumber,", date:",mydate),side=3,line=-1,outer=T,cex=0.6,adj=0.95)}
   
   
   #PlotEcoStd
@@ -505,5 +507,8 @@ if (!is.null(dim(dataMerged))){
     cat("Close pdf","\n")
     dev.off()
   }
+}
+else {
+  warning("Null data")
 }
 }

@@ -10,8 +10,7 @@ cts5_decode(
   PatternNumber = 1,
   sensors = c("sbe41", "do", "eco", "ocr", "suna", "sbeph", "uvp6_lpm", "uvp6_blk"),
   subdir = ".",
-  OS_windows_progpath = "D:/Data/Provor_USEA/USEA_R/",
-  OS_Linux_progpath = "/home/edouard/Documents/APMT-USEA-decod"
+  Nke_ProgPath = ""
 )
 }
 \arguments{
@@ -24,6 +23,8 @@ cts5_decode(
 \item{sensors}{list of sensor to decode. From the list "sbe41","sbeph,"do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"}
 
 \item{subdir}{subdir where to put .csv ASCII files}
+
+\item{Nke_ProgPath}{path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath")}
 }
 \value{
 No return. This function create ASCII files in the subdir directory

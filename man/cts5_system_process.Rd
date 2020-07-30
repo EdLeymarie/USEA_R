@@ -12,8 +12,7 @@ cts5_system_process(
   subdir = ".",
   userdefine = "",
   AutoSaveLoad = F,
-  OS_windows_progpath = "D:/Data/Provor_USEA/USEA_R/",
-  OS_Linux_progpath = "/home/edouard/Documents/APMT-USEA-decod"
+  Nke_ProgPath = ""
 )
 }
 \arguments{
@@ -33,9 +32,7 @@ in the directory}
 
 \item{AutoSaveLoad}{If True, Navdata are saved and load automatically}
 
-\item{OS_windows_progpath}{path to the nke decoder (APMTDecrypt.exe) for a windows system}
-
-\item{OS_Linux_progpath}{path to the nke decoderfor (APMTDecrypt.exe) a Linux system. !! Attention, required
+\item{Nke_ProgPath}{path to the nke decoder (APMTDecrypt.exe). This path is stored to Sys.getenv("USEAR_Nke_ProgPath") !! Attention, on linux : required
 the installation of wine}
 }
 \value{

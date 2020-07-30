@@ -28,6 +28,21 @@ apply processing to raw values in order to compute physical values
 calibration coefficients are usually in 00_technical.txt file.
 }
 \examples{
-dataMerged<-usea_concatProfile(floatname="ffff",CycleNumber=275)
+
+Meta<-cts5_readMetaSensor()
+
+tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
+
+cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
+
+setwd("./CSV")
+
+dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+
+dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+
+PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
+
+SaveToCTS5(login = login,dataMerged = dataMerged,GPS = tech$GPS)
 
 }

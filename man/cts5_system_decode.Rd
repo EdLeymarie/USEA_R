@@ -11,8 +11,7 @@ cts5_system_decode(
   CycleNumber = NULL,
   PatternNumber = 1,
   subdir = ".",
-  OS_windows_progpath = "D:/Data/Provor_USEA/USEA_R/",
-  OS_Linux_progpath = "/home/edouard/Documents/APMT-USEA-decod"
+  Nke_ProgPath = ""
 )
 }
 \arguments{
@@ -28,9 +27,7 @@ cts5_system_decode(
 
 \item{subdir}{not used}
 
-\item{OS_windows_progpath}{path to the nke decoder (APMTDecrypt.exe) for a windows system}
-
-\item{OS_Linux_progpath}{path to the nke decoderfor (APMTDecrypt.exe) a Linux system. !! Attention, required
+\item{Nke_ProgPath}{path to the nke decoder (APMTDecrypt.exe). This path is stored to Sys.getenv("USEAR_Nke_ProgPath") !! Attention, on linux : required
 the installation of wine}
 }
 \value{
@@ -43,12 +40,15 @@ call APMTDecrypt.exe routine to decode .hex system files and create NKE .csv ASC
 this function must be call in the directory where are .hex files
 
 This function will decode the system file in the following order of priority :
-1- filename if provided, 2- the system file with the sysfile_number if provided, 
+1- filename if provided, 
+2- the system file with the sysfile_number if provided, 
 3- the system file recorded at the same time than the technical file specified by CycleNumber and PatternNumber
+
+required the Nke_ProgPath for the first time or the parametrization of Sys.getenv("USEAR_Nke_ProgPath")
 }
 \examples{
 decrypt_filename<-cts5_system_decode(floatname = "3ab3",sysfile_number=131,
-OS_windows_progpath="my path to APMTDecrypt.exe")
+Nke_ProgPath="my path to APMTDecrypt.exe")
 
 Navdata<-cts5_system_parse(decrypt_filename)
 

@@ -17,6 +17,7 @@ require(chron)
 #' @param PatternNumber numeric : number of the Pattern to decode
 #' @param sensors list of sensor to decode. From the list "sbe41","sbeph,"do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"
 #' @param subdir subdir where to put .csv ASCII files
+#' @param Nke_ProgPath path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath") 
 #' 
 #' @return No return. This function create ASCII files in the subdir directory
 #' 
@@ -26,19 +27,31 @@ require(chron)
 #' @export
 #'
 cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sbe41","do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"),subdir=".",
-                      OS_windows_progpath="D:/Data/Provor_USEA/USEA_R/",
-                      OS_Linux_progpath="/home/edouard/Documents/APMT-USEA-decod"){
+                      Nke_ProgPath=""){
   
   #Positionnement dans le repertoire Decoder
+  if (Nke_ProgPath == ""){
+    if (Sys.getenv("USEAR_Nke_ProgPath") != ""){
+      ProgDir=Sys.getenv("USEAR_Nke_ProgPath")
+    }
+    else {
+      warning("Nke_ProgPath where APMTDecrypt.exe or Decoder are must be defined. Provide Nke_ProgPath 
+              or set Sys.getenv('USEAR_Nke_ProgPath')",immediate.=T)
+    }
+  }
+  else {
+    ProgDir=Nke_ProgPath
+    Sys.setenv(USEAR_Nke_ProgPath=Nke_ProgPath)
+  }
+  
+  
   #windows
   if (Sys.info()["sysname"] == "Windows"){
-    ProgDir=OS_windows_progpath
     ProgName="APMTDecoder.exe"
     OSlabel=""
   }
-  
+  #Linux
   if (Sys.info()["sysname"] == "Linux"){
-    ProgDir=OS_windows_progpath
     ProgName="Decoder"
     OSlabel=".linux"
   }
@@ -454,7 +467,22 @@ return(dataMerged)
 #' @details calibration coefficients are usually in 00_technical.txt file.
 #' 
 #' @examples 
-#' dataMerged<-usea_concatProfile(floatname="ffff",CycleNumber=275)
+#' 
+#' Meta<-cts5_readMetaSensor()
+#' 
+#' tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#'
+#' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
+#'
+#' setwd("./CSV")
+#'
+#' dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#'
+#' dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+#'
+#' PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
+#'
+#' SaveToCTS5(login = login,dataMerged = dataMerged,GPS = tech$GPS)
 #' 
 #' @export
 #'

@@ -127,8 +127,7 @@ AddDateToNav<-function(date,NavData,offsettime=0){
 #' @param CycleNumber numeric : number of the cycle to decode
 #' @param PatternNumber numeric : number of the Pattern to decode
 #' @param subdir not used
-#' @param OS_windows_progpath path to the nke decoder (APMTDecrypt.exe) for a windows system
-#' @param OS_Linux_progpath path to the nke decoderfor (APMTDecrypt.exe) a Linux system. !! Attention, required
+#' @param Nke_ProgPath path to the nke decoder (APMTDecrypt.exe). This path is stored to Sys.getenv("USEAR_Nke_ProgPath") !! Attention, on linux : required
 #' the installation of wine
 #' 
 #' @return filename of the decoded file
@@ -136,12 +135,15 @@ AddDateToNav<-function(date,NavData,offsettime=0){
 #' @details this function must be call in the directory where are .hex files
 #' 
 #' This function will decode the system file in the following order of priority :
-#' 1- filename if provided, 2- the system file with the sysfile_number if provided, 
+#' 1- filename if provided, 
+#' 2- the system file with the sysfile_number if provided, 
 #' 3- the system file recorded at the same time than the technical file specified by CycleNumber and PatternNumber
+#' 
+#' required the Nke_ProgPath for the first time or the parametrization of Sys.getenv("USEAR_Nke_ProgPath")
 #' 
 #' @examples 
 #' decrypt_filename<-cts5_system_decode(floatname = "3ab3",sysfile_number=131,
-#' OS_windows_progpath="my path to APMTDecrypt.exe")
+#' Nke_ProgPath="my path to APMTDecrypt.exe")
 #' 
 #' Navdata<-cts5_system_parse(decrypt_filename)
 #' 
@@ -153,20 +155,33 @@ cts5_system_decode<-function(filename="",
                              floatname="ffff",sysfile_number=NULL,
                              CycleNumber=NULL,PatternNumber=1,
                              subdir=".",
-                             OS_windows_progpath="D:/Data/Provor_USEA/USEA_R/",
-                             OS_Linux_progpath="/home/edouard/Documents/APMT-USEA-decod"){
+                             Nke_ProgPath=""){
   
   #Positionnement dans le repertoire Decoder
+  if (Nke_ProgPath == ""){
+    if (Sys.getenv("USEAR_Nke_ProgPath") != ""){
+      ProgDir=Sys.getenv("USEAR_Nke_ProgPath")
+    }
+    else {
+      warning("Nke_ProgPath where APMTDecrypt.exe is must be defined. Provide Nke_ProgPath 
+              or set Sys.getenv('USEAR_Nke_ProgPath')",immediate.=T)
+    }
+  }
+  else {
+    ProgDir=Nke_ProgPath
+    Sys.setenv(USEAR_Nke_ProgPath=Nke_ProgPath)
+  }
+  
+  
+  
   #windows
   if (Sys.info()["sysname"] == "Windows"){
-    ProgDir=OS_windows_progpath
     ProgName="APMTDecrypt.exe"
     OSlabel=""
   }
   
   #Linux
   if (Sys.info()["sysname"] == "Linux"){
-    ProgDir=OS_Linux_progpath
     ProgName="wine APMTDecrypt.exe"
     OSlabel=""
   }
@@ -314,7 +329,10 @@ logdata<-scan(filename,what=character(0),sep="\n",encoding="latin1")
 sysFileNumber<-as.numeric(substr(strsplit(filename,split="_")[[1]][3],1,5))
 
 #Cycle Pattern table
-#detction new Pattern
+#detection new Pattern
+indCycle<-grep(pattern = "NAV.*> Cycle N?",logdata)
+
+#detection new Pattern
 indPattern<-grep(pattern = "NAV.*> Pattern N?",logdata)
 
 #identification with technical file FILE     > Creation of
@@ -322,31 +340,37 @@ indTech<-grep(pattern = "FILE.*> Creation of .*technical.txt",logdata)
 
 #Association
 CycleRecord<-NULL
+DatePattern<-NULL
+
 if (length(indPattern)>0){
-  if (length(indPattern) == length(indTech)){
-    if (length(indPattern)>1){
-      DataPattern<-matrix(unlist(strsplit(logdata[indPattern],split=" ")),ncol=14,byrow = TRUE)[,c(1:2,13)]
-      DatePattern<-strptime(apply(DataPattern[,1:2],1,paste,collapse=" "),format=date.format, tz="UTC")
-      CycleRecord<-matrix(unlist(strsplit(logdata[indTech],split="_")),ncol=4,byrow = TRUE)[,2:3]
-      CycleRecord<-data.frame(DatePattern,as.numeric(CycleRecord[,1]),as.numeric(CycleRecord[,2]))
-      
+  for (p in indPattern){
+    DataPattern<-strsplit(logdata[p],split=" ")[[1]][c(1:2,13)]
+    DatePattern<-c(DatePattern,paste(DataPattern[1:2],collapse=" "))
+    
+    DataCycle<-NA
+    #do we have a cycle loaded before the pattern 
+    if (length(indCycle[indCycle<p])>0){
+      c<-max(indCycle[indCycle<p])
+      DataCycle<-strsplit(logdata[c],split=" ")[[1]][13]
     }
     else {
-      DataPattern<-matrix(unlist(strsplit(logdata[indPattern],split=" ")),ncol=14,byrow = TRUE)[,c(1:2,13)]
-      DatePattern<-strptime(paste(DataPattern[1:2],collapse=" "),format=date.format, tz="UTC")
-      CycleRecord<-matrix(unlist(strsplit(logdata[indTech],split="_")),ncol=4,byrow = TRUE)[,2:3]
-      CycleRecord<-data.frame(DatePattern,as.numeric(CycleRecord[1]),as.numeric(CycleRecord[2]))
-      
+      #if not, do we have a technical file 
+      if (length(indTech[indTech>p])>0){
+        c<-min(indTech[indTech>p])
+        DataCycle<-strsplit(logdata[c],split="_")[[1]][2]
+      }
     }
+    
+    CycleRecord<-rbind(CycleRecord,c(DataCycle,DataPattern[3]))
+    
   }
-  else {
-    warning("No technical file for each pattern !")
-  }
-  
-  names(CycleRecord)<-c("date","CycleNumber","PatternNumber")
-  rownames(CycleRecord)<-NULL
   
 }
+
+CycleRecord<-data.frame(strptime(DatePattern,format=date.format, tz="UTC"),as.numeric(CycleRecord[,1]),as.numeric(CycleRecord[,2]))
+
+names(CycleRecord)<-c("date","CycleNumber","PatternNumber")
+rownames(CycleRecord)<-NULL 
 
 
 ### Analyse Pe
@@ -638,6 +662,22 @@ else {
         }
       }
     }  
+    
+    
+    ## update CyclePattern
+    for (n in names(Navdata1)){
+      if (all(c("CycleNumber","PatternNumber") %in% names(Navdata1[[n]]))){
+        ind<-is.na(Navdata1[[n]]$CycleNumber)
+        if (sum(ind)>0){
+          temp<-FindCyclePattern(Navdata1[[n]]$date[ind],Navdata1$CycleRecord)
+          
+          Navdata1[[n]]$CycleNumber[ind]<-temp$Cycle
+          Navdata1[[n]]$PatternNumber[ind]<-temp$Pattern
+        }
+      }
+    }
+    
+    
   } 
   else {
     warning("lenght(Navdata1) != length(Navdata2)")
@@ -663,8 +703,7 @@ return(Navdata1)
 #' @param subdir not used
 #' @param userdefine Key word to look for in the system file
 #' @param AutoSaveLoad If True, Navdata are saved and load automatically
-#' @param OS_windows_progpath path to the nke decoder (APMTDecrypt.exe) for a windows system
-#' @param OS_Linux_progpath path to the nke decoderfor (APMTDecrypt.exe) a Linux system. !! Attention, required
+#' @param Nke_ProgPath path to the nke decoder (APMTDecrypt.exe). This path is stored to Sys.getenv("USEAR_Nke_ProgPath") !! Attention, on linux : required
 #' the installation of wine
 #' 
 #' @return list containing the parsed system information as from \code{\link{cts5_system_parse}}
@@ -683,8 +722,7 @@ cts5_system_process<-function(Navdata=NULL,floatname,OnlyNew=T,
                               subdir=".",
                               userdefine="",
                               AutoSaveLoad=F,
-                              OS_windows_progpath="D:/Data/Provor_USEA/USEA_R/",
-                              OS_Linux_progpath="/home/edouard/Documents/APMT-USEA-decod"){
+                              Nke_ProgPath=""){
 
 # Recherche des fichiers system
 if (is.null(sysfile_number)){
@@ -716,7 +754,7 @@ if (!is.null(Navdata)){
 # Process
 if (length(sysfile_number)>0){
   for (i in 1:length(sysfile_number)){
-    sysfile<-cts5_system_decode(floatname=floatname,sysfile_number = sysfile_number[i])
+    sysfile<-cts5_system_decode(floatname=floatname,sysfile_number = sysfile_number[i],Nke_ProgPath=Nke_ProgPath)
     Navdata2<-cts5_system_parse(sysfile,userdefine=userdefine)
     Navdata<-cts5_system_merge(Navdata1=Navdata,Navdata2=Navdata2)
   }

@@ -58,19 +58,20 @@ if (!is.null(CycleRecord)){
   for (i in 1:length(date))  {
     
     #Cycle
-    if (date[i]<min(CycleRecord$date)){
-      tempCycle<-NA
-      tempPattern<-NA}
-    else {
-      if (date[i]>max(CycleRecord$date)){
-        tempCycle<-rev(CycleRecord$CycleNumber)[1]
-        tempPattern<-rev(CycleRecord$PatternNumber)[1]
-      }
-      else {
-        #ind<-which((date[i]>c(DateCycle[1:(length(DateCycle)-1)])) & (date[i]<=DateCycle[2:(length(DateCycle))]))
-        ind<-which(date[i]>CycleRecord$date)
-        tempCycle<-CycleRecord$CycleNumber[max(ind)]
-        tempPattern<-CycleRecord$PatternNumber[max(ind)]
+    tempCycle<-NA
+    tempPattern<-NA
+    if (!is.na(date[i])){
+      if (date[i]>=min(CycleRecord$date)){
+        if (date[i]>max(CycleRecord$date)){
+          tempCycle<-rev(CycleRecord$CycleNumber)[1]
+          tempPattern<-rev(CycleRecord$PatternNumber)[1]
+        }
+        else {
+          #ind<-which((date[i]>c(DateCycle[1:(length(DateCycle)-1)])) & (date[i]<=DateCycle[2:(length(DateCycle))]))
+          ind<-which(date[i]>CycleRecord$date)
+          tempCycle<-CycleRecord$CycleNumber[max(ind)]
+          tempPattern<-CycleRecord$PatternNumber[max(ind)]
+        }
       }
     }
 
@@ -324,6 +325,7 @@ cts5_system_decode<-function(filename="",
 #'
 cts5_system_parse<-function(filename="_system_decrypt.log",userdefine=""){
 
+cat("open:",filename,"\n")
 logdata<-scan(filename,what=character(0),sep="\n",encoding="latin1")    
 
 sysFileNumber<-as.numeric(substr(strsplit(filename,split="_")[[1]][3],1,5))
@@ -365,12 +367,13 @@ if (length(indPattern)>0){
     
   }
   
+  CycleRecord<-data.frame(strptime(DatePattern,format=date.format, tz="UTC"),as.numeric(CycleRecord[,1]),as.numeric(CycleRecord[,2]))
+  
+  names(CycleRecord)<-c("date","CycleNumber","PatternNumber")
+  rownames(CycleRecord)<-NULL 
+  
 }
 
-CycleRecord<-data.frame(strptime(DatePattern,format=date.format, tz="UTC"),as.numeric(CycleRecord[,1]),as.numeric(CycleRecord[,2]))
-
-names(CycleRecord)<-c("date","CycleNumber","PatternNumber")
-rownames(CycleRecord)<-NULL 
 
 
 ### Analyse Pe
@@ -896,7 +899,7 @@ if (legendPos != ""){
 
 # Sauvegarde des donnees navigation au format csv dans un fichier login_ccc_pp_trajectory.csv
 
-SaveToTrajFile<-function(login,NavData,split.file=TRUE,show.PumpEV=TRUE){
+cts5_SaveToTrajFile<-function(login,NavData,split.file=TRUE,show.PumpEV=TRUE){
 Result<-cbind(NavData$DepthRecord[,1:4],0,0,NA,NA)
 colnames(Result)[5:8]<-c("EV","Pump","Lon(deg)","Lat(deg)")
 
@@ -914,6 +917,9 @@ Result<-rbind(temp,Result)
 
 colnames(Result)[3]<-"date(UTC)"
 
+# elimination des dates NA
+Result<-Result[!is.na(Result$date),]
+
 #tri
 Result<-Result[order(Result$date),]
 
@@ -925,8 +931,8 @@ if (!show.PumpEV){
 Date<-as.numeric(Result[,"date(UTC)"])
 Result<-cbind(Result[,1:3],Date,Result[,-(1:3)])
 
-#Correction des Cycle==0
-Result[Result$CycleNumber==0,"CycleNumber"]<-min(Result[Result$CycleNumber >0,"CycleNumber"])
+#Correction des Cycle NA
+# Result[Result$CycleNumber==0,"CycleNumber"]<-min(Result$CycleNumber,na.rm = T)
 
 
 ## save

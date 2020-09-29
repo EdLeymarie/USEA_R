@@ -468,7 +468,11 @@ return(dataMerged)
 #' 
 #' @examples 
 #' 
-#' Meta<-cts5_readMetaSensor()
+#' login="lovuse001a"
+#' 
+#' floatname="ffff"
+#' 
+#' Meta<-cts5_readMetaSensor(floatname=floatname)
 #' 
 #' tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
 #'
@@ -587,8 +591,30 @@ cts5_ProcessData<-function(metadata,dataMerged,sensor=c("eco","ocr","do","suna",
 #' @param login login of the float used as prefix
 #' @param dataMerged Merged data obtained by \code{\link{cts5_concatProfile}}
 #' @param subdir sub directory where to save the data
-#' @param GPS GPS data to be included in the csv. obtained by \code{\link{cts5_readtechnical}}
+#' @param GPS GPS data to be included in the csv. Provided as a list ("time","lat (deg),"lon (deg)"). 
+#' obtained by \code{\link{cts5_readtechnical}}.
 #' 
+#' @examples 
+#' 
+#' login="lovuse001a"
+#' 
+#' floatname="ffff"
+#' 
+#' Meta<-cts5_readMetaSensor(floatname=floatname)
+#' 
+#' tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#'
+#' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
+#'
+#' setwd("./CSV")
+#'
+#' dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#'
+#' dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+#'
+#' PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
+#'
+#' SaveToCTS5(login = login,dataMerged = dataMerged,GPS = tech$GPS)
 #' 
 #' @export
 #'

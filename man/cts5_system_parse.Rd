@@ -17,3 +17,17 @@ list containing the parsed system information
 \description{
 parse the cts5 system file after decrypting
 }
+\examples{
+
+NavData<-cts5_system_parse("ffff_system_01755_decrypt.log",OS_windows_progpath="my path to APMTDecrypt.exe")
+NavData<-cts5_system_parse("_system_decrypt.log",userdefine="Grounding detected")
+
+sysfile<-cts5_system_decode(floatname="ffff",CycleNumber=15,PatternNumber = 1,OS_windows_progpath="my path to APMTDecrypt.exe")
+
+decrypt_filename<-cts5_system_decode(floatname = "3ab3",sysfile_number=131,OS_windows_progpath="my path to APMTDecrypt.exe")
+
+Navdata<-cts5_system_parse(decrypt_filename)
+
+cts5_system_plot(Navdata)
+
+}

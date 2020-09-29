@@ -29,7 +29,11 @@ calibration coefficients are usually in 00_technical.txt file.
 }
 \examples{
 
-Meta<-cts5_readMetaSensor()
+login="lovuse001a"
+
+floatname="ffff"
+
+Meta<-cts5_readMetaSensor(floatname=floatname)
 
 tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
 

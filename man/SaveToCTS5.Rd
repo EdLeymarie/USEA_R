@@ -13,8 +13,32 @@ SaveToCTS5(login, dataMerged, subdir = ".", GPS = NULL)
 
 \item{subdir}{sub directory where to save the data}
 
-\item{GPS}{GPS data to be included in the csv. obtained by \code{\link{cts5_readtechnical}}}
+\item{GPS}{GPS data to be included in the csv. Provided as a list ("time","lat (deg),"lon (deg)"). 
+obtained by \code{\link{cts5_readtechnical}}.}
 }
 \description{
 save data to CTS5 csv format
+}
+\examples{
+
+login="lovuse001a"
+
+floatname="ffff"
+
+Meta<-cts5_readMetaSensor(floatname=floatname)
+
+tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
+
+cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
+
+setwd("./CSV")
+
+dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+
+dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+
+PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
+
+SaveToCTS5(login = login,dataMerged = dataMerged,GPS = tech$GPS)
+
 }

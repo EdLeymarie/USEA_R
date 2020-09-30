@@ -180,9 +180,8 @@ cts5_system_decode<-function(filename="",
     ProgName="APMTDecrypt.exe"
     OSlabel=""
   }
-  
-  #Linux
-  if (Sys.info()["sysname"] == "Linux"){
+  #Linux / MacOS
+  else {
     ProgName="wine APMTDecrypt.exe"
     OSlabel=""
   }
@@ -249,9 +248,8 @@ cts5_system_decode<-function(filename="",
       
       setwd(dataDir)
     }
-    
     # Decodage Linux
-    if (Sys.info()["sysname"] == "Linux"){
+    else {
       
       dataDir<-getwd()
       

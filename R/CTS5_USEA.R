@@ -50,8 +50,7 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sb
     ProgName="APMTDecoder.exe"
     OSlabel=""
   }
-  #Linux
-  if (Sys.info()["sysname"] == "Linux"){
+  else {
     ProgName="Decoder"
     OSlabel=".linux"
   }
@@ -99,25 +98,24 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sb
           setwd(dataDir)
         }
         
-        # Decodage Linux
-        if (Sys.info()["sysname"] == "Linux"){
+        # Decodage Linux / MacOS
+        else {
           
-          dataDir<-getwd()
+          #dataDir<-getwd()
           
           #Positionnement dans le repertoire Decoder
-          #Lubunto14-32
-          if (Sys.info()[4] == "oao2016"){
-            setwd("/home/data-usea/TOOLS/UTILS/decoder")
-          }
-          else {
-            setwd(OS_Linux_progpath)
-          }
+          # setwd(ProgDir)
+          # inutile si on compile le decoder avec des chemins absolus et si on met le chemin du decoder dans export path 
           
-          filename<-paste(dataDir,"/",SensorFilename,sep="")
-          cat(paste("./Decoder",filename,sep=" "),"\n")
-          system(paste("./Decoder",filename,sep=" "))
+          #filename<-paste(dataDir,"/",SensorFilename,sep="")
+          #cat(paste("./Decoder",filename,sep=" "),"\n")
+          #system(paste("./Decoder",filename,sep=" "))
           
-          setwd(dataDir)
+          cmd<-paste(ProgDir,"/Decoder ",SensorFilename,sep="")
+          cat(cmd,"\n")
+          system(cmd)
+          
+          #setwd(dataDir)
           
         }
         

@@ -199,6 +199,48 @@ PlotOptode<-function(data,technical=TRUE){
 }
 
 #**************************************************
+#Plot CRover
+
+
+###
+
+PlotCROVER<-function(data,technical=TRUE){
+  
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("cRover",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"Number Phase"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$`Pressure [dbar]`[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta DO",xlab="delta [db]",ylab="depth [db]")
+    }
+  }    
+  
+  
+  #Plot c
+  if (dim(data)[1]>5){
+    
+    plot(NULL,NULL,xlim=range(data[,"c_uncalibrated, [1/m]"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="c_uncalibrated, [1/m]",ylab="depth")
+    for (i in unique (data[,"Number Phase"])){
+      lines(data[data[,"Number Phase"]==i,"c_uncalibrated, [1/m]"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    }
+  }
+  
+}
+
+#**************************************************
 #Plot SUNA
 
 
@@ -462,6 +504,13 @@ if (!is.null(dim(dataMerged))){
     data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","Downwelling_irradiance_380nm",
                          "Downwelling_irradiance_412nm","Downwelling_irradiance_490nm","Photosynthetic_Active_Radiation")]
     PlotOCR4(data,meta,technical=technical)
+  }
+  
+  #PlotcRover
+  ind<-(dataMerged[,"SensorType"]==18) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
+  if ((sum(ind)>0) & ("c_uncalibrated, [1/m]" %in% colnames(dataMerged))){
+    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","c_uncalibrated, [1/m]")]
+    PlotCROVER(data,technical=technical)
   }
   
 

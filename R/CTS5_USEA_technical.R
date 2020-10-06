@@ -354,7 +354,9 @@ if (!is.null(technical) & !is.null(dataMerged)){
            "DO" = {SensorType <- 3},
            "ECO" = {SensorType <- 9},
            "OCR" = {SensorType <- 12},
+           "CROVER" = {SensorType <- 18},
            "SUNA" = {SensorType <- 21},
+           "SBEPH" = {SensorType <- 22},
            "UVP6-LPM" = {SensorType <- 109},
            "UVP6-BLK" = {SensorType <- 110})
     

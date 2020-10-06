@@ -161,6 +161,7 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sb
 #'   3 : DO Aanderaa
 #'   9 : ECOpuck
 #'  12 : OCR504
+#'  18 : cROVER
 #'  21 : SUNA
 #'  22 : PHSEABIRD
 #' 101 : OCR507 1
@@ -214,6 +215,12 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   if (sensor == "ocr"){
     data.colnames<-c("Downwelling_irradiance_380nm, [CN]","Downwelling_irradiance_412nm, [CN]","Downwelling_irradiance_490nm, [CN]","Photosynthetic_Active_Radiation, [CN]")
     SensorType=12
+  }
+  
+  ## crover
+  if (sensor == "crover"){
+    data.colnames<-c("Corr_Sig_Raw, [CN]")
+    SensorType=18
   }
   
   ## suna
@@ -405,7 +412,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
 #' @export
 #'
 
-cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sbe41","do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"),dec="."){
+cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sbe41","do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk","crover"),dec="."){
   
 EnTeteCom<-c("Pressure [dbar]","Date","Number Cycle","Number Pattern","Number Phase","Files","SensorType","processing")
 
@@ -488,7 +495,7 @@ return(dataMerged)
 #' 
 #' @export
 #'
-cts5_ProcessData<-function(metadata,dataMerged,sensor=c("eco","ocr","do","suna","sbeph")){
+cts5_ProcessData<-function(metadata,dataMerged,sensor=c("eco","ocr","do","suna","sbeph","crover")){
   
   ### ECO
   if ("eco" %in% sensor) {
@@ -532,6 +539,16 @@ cts5_ProcessData<-function(metadata,dataMerged,sensor=c("eco","ocr","do","suna",
         (dataMerged[,"Photosynthetic_Active_Radiation, [CN]"]-metadata$SENSOR_OCR$CHANNEL_04[1])
       
       }
+  }
+  
+  ### crover
+  if ("crover" %in% sensor) {
+    if ("Corr_Sig_Raw, [CN]" %in% colnames(dataMerged)){
+      CSCdark=0
+      CSCcal=12766
+      x=0.25
+      dataMerged[,"c_uncalibrated, [1/m]"] <- -log((dataMerged[,"Corr_Sig_Raw, [CN]"]-CSCdark)/(CSCcal-CSCdark))/x
+    }
   }
   
   ### DO

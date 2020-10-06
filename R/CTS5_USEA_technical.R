@@ -91,6 +91,9 @@ cts5_readtechnical<-function(filename="",floatname="ffff",CycleNumber,PatternNum
     cat("open:",filename,"\n")
     data<-scan(filename,sep="\n",what=character(0))
     
+    #0: remove padding
+    data<-data[-grep("\32",data)]
+    
     ## 1: split [balise]
     ind<-grep("^\\[",data)
     ind<-c(ind,length(data)+1)

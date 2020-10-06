@@ -8,7 +8,8 @@ cts5_concatProfile(
   floatname = "ffff",
   CycleNumber,
   PatternNumber = 1,
-  sensors = c("sbe41", "do", "eco", "ocr", "suna", "sbeph", "uvp6_lpm", "uvp6_blk"),
+  sensors = c("sbe41", "do", "eco", "ocr", "suna", "sbeph", "uvp6_lpm", "uvp6_blk",
+    "crover"),
   dec = "."
 )
 }

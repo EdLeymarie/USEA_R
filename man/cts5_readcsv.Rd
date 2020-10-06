@@ -37,6 +37,7 @@ this function add an identification for the sensorType and acquisition phase.
   3 : DO Aanderaa
   9 : ECOpuck
  12 : OCR504
+ 18 : cROVER
  21 : SUNA
  22 : PHSEABIRD
 101 : OCR507 1

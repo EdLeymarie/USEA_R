@@ -7,7 +7,7 @@
 cts5_ProcessData(
   metadata,
   dataMerged,
-  sensor = c("eco", "ocr", "do", "suna", "sbeph")
+  sensor = c("eco", "ocr", "do", "suna", "sbeph", "crover")
 )
 }
 \arguments{

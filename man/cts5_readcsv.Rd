@@ -19,7 +19,7 @@ cts5_readcsv(
 
 \item{PatternNumber}{numeric : number of the Pattern to decode}
 
-\item{sensor}{name of the sensor to read from the list c("sbe41","do","eco","ocr")}
+\item{sensor}{name of the sensor to read from the list CTS5_supported_sensors}
 
 \item{dec}{decimal character in ASCII}
 }
@@ -40,14 +40,6 @@ this function add an identification for the sensorType and acquisition phase.
  18 : cROVER
  21 : SUNA
  22 : PHSEABIRD
-101 : OCR507 1
-102 : OCR507 2
-103 : Tilt
-104 : PSA916
-105 : RTSys
-106 : Contros
-107 : OptTak
-108 : Trios_Nitrate
 109 : Octopus lpm
 110 : Octopus blk
 

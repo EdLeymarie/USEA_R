@@ -4,11 +4,7 @@
 \alias{cts5_ProcessData}
 \title{Process data to physical values}
 \usage{
-cts5_ProcessData(
-  metadata,
-  dataMerged,
-  sensor = c("eco", "ocr", "do", "suna", "sbeph", "crover")
-)
+cts5_ProcessData(metadata, dataMerged, sensor = CTS5_supported_sensors)
 }
 \arguments{
 \item{metadata}{is a list containing technical data including calibration coefficients 

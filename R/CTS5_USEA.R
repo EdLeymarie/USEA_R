@@ -1,6 +1,7 @@
 options(stringsAsFactors = FALSE)
 require(chron)
 
+CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph","uvp6_lpm","uvp6_blk")
 
 #**************************************************
 
@@ -15,7 +16,7 @@ require(chron)
 #' @param floatname hexa name of the float
 #' @param CycleNumber numeric : number of the cycle to decode
 #' @param PatternNumber numeric : number of the Pattern to decode
-#' @param sensors list of sensor to decode. From the list "sbe41","sbeph,"do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"
+#' @param sensors list of sensor to decode. From the list CTS5_supported_sensors
 #' @param subdir subdir where to put .csv ASCII files
 #' @param Nke_ProgPath path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath") 
 #' 
@@ -26,7 +27,7 @@ require(chron)
 #' 
 #' @export
 #'
-cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sbe41","do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"),subdir=".",
+cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,subdir=".",
                       Nke_ProgPath=""){
   
   #Positionnement dans le repertoire Decoder
@@ -149,7 +150,7 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sb
 #' @param floatname hexa name of the float
 #' @param CycleNumber numeric : number of the cycle to decode
 #' @param PatternNumber numeric : number of the Pattern to decode
-#' @param sensor name of the sensor to read from the list c("sbe41","do","eco","ocr")
+#' @param sensor name of the sensor to read from the list CTS5_supported_sensors
 #' @param dec decimal character in ASCII
 #' 
 #' @return data.frame containing the data
@@ -164,14 +165,6 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sb
 #'  18 : cROVER
 #'  21 : SUNA
 #'  22 : PHSEABIRD
-#' 101 : OCR507 1
-#' 102 : OCR507 2
-#' 103 : Tilt
-#' 104 : PSA916
-#' 105 : RTSys
-#' 106 : Contros
-#' 107 : OptTak
-#' 108 : Trios_Nitrate
 #' 109 : Octopus lpm
 #' 110 : Octopus blk
 #' 
@@ -412,7 +405,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
 #' @export
 #'
 
-cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=c("sbe41","do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk","crover"),dec="."){
+cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,dec="."){
   
 EnTeteCom<-c("Pressure [dbar]","Date","Number Cycle","Number Pattern","Number Phase","Files","SensorType","processing")
 
@@ -495,7 +488,7 @@ return(dataMerged)
 #' 
 #' @export
 #'
-cts5_ProcessData<-function(metadata,dataMerged,sensor=c("eco","ocr","do","suna","sbeph","crover")){
+cts5_ProcessData<-function(metadata,dataMerged,sensor=CTS5_supported_sensors){
   
   ### ECO
   if ("eco" %in% sensor) {

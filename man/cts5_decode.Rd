@@ -8,7 +8,7 @@ cts5_decode(
   floatname = "ffff",
   CycleNumber,
   PatternNumber = 1,
-  sensors = c("sbe41", "do", "eco", "ocr", "suna", "sbeph", "uvp6_lpm", "uvp6_blk"),
+  sensors = CTS5_supported_sensors,
   subdir = ".",
   Nke_ProgPath = ""
 )
@@ -20,7 +20,7 @@ cts5_decode(
 
 \item{PatternNumber}{numeric : number of the Pattern to decode}
 
-\item{sensors}{list of sensor to decode. From the list "sbe41","sbeph,"do","eco","ocr","suna","sbeph","uvp6_lpm","uvp6_blk"}
+\item{sensors}{list of sensor to decode. From the list CTS5_supported_sensors}
 
 \item{subdir}{subdir where to put .csv ASCII files}
 

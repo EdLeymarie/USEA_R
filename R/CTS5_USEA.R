@@ -1,8 +1,6 @@
 options(stringsAsFactors = FALSE)
 require(chron)
 
-CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph","uvp6_lpm","uvp6_blk")
-
 #**************************************************
 
 # Decod USEA
@@ -139,6 +137,74 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_
 
 #**************************************************
 
+# Sensors
+
+#**************************************************
+
+#' list of available sensors
+#' @description vector of names of available sensors
+#' @rawNamespace export(CTS5_supported_sensors)
+CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
+                          "uvp6_lpm","uvp6_blk","ramses","opus_lgt","opus_blk")
+#' 
+
+#**************************************************
+#' provide sensor Id used un csv file
+#'
+#' @description
+#' provide sensor Id used un csv file \code{\link{cts5_readcsv}} .
+#'
+#' @param pattern name of the sensor to look for. if "", provide the full list.
+#' 
+#' @return a vector containing the id of the sensors
+#' 
+#' @details 
+#' 
+#'  SensorType
+#'   0 : CTD
+#'   3 : DO Aanderaa
+#'   9 : ECOpuck
+#'  12 : OCR504
+#'  18 : cROVER
+#'  21 : SUNA
+#'  22 : PHSEABIRD
+#' 109 : UVP6 lpm
+#' 110 : UVP6 blk
+#' 111 : UVP6 TAXO1 (future use)
+#' 112 : UVP6 TAXO2 (future use)
+#' 113 : Ramses
+#' 114 : opus_lgt
+#' 115 : opus_blk
+#' 
+#' @examples 
+#' cts5_SensorTypeId("")
+#' 
+#' cts5_SensorTypeId("uvp6")
+#' 
+#' cts5_SensorTypeId("uvp6_blk")
+#' 
+#' @export
+#'
+cts5_SensorTypeId<-function(pattern=""){
+  
+# !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,113,114,115)
+
+names(SensorTypeId)<-CTS5_supported_sensors
+
+if (pattern == ""){
+  return(SensorTypeId)
+}
+else {
+  ind<-grep(pattern,CTS5_supported_sensors,ignore.case = T)
+  return(SensorTypeId[ind])
+}
+  
+}
+
+
+#**************************************************
+
 # read USEA data file (generic)
 
 #**************************************************
@@ -155,18 +221,9 @@ cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_
 #' 
 #' @return data.frame containing the data
 #' 
-#' @details this function add an identification for the sensorType and acquisition phase.
+#' @details this function add an identification for the sensorType from \code{\link{cts5_SensorTypeId}} 
+#' and acquisition phase.
 #' 
-#'  SensorType
-#'   0 : CTD
-#'   3 : DO Aanderaa
-#'   9 : ECOpuck
-#'  12 : OCR504
-#'  18 : cROVER
-#'  21 : SUNA
-#'  22 : PHSEABIRD
-#' 109 : Octopus lpm
-#' 110 : Octopus blk
 #' 
 #' Phase
 #' [DESCENT]->"DES"
@@ -186,50 +243,54 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   DepthName<-"Pressure [dbar]"
   
-  ## sbe41
+  #****************************
+  #* BEGIN Sensors description
+  #* **************************
+  
+  ##-1 sbe41
   if (sensor == "sbe41"){
     data.colnames<-c("Temperature [deg. C.]","Salinity [PSU]")
-    SensorType=0
+    # SensorType=0
   }
   
-  ## do
+  ##-2 do
   if (sensor == "do"){
     data.colnames<-c("c1phase_doxy [deg]","c2phase_doxy [deg]","temp_doxy [deg. C.]")
-    SensorType=3
+    # SensorType=3
   }
   
-  ## eco
+  ##-3 eco
   if (sensor == "eco"){
     data.colnames<-c("chlorophyll_a, [CN]","beta_theta, [CN]","colored_dissolved_organic_matter, [CN]")
-    SensorType=9
+    # SensorType=9
   }
   
-  ## ocr
+  ##-4 ocr
   if (sensor == "ocr"){
     data.colnames<-c("Downwelling_irradiance_380nm, [CN]","Downwelling_irradiance_412nm, [CN]","Downwelling_irradiance_490nm, [CN]","Photosynthetic_Active_Radiation, [CN]")
-    SensorType=12
+    # SensorType=12
   }
   
-  ## crover
+  ##-5 crover
   if (sensor == "crover"){
     data.colnames<-c("Corr_Sig_Raw, [CN]")
-    SensorType=18
+    # SensorType=18
   }
   
-  ## suna
+  ##-6 suna
   if (sensor == "suna"){
     data.colnames<-c("CTDtempsuna","CTDsalsuna","SunaInterTemp","SunaSpectroTemp","SunaInterHumidty","SunaDarkSpectrumMean",
-                     "SunaDarkSpectrumSD","nitrate_concentration, [micoMol/l]","SunaAbsorbanceFitResuduals",paste("OutSpectrum",1:45,sep=""))
-    SensorType=21
+                     "SunaDarkSpectrumSD","nitrate_concentration, [micoMol/l]","SunaAbsorbanceFitResuduals",paste("OutSpectrum",1:90,sep=""))
+    # SensorType=21
   }
   
-  ## sbeph
+  ##-7 sbeph
   if (sensor == "sbeph"){
     data.colnames<-"pH [mV]"
-    SensorType=22
+    # SensorType=22
   }
   
-  ## uvp6_lpm
+  ##-8 uvp6_lpm
   if (sensor == "uvp6_lpm"){
     OctopusClass<-c(64, 80.6, 102, 128, 161, 203, 256, 323, 406, 512, 645, 813, 1020, 1290, 1630, 2050, 2580, 3250, 4100)
     OctopusClass<-paste("[",OctopusClass[1:18],",",OctopusClass[2:19],"[ (um)",sep="")
@@ -241,24 +302,47 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
                       data.colnames,paste("SD(",data.colnames,")",sep=""),paste("MEAN(",c(DepthName,data.colnames),")",sep=""))
     
     
-    SensorType=109
+    # SensorType=109
     
   }
   
-  ## uvp6_blk
+  ##-9 uvp6_blk
   if (sensor == "uvp6_blk"){
 
     data.colnames<-c("uvp-blk_Internal_temp","uvp-blk_Count1","uvp-blk_Count2","uvp-blk_Count3","uvp-blk_Count4","uvp-blk_Count5")
     
     
-    SensorType=110
+    # SensorType=110
     
   }
   
+  ##-10 ramses
+  if (sensor == "ramses"){
+    data.colnames<-c("ramses_int_time","ramses_depth1","ramses_depth2","ramses_tilt1","ramses_tilt2","ramses_dark_count",
+                     "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
+    # SensorType=113
+  }
   
+  ##-11 Opus_lgt
+  if (sensor == "opus_lgt"){
+    data.colnames<-c("opus_spectrum_type","opus_lgt_averaging","opus_lgt_flash_count","opus_lgt_int_temp",
+                     "opus_N_channels",paste("opus_raw_count",1:250,sep=""))
+    # SensorType=114
+  }
   
-  ## End Of Sensors descriptino
+  ##-12 Opus_blk
+  if (sensor == "opus_blk"){
+    data.colnames<-c("opus_blk_averaging","opus_blk_flash_count","opus_blk_int_temp",
+                     "opus_blk_dark_mean","opus_blk_dark_std")
+    # SensorType=115
+  }
+  
+  #****************************
+  #* END Sensors description
+  #* **************************
 
+  SensorType = cts5_SensorTypeId(sensor)
+  
   Sensor_NChannel<-length(data.colnames)
   
   
@@ -343,6 +427,12 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     
     if (length(grep("MD",Dataclean$processing))==0){
       Dataclean<-Dataclean[,-grep("MEAN\\(",colnames(Dataclean))]
+    }
+    
+    # Elimination des colonnes NA pour suna et ramses
+    if (sensor %in% c("suna","ramses","opus_lgt")){
+      indNA<-apply(Dataclean,2,function(c){all(is.na(c))})
+      Dataclean<-Dataclean[,!indNA]
     }
     
     # Conversion temps
@@ -663,16 +753,51 @@ SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
 #'
 #' @description
 #' read CTS5 _apmt.ini file and store the information into a list
+#' 
 #'
 #'
 #' @param inifilename filename of the ini file
+#' @param floatname hexa name of the float
+#' @param CycleNumber numeric : number of the cycle to look for
+#' @param PatternNumber numeric : number of the Pattern to look for
 #' 
 #' @return list containing the information
 #' 
+#' @details #' if the inifilename is not provided, the inifile which describe the profile CycleNumber,PatternNumber
+#' will be open
+#' 
+#' @examples 
+#' 
+#' IniParam<-cts5_readIni("3e82_046_02_apmt.ini")
+#' 
+#' IniParam<-cts5_readIni(floatname="3e82",CycleNumber=46,PatternNumber=2)
+#' 
 #' @export
 #'
-cts5_readIni<-function(inifilename){
+cts5_readIni<-function(inifilename="",floatname="ffff",CycleNumber,PatternNumber=1){
   
+  
+  ## Selection of the file
+  if (inifilename == ""){
+    ## look for the ini file which describe the cycle and pattern
+    
+    listini<-list.files(pattern=paste("^",floatname,".*_apmt.ini",sep=""))
+    listini<-cbind(listini,matrix(unlist(strsplit(listini,split="_")),ncol = 4,byrow = T)[,2:3])
+    listini<-data.frame(listini)
+    colnames(listini)<-c("filename","c","p")
+    listini$c<-as.numeric(listini$c)
+    listini$p<-as.numeric(listini$p)
+    
+    ind<-((CycleNumber >= listini$c) & (PatternNumber > listini$p)) | (CycleNumber > listini$c)
+
+    ind<-max(which(ind))
+    
+    inifilename<-listini$filename[ind]
+    
+  }
+  
+  
+  ## read and Parse
   cat("open:",inifilename,"\n")
   data<-scan(inifilename,sep="\n",what=character(0))
   

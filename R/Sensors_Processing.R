@@ -5,7 +5,9 @@
 #**************************************************
 
 #**************************************************
+#*
 # Compute do
+#*
 #**************************************************
 
 # Inputs : C1phase,C2phase,temp, Pres : data from the Optode. tempCTD,salCTD, PRESCTD : Data from the CTD
@@ -73,7 +75,9 @@ Process_DO_Bittig <- function(C1phase,C2phase,temp, Pres,tempCTD,salCTD, PRESCTD
 
 
 #**************************************************
+#*
 # Compute pH
+#*
 #**************************************************
 
 # Inputs : 
@@ -88,8 +92,8 @@ Process_pH_SBE<-function(data,k0=-1.392151,k2=-1.0798E-03,coefsp=c(2.5064E-05,-4
     #il y a assez de data
     
     #interpolation des donnees CTD
-    t<-approxfun(data$`Pressure [dbar]`[indCTD],data$`Temperature [deg. C.]`[indCTD],rule = 2)
-    S<-approxfun(data$`Pressure [dbar]`[indCTD],data$`Salinity [PSU]`[indCTD],rule = 2)
+    t<-approxfun(data$`Pressure [dbar]`[indCTD],data$`Temperature [deg. C.]`[indCTD],rule = 2,ties="mean")
+    S<-approxfun(data$`Pressure [dbar]`[indCTD],data$`Salinity [PSU]`[indCTD],rule = 2,ties="mean")
     
     #calcul
     Press<-data$`Pressure [dbar]`[indpH]
@@ -198,6 +202,57 @@ Process_pH_SBE<-function(data,k0=-1.392151,k2=-1.0798E-03,coefsp=c(2.5064E-05,-4
   }
   
   return(phtot)
+  
+}
+
+#**************************************************
+#*
+# Compute Ramses
+#*
+#**************************************************
+
+ra_single<-function(x,B0,B1,S){
+t<-x[1]
+I<-x[-1]
+
+#Etape1 Normalisation
+M<-I/65535
+  
+#Etape2 Background Substraction
+B<-B0 + t*B1/8192
+C<-M-B
+
+D<-C-t/8192
+
+#Etape3 Integration time normalisation
+E<-D*8192/t
+  
+#Etape4 Sensitivity
+return(E/S)
+  
+}
+
+#**************************************************
+
+Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM_86CC_AllCal.txt"){
+  
+ramses_cal<-read.table(calib_file,header = T,sep="\t")
+
+sq<-seq(PixelStart,PixelStop,by=PixelBinning)
+
+wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})
+B0<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B0[c(sq[i],sq[i]+PixelBinning-1)])})
+B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
+S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+
+
+ind<-c(grep("ramses_int_time",colnames(data)),grep("ramses_raw_count",colnames(data)))
+
+#Process calibration
+dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S))
+
+wave<-round(wave*100)/100
+colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
   
 }
 

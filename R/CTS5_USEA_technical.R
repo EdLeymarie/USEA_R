@@ -253,7 +253,7 @@ cts5_readtechnical<-function(filename="",floatname="ffff",CycleNumber,PatternNum
     
     
     ## Sensor
-    SensorTag<-c("SENSOR_DO","SENSOR_OCR","SENSOR_ECO","SENSOR_SBEPH","SENSOR_SUNA")
+    SensorTag<-c("SENSOR_DO","SENSOR_OCR","SENSOR_ECO","SENSOR_SBEPH","SENSOR_SUNA","SENSOR_UVP6")
     for (j in 1:length(SensorTag)){
       itag<-grep(SensorTag[j],names(technical))[1]
       if (!is.na(itag)){
@@ -353,19 +353,9 @@ if (!is.null(technical) & !is.null(dataMerged)){
     }
     
     #correspondance SensorType
-    SensorType <- -1
-    switch(sensor,
-           "SBE41" = {SensorType <- 0},
-           "DO" = {SensorType <- 3},
-           "ECO" = {SensorType <- 9},
-           "OCR" = {SensorType <- 12},
-           "CROVER" = {SensorType <- 18},
-           "SUNA" = {SensorType <- 21},
-           "SBEPH" = {SensorType <- 22},
-           "UVP6-LPM" = {SensorType <- 109},
-           "UVP6-BLK" = {SensorType <- 110})
+    SensorType <- cts5_SensorTypeId(sensor)
     
-    if (SensorType == -1){warning(paste("Sensor type not defined for:",sensor))}
+    if (length(SensorType) == 0){warning(paste("Sensor type not defined for:",sensor))}
     
     temp<-dataMerged[dataMerged$SensorType == SensorType,]
     

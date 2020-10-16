@@ -30,18 +30,9 @@ data.frame containing the data
 read NKE .csv ASCII files obtained from \code{\link{cts5_decode}} .
 }
 \details{
-this function add an identification for the sensorType and acquisition phase.
+this function add an identification for the sensorType from \code{\link{cts5_SensorTypeId}} 
+and acquisition phase.
 
- SensorType
-  0 : CTD
-  3 : DO Aanderaa
-  9 : ECOpuck
- 12 : OCR504
- 18 : cROVER
- 21 : SUNA
- 22 : PHSEABIRD
-109 : Octopus lpm
-110 : Octopus blk
 
 Phase
 [DESCENT]->"DES"

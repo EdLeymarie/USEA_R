@@ -4,14 +4,36 @@
 \alias{cts5_readIni}
 \title{read CTS5 _apmt.ini file}
 \usage{
-cts5_readIni(inifilename)
+cts5_readIni(
+  inifilename = "",
+  floatname = "ffff",
+  CycleNumber,
+  PatternNumber = 1
+)
 }
 \arguments{
 \item{inifilename}{filename of the ini file}
+
+\item{floatname}{hexa name of the float}
+
+\item{CycleNumber}{numeric : number of the cycle to look for}
+
+\item{PatternNumber}{numeric : number of the Pattern to look for}
 }
 \value{
 list containing the information
 }
 \description{
 read CTS5 _apmt.ini file and store the information into a list
+}
+\details{
+#' if the inifilename is not provided, the inifile which describe the profile CycleNumber,PatternNumber
+will be open
+}
+\examples{
+
+IniParam<-cts5_readIni("3e82_046_02_apmt.ini")
+
+IniParam<-cts5_readIni(floatname="3e82",CycleNumber=46,PatternNumber=2)
+
 }

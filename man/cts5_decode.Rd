@@ -5,7 +5,7 @@
 \title{Use NKE routine to decode .hex data files}
 \usage{
 cts5_decode(
-  floatname = "ffff",
+  floatname = "",
   CycleNumber,
   PatternNumber = 1,
   sensors = CTS5_supported_sensors,
@@ -14,7 +14,7 @@ cts5_decode(
 )
 }
 \arguments{
-\item{floatname}{hexa name of the float}
+\item{floatname}{hexa name of the float. If "", the floatname will automatically found.}
 
 \item{CycleNumber}{numeric : number of the cycle to decode}
 

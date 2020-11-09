@@ -4,13 +4,13 @@
 \alias{cts5_ProcessData}
 \title{Process data to physical values}
 \usage{
-cts5_ProcessData(metadata, dataMerged, sensor = CTS5_supported_sensors)
+cts5_ProcessData(metadata, dataprofile)
 }
 \arguments{
 \item{metadata}{is a list containing technical data including calibration coefficients 
 obtained by using \code{\link{cts5_readMetaSensor}}}
 
-\item{dataMerged}{is the merged data.frame obtained by \code{\link{cts5_concatProfile}}}
+\item{dataprofile}{data and technical files read from \code{\link{cts5_readProfile}}}
 
 \item{sensors}{list of sensor to process}
 }
@@ -31,18 +31,13 @@ floatname="ffff"
 
 Meta<-cts5_readMetaSensor(floatname=floatname)
 
-tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
-
 cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
 
-setwd("./CSV")
+dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 
-dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 
-dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+PlotCTS5(login=login,dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
 
-PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
-
-SaveToCTS5(login = login,dataMerged = dataMerged,GPS = tech$GPS)
 
 }

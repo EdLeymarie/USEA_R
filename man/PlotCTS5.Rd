@@ -6,7 +6,7 @@
 \usage{
 PlotCTS5(
   login = "lov",
-  dataMerged,
+  dataprofile,
   PhaseToPlot = c("PRE", "DES", "PAR", "ASC", "SUR"),
   add = FALSE,
   technical = TRUE,
@@ -17,7 +17,7 @@ PlotCTS5(
 \arguments{
 \item{login}{identifiant used at the beginning of the pdf filename}
 
-\item{dataMerged}{data.frame obtained by \code{\link{usea_concatProfile}} after
+\item{dataprofile}{data and technical files read from \code{\link{cts5_readProfile}}
 processing by \code{\link{usea_ProcessData}}}
 
 \item{PhaseToPlot}{list of phase to plot}
@@ -33,4 +33,23 @@ current open device}
 }
 \description{
 PlotCTS5 : create a pdf file with profile plots
+}
+\examples{
+
+login="lovuse001a"
+
+floatname="ffff"
+
+Meta<-cts5_readMetaSensor(floatname=floatname)
+
+cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
+
+dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+
+dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+
+PlotCTS5(login=login,dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
+
+ 
+
 }

@@ -1,5 +1,4 @@
 require(oce)
-require(plotuti)
 require(fields)
 
 Sys.setenv(TZ = "utc") #pour imposer timezone = UTC
@@ -24,7 +23,10 @@ dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"Density"
 data<-cbind(data,swSigmaT(data[,"Salinity [PSU]"], temperature=data[,"Temperature [deg. C.]"], pressure=data[,"Pressure [dbar]"]))
 dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
 
-  for (ph in unique(data[,"Number Phase"])){        
+  phaseToPlot<-c("DES","ASC")
+  phaseToPlot<-phaseToPlot[phaseToPlot %in% unique(data[,"Number Phase"])]
+
+  for (ph in phaseToPlot){        
     ind<-data[,"Number Phase"]==ph
     plot(data$swSigmaT[ind],-data[ind,"Pressure [dbar]"],type="l",col=1,xlab="potential density anomaly",ylab="Depth",ylim=ylim)
     par(new=TRUE)
@@ -147,7 +149,7 @@ PlotOCR4<-function(data,meta,technical=TRUE){
     if (xlim[2]<=0){xlim[2]<-1}  
     if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
     plot(NULL,NULL,xlim=xlim,ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab=rad,ylab="depth",log="x")
-    for (i in unique (data[,"Number Phase"])){
+    for (i in unique(data[,"Number Phase"])){
       lines(temp[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
       }
   }
@@ -224,7 +226,7 @@ PlotCROVER<-function(data,technical=TRUE){
       depth<-data$`Pressure [dbar]`[ind]
       
       delta<-depth[-length(depth)]-depth[-1]
-      plot(delta,-depth[-1],log="x",main="delta DO",xlab="delta [db]",ylab="depth [db]")
+      plot(delta,-depth[-1],log="x",main="delta CROVER",xlab="delta [db]",ylab="depth [db]")
     }
   }    
   
@@ -346,7 +348,7 @@ PlotUVP_lpm<-function(data,technical=TRUE){
   
   #Plot Chronologie
   if (technical){
-    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Files"],unique(data[,"Files"])),xlab="time",ylab="depth",type="b")
+    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
     title(main=paste("UVP6",rev(data$date)[1],sep=" "))
     ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
     rangedescent<-range(data[ind,"Pressure [dbar]"])
@@ -379,8 +381,8 @@ PlotUVP_lpm<-function(data,technical=TRUE){
       title(main=title_list[i])
       for (j in 1:6){
         if (sum(temp[,j]>0)>4){
-          for (i in unique (data[,"Files"])){
-            lines(temp[data[,"Files"]==i,j],-data[data[,"Files"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Files"])),lty=j)}
+          for (i in unique(data[,"Number Phase"])){
+            lines(temp[data[,"Number Phase"]==i,j],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])),lty=j)}
         }
       }
       
@@ -397,7 +399,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
   
   #Plot Chronologie
   if (technical){
-    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Files"],unique(data[,"Files"])),xlab="time",ylab="depth",type="b")
+    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
     title(main=paste("UVP6 Black",rev(data$date)[1],sep=" "))
     ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
     rangedescent<-range(data[ind,"Pressure [dbar]"])
@@ -426,13 +428,68 @@ PlotUVP_blk<-function(data,technical=TRUE){
       title(main="UVP black count")
       for (j in 1:5){
         if (sum(temp[,j]>0)>4){
-          for (i in unique (data[,"Files"])){
-            lines(temp[data[,"Files"]==i,j],-data[data[,"Files"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Files"])),lty=j)}
+          for (i in unique (data[,"Number Phase"])){
+            lines(temp[data[,"Number Phase"]==i,j],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])),lty=j)}
         }
       }
       
       legend("bottomright",col=1,lty=1:6,legend=colnames(temp))
     }
+  
+}
+
+
+#**************************************************
+#Plot Ramses
+PlotRamses<-function(data,technical=TRUE){
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("Ramses",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"Number Phase"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"Number Phase"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$`Pressure [dbar]`[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta Ramses",xlab="delta [db]",ylab="depth [db]")
+    }
+    
+    ## IntTime et Tilt
+    ind<-which(data[,"Number Phase"] == "ASC")
+    plot(data$ramses_int_time[ind],-data[ind,"Pressure [dbar]"],type="l",col=1,xlab="Integration Time",ylab="Depth")
+    par(new=TRUE)
+    plot(data$ramses_tilt1[ind],-data[ind,"Pressure [dbar]"],type="l",axes=FALSE,col=4,xlab="",ylab="")
+    axis(3,col=4,col.axis=4)
+    
+  }    
+  
+  ## Data
+  
+  breaks <- pretty(data$`Pressure [dbar]`, n = 25)
+  cols <- cm.colors(length(breaks)-1)[cut(data$`Pressure [dbar]`,breaks = breaks)]
+  
+  indraw<-grep("ramses_raw_count",colnames(data))
+  if (length(indraw)>0){
+    matplot(1:length(indraw),t(data[,indraw]),lty=1,pch=0,type="l",xlab="pixel",ylab = "Ramses Irradiance Count",col=cols)
+  }
+  
+  indsig<-grep("ramses_sig",colnames(data))
+  if (length(indsig)>0){
+    waves<-colnames(data)[indsig]
+    waves<-as.numeric(matrix(unlist(strsplit(waves,split="_")),ncol=3,byrow = T)[,3])
+    
+    matplot(waves,t(data[,indsig]),lty=1,pch=0,type="l",ylab = "Ramses Irradiance physical",col=cols,log="y")
+  }
+  
   
   
 }
@@ -449,7 +506,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
 #'
 #'
 #' @param login identifiant used at the beginning of the pdf filename
-#' @param dataMerged data.frame obtained by \code{\link{usea_concatProfile}} after
+#' @param dataprofile data and technical files read from \code{\link{cts5_readProfile}}
 #' processing by \code{\link{usea_ProcessData}}
 #' @param PhaseToPlot list of phase to plot
 #' @param add if false a new pdf will be created. if true all plots will be generated in the 
@@ -457,17 +514,34 @@ PlotUVP_blk<-function(data,technical=TRUE){
 #' @param technical if true, technical information will be plotted
 #' @param paper paper size
 #' @param mfrow mfrow
+#' 
+#' @examples 
+#' 
+#' login="lovuse001a"
+#' 
+#' floatname="ffff"
+#' 
+#' Meta<-cts5_readMetaSensor(floatname=floatname)
+#'
+#' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
+#'
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+#'
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+#'
+#' PlotCTS5(login=login,dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
+#'
 #'  
 #' 
 #' @export
 #'
-PlotCTS5<-function(login="lov",dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2)){
+PlotCTS5<-function(login="lov",dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2)){
 
 
-if (!is.null(dim(dataMerged))){   
+if (!is.null(dataprofile)){   
 
-  CycleNumber<-unique(dataMerged[,"Number Cycle"])[1]
-  PatternNumber<-unique(dataMerged[,"Number Pattern"])[1]
+  CycleNumber<-dataprofile$CycleNumber
+  PatternNumber<-dataprofile$PatternNumber
   
   #Ouverture du pdf
   if (!add){
@@ -480,77 +554,81 @@ if (!is.null(dim(dataMerged))){
   
     
   #CTD
-  ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,"Number Phase"] %in% c("DES","ASC"))
-  if (sum(ind)>0){
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Temperature [deg. C.]","Salinity [PSU]")]
+  #ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,"Number Phase"] %in% c("DES","ASC"))
+  if ("sbe41" %in% names(dataprofile$data)){
+    data<-dataprofile$data$sbe41
     plotCTD(data)
-  }
   
-  mydate<-max(as.POSIXct(dataMerged[,"Date"],origin = "1970-01-01",tz="UTC"))
-  if (sum(ind)>0){
-    mtext(paste("float:",login,", cycle:",CycleNumber,", pattern:",PatternNumber,", date:",mydate),side=3,line=-1,outer=T,cex=0.6,adj=0.95)}
+    mydate<-max(as.POSIXct(dataprofile$data$sbe41[,"Date"],origin = "1970-01-01",tz="UTC"))
+    mtext(paste("float:",login,", cycle:",CycleNumber,", pattern:",PatternNumber,", date:",mydate),side=3,line=-1,outer=T,cex=0.6,adj=0.95)
+    
+  }
   
   
   #PlotEcoStd
-  ind<-(dataMerged[,"SensorType"]==9) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if ((sum(ind)>0) & ("chlorophyll_a, [ug/l]" %in% colnames(dataMerged))){
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","chlorophyll_a, [ug/l]","beta_theta, [1/m.sr]","colored_dissolved_organic_matter, [ppb]")]
-    PlotEcoStd(data,technical=technical)
+  if ("eco" %in% names(dataprofile$data)){
+    if ("chlorophyll_a, [ug/l]" %in% colnames(dataprofile$data$eco)){
+      data<-dataprofile$data$eco
+      PlotEcoStd(data,technical=technical)
+    }
   }
   
   #PlotOCR504
-  ind<-(dataMerged[,"SensorType"]==12) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if ((sum(ind)>0) & ("Downwelling_irradiance_380nm" %in% colnames(dataMerged))){
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","Downwelling_irradiance_380nm",
-                         "Downwelling_irradiance_412nm","Downwelling_irradiance_490nm","Photosynthetic_Active_Radiation")]
-    PlotOCR4(data,meta,technical=technical)
+  if ("ocr" %in% names(dataprofile$data)){  
+    if ("Downwelling_irradiance_380nm" %in% colnames(dataprofile$data$ocr)){
+      data<-dataprofile$data$ocr
+      PlotOCR4(data,meta,technical=technical)
+    }
   }
-  
+    
   #PlotcRover
-  ind<-(dataMerged[,"SensorType"]==18) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if ((sum(ind)>0) & ("c_uncalibrated, [1/m]" %in% colnames(dataMerged))){
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","c_uncalibrated, [1/m]")]
-    PlotCROVER(data,technical=technical)
+  if ("crover" %in% names(dataprofile$data)){  
+    if ("c_uncalibrated, [1/m]" %in% colnames(dataprofile$data$crover)){
+      data<-dataprofile$data$crover
+      PlotCROVER(data,technical=technical)
+    }
   }
   
-
   #PlotOptode
-  ind<-(dataMerged[,"SensorType"]==3) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if ((sum(ind)>0) & ("doxy_uncalibrated" %in% colnames(dataMerged))){
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","c1phase_doxy [deg]","c2phase_doxy [deg]","temp_doxy [deg. C.]","doxy_uncalibrated")]
-    PlotOptode(data,technical=technical)
-  }
+  if ("do" %in% names(dataprofile$data)){  
+    if ("doxy_uncalibrated" %in% colnames(dataprofile$data$do)){
+      data<-dataprofile$data$do
+      PlotOptode(data,technical=technical)
+    }
+  }  
   
   #PlotSuna
-  ind<-(dataMerged[,"SensorType"]==21) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if (sum(ind)>0){
-    indSpec<-grep("OutSpectrum",colnames(dataMerged))
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","nitrate_concentration, [micoMol/l]",colnames(dataMerged)[indSpec])]
+  if ("suna" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$suna
     PlotSUNA(data,technical=technical)
   }
+
   
   #PlotsbepH
-  ind<-(dataMerged[,"SensorType"]==22) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if ((sum(ind)>0) & ("pH_Uncal" %in% colnames(dataMerged))){
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files","pH_Uncal")]
-    PlotSbepH(data,technical=technical)
-  }
+  if ("sbeph" %in% names(dataprofile$data)){  
+    if ("pH_Uncal" %in% colnames(dataprofile$data$sbeph)){
+      data<-dataprofile$data$sbeph
+      PlotSbepH(data,technical=technical)
+    }
+  }    
   
   #PlotUVP_lpm
-  ind<-(dataMerged[,"SensorType"]==109) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if (sum(ind)>0){
-    indOct<-grep("NP_.*(um)",colnames(dataMerged))
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files",colnames(dataMerged)[indOct])]
+  if ("uvp6_lpm" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$uvp6_lpm
     PlotUVP_lpm(data,technical=technical)
-  }
-  
+  }    
+    
   #PlotUVP_blk
-  ind<-(dataMerged[,"SensorType"]==110) & (dataMerged[,"Number Phase"] %in% PhaseToPlot)
-  if (sum(ind)>0){
-    induvp_blk<-grep("uvp-blk",colnames(dataMerged))
-    data<-dataMerged[ind,c("Pressure [dbar]","Date","Number Phase","Files",colnames(dataMerged)[induvp_blk])]
+  if ("uvp6_blk" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$uvp6_lpm
     PlotUVP_blk(data,technical=technical)
-  }
+  }        
+  
+  #PlotRamses
+  if ("ramses" %in% names(dataprofile$data)){  
+      data<-dataprofile$data$ramses
+      PlotRamses(data,technical=technical)
+  }   
   
   if (!add){
     cat("Close pdf","\n")

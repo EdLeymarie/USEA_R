@@ -303,8 +303,7 @@ cts5_readtechnical<-function(filename="",floatname="ffff",CycleNumber,PatternNum
 #' cts5_CheckDataCount compare the number of data point per sensor and per phase
 #' between the technical file and the dataMerged file
 #'
-#' @param technical technical file read from \code{\link{cts5_readtechnical}}
-#' @param dataMerged merged data read from \code{\link{cts5_concatProfile}}
+#' @param dataprofile data and technical files read from \code{\link{cts5_readProfile}}
 #' 
 #' @return list containing check (= True if the number of data point are the same);
 #' and DataCheck a data.frame with the full comparison.
@@ -313,72 +312,69 @@ cts5_readtechnical<-function(filename="",floatname="ffff",CycleNumber,PatternNum
 #' @examples 
 #' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV",sensors=c("sbe41","do","eco","ocr"))
 #'
-#' tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#' dataprofile<-cts5_readProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#'     
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 #'
-#' setwd("./CSV")
-#'
-#' dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p,
-#'                               sensors=c("sbe41","do","eco","ocr"))
-#'
-#' dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 #' 
-#' if (!cts5_CheckDataCount(tech,dataMerged)$check){
+#' if (!cts5_CheckDataCount(dataprofile)$check){
 #'  cat("!! Warning, data count error \n")
 #' }
 #' 
-#' PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
 #' 
 #' @export
 #'
 
 
-cts5_CheckDataCount<-function(technical,dataMerged){
+cts5_CheckDataCount<-function(dataprofile){
 
-if (!is.null(technical) & !is.null(dataMerged)){  
+if (!is.null(dataprofile$technical) & (length(dataprofile$data)>0)){  
     
   DataCheck<-NULL
   DataInfile<-NULL
   
-  sensorList<-names(technical$DATA)
+  sensorList<-names(dataprofile$technical$DATA)
   
   sensorList<-sensorList[!(sensorList %in% c("Upload","Pattern","Download"))]
     
   for (sensor in sensorList){ #sensor<-"SBE41"
-    DataCount<-technical$DATA[[sensor]]
+    DataCount<-dataprofile$technical$DATA[[sensor]]
     
-    #On élimine le cas subsurface
+    #On elimine le cas subsurface
     if (sensor == "SBE41"){
       DataCount[5]<-sum(DataCount[c(5,7)])
       DataCount<-DataCount[1:6]
     }
     
     #correspondance SensorType
-    SensorType <- cts5_SensorTypeId(sensor)
+    SensorType <- tolower(sensor)
+    SensorType <- gsub("-","_",SensorType) #"UVP6-LPM" -> "uvp6_lpm"
     
-    if (length(SensorType) == 0){warning(paste("Sensor type not defined for:",sensor))}
+    if (SensorType %in% names(dataprofile$data)){
     
-    temp<-dataMerged[dataMerged$SensorType == SensorType,]
+      temp<-dataprofile$data[[SensorType]]
+      
+      temp<-c(nrow(temp[temp$`Number Phase`=="DES",]),
+              nrow(temp[temp$`Number Phase`=="PAR",]),
+              nrow(temp[temp$`Number Phase`=="DEE",]),
+              nrow(temp[temp$`Number Phase`=="SHP",]),
+              nrow(temp[temp$`Number Phase`=="ASC",]),
+              nrow(temp[temp$`Number Phase`=="SUR",]))
+    }
+    else {
+      temp<-rep(0,6)
+    }
+      
     
-    DataLine<-c(DataCount[1]-nrow(temp[temp$`Number Phase`=="DES",]),
-                DataCount[2]-nrow(temp[temp$`Number Phase`=="PAR",]),
-                DataCount[3]-nrow(temp[temp$`Number Phase`=="DEE",]),
-                DataCount[4]-nrow(temp[temp$`Number Phase`=="SHP",]),
-                DataCount[5]-nrow(temp[temp$`Number Phase`=="ASC",]),
-                DataCount[6]-nrow(temp[temp$`Number Phase`=="SUR",]))
+    DataLine<-DataCount-temp
     
-    #DataCheck<-rbind(DataCheck,c(sensor,DataLine))
     DataCheck<-rbind(DataCheck,DataLine)
-    
-    temp<-c(nrow(temp[temp$`Number Phase`=="DES",]),
-                  nrow(temp[temp$`Number Phase`=="PAR",]),
-                  nrow(temp[temp$`Number Phase`=="DEE",]),
-                  nrow(temp[temp$`Number Phase`=="SHP",]),
-                  nrow(temp[temp$`Number Phase`=="ASC",]),
-                  nrow(temp[temp$`Number Phase`=="SUR",]))
     
     names(temp)<-paste(sensor,c("DES","PAR","DEE","SHP","ASC","SUR"),sep = "_")
     
     DataInfile<-c(DataInfile,temp)
+      
     }
   
   DataCheck<-data.frame(DataCheck,stringsAsFactors = F)
@@ -386,7 +382,7 @@ if (!is.null(technical) & !is.null(dataMerged)){
   colnames(DataCheck)<-c("DES","PAR","DEE","SHP","ASC","SUR")
   rownames(DataCheck)<-sensorList
   
-  DataInfile<-c(dataMerged$`Number Cycle`[1],dataMerged$`Number Pattern`[1],DataInfile)
+  DataInfile<-c(dataprofile$CycleNumber,dataprofile$PatternNumber,DataInfile)
   
   names(DataInfile)[1:2]<-c("Cycle_Number","Pattern_Number")
   
@@ -394,7 +390,7 @@ if (!is.null(technical) & !is.null(dataMerged)){
 }
 else {
   
-  return(list(check=is.null(technical) & is.null(dataMerged),DataCheck=NULL,DataInfile=NULL))
+  return(list(check=FALSE,DataCheck=NULL,DataInfile=NULL))
   
   }
 }

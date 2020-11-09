@@ -4,12 +4,10 @@
 \alias{cts5_CheckDataCount}
 \title{Compare the number of available data point}
 \usage{
-cts5_CheckDataCount(technical, dataMerged)
+cts5_CheckDataCount(dataprofile)
 }
 \arguments{
-\item{technical}{technical file read from \code{\link{cts5_readtechnical}}}
-
-\item{dataMerged}{merged data read from \code{\link{cts5_concatProfile}}}
+\item{dataprofile}{data and technical files read from \code{\link{cts5_readProfile}}}
 }
 \value{
 list containing check (= True if the number of data point are the same);
@@ -22,19 +20,15 @@ between the technical file and the dataMerged file
 \examples{
 cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV",sensors=c("sbe41","do","eco","ocr"))
 
-tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
+dataprofile<-cts5_readProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+    
+dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 
-setwd("./CSV")
+dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 
-dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p,
-                              sensors=c("sbe41","do","eco","ocr"))
-
-dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
-
-if (!cts5_CheckDataCount(tech,dataMerged)$check){
+if (!cts5_CheckDataCount(dataprofile)$check){
  cat("!! Warning, data count error \n")
 }
 
-PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
 
 }

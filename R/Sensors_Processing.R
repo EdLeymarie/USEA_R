@@ -82,22 +82,22 @@ Process_DO_Bittig <- function(C1phase,C2phase,temp, Pres,tempCTD,salCTD, PRESCTD
 
 # Inputs : 
 
-Process_pH_SBE<-function(data,k0=-1.392151,k2=-1.0798E-03,coefsp=c(2.5064E-05,-4.4107E-08,4.7311E-11,-2.8822E-14,9.2132E-18,-1.1965E-21)){
+Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coefsp=c(2.5064E-05,-4.4107E-08,4.7311E-11,-2.8822E-14,9.2132E-18,-1.1965E-21)){
   phtot=NULL
   
-  indCTD<-data$SensorType==0
-  indpH<-data$SensorType==22
+  dataCTD<-data$sbe41[data$sbe41$`Number Phase`==NumberPhase,]
+  datapH<-data$sbeph[data$sbeph$`Number Phase`==NumberPhase,]
   
-  if ((length(data$`pH [mV]`[indpH])>10) & (length(data$`Temperature [deg. C.]`[indCTD])>10)){
+  if ((length(datapH$`pH [mV]`)>10) & (length(dataCTD$`Temperature [deg. C.]`)>10)){
     #il y a assez de data
     
     #interpolation des donnees CTD
-    t<-approxfun(data$`Pressure [dbar]`[indCTD],data$`Temperature [deg. C.]`[indCTD],rule = 2,ties="mean")
-    S<-approxfun(data$`Pressure [dbar]`[indCTD],data$`Salinity [PSU]`[indCTD],rule = 2,ties="mean")
+    t<-approxfun(dataCTD$`Pressure [dbar]`,dataCTD$`Temperature [deg. C.]`,rule = 2,ties="mean")
+    S<-approxfun(dataCTD$`Pressure [dbar]`,dataCTD$`Salinity [PSU]`,rule = 2,ties="mean")
     
     #calcul
-    Press<-data$`Pressure [dbar]`[indpH]
-    Vrs<-data$`pH [mV]`[indpH]
+    Press<-datapH$`Pressure [dbar]`
+    Vrs<-datapH$`pH [mV]`
     Temp<-t(Press)
     Tk<-273.15+Temp #degrees Kelvin
     Salt<-S(Press)
@@ -208,12 +208,14 @@ Process_pH_SBE<-function(data,k0=-1.392151,k2=-1.0798E-03,coefsp=c(2.5064E-05,-4
 #**************************************************
 #*
 # Compute Ramses
+#* Input : X = c(ramses_int_time,ramses_dark_count, I) 
 #*
 #**************************************************
 
-ra_single<-function(x,B0,B1,S){
-t<-x[1]
-I<-x[-1]
+ra_single<-function(x,B0,B1,S,B0_Dark,B1_Dark){
+t<-as.numeric(x[1])
+offset<-as.numeric(x[2])
+I<-x[-(1:2)]
 
 #Etape1 Normalisation
 M<-I/65535
@@ -222,7 +224,10 @@ M<-I/65535
 B<-B0 + t*B1/8192
 C<-M-B
 
-D<-C-t/8192
+offset<-offset/65535
+offset<-offset-B0_Dark-t*B1_Dark/8192
+
+D<-C-offset
 
 #Etape3 Integration time normalisation
 E<-D*8192/t
@@ -236,23 +241,35 @@ return(E/S)
 
 Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM_86CC_AllCal.txt"){
   
-ramses_cal<-read.table(calib_file,header = T,sep="\t")
-
-sq<-seq(PixelStart,PixelStop,by=PixelBinning)
-
-wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})
-B0<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B0[c(sq[i],sq[i]+PixelBinning-1)])})
-B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
-S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
-
-
-ind<-c(grep("ramses_int_time",colnames(data)),grep("ramses_raw_count",colnames(data)))
-
-#Process calibration
-dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S))
-
-wave<-round(wave*100)/100
-colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
+if (file.exists(calib_file)){
+  ramses_cal<-read.table(calib_file,header = T,sep="\t")
+  
+  sq<-seq(PixelStart,PixelStop,by=PixelBinning)
+  
+  wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})
+  B0<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B0[c(sq[i],sq[i]+PixelBinning-1)])})
+  B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
+  S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+  
+  DarkPixelStart = 237
+  DarkPixelStop = 254
+  B0_Dark=mean(ramses_cal$B0[DarkPixelStart:DarkPixelStop],na.rm = T)
+  B1_Dark=mean(ramses_cal$B1[DarkPixelStart:DarkPixelStop],na.rm = T)
+  
+  ind<-c(grep("ramses_int_time",colnames(data)),grep("ramses_dark_count",colnames(data)),grep("ramses_raw_count",colnames(data)))
+  
+  #Process calibration
+  dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+  
+  wave<-round(wave*100)/100
+  colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
+}
+else {
+  warning("Ramses, no calibration file for:",calib_file,"\n")
+  dataCal<-NULL
+}
+  
+return(dataCal) 
   
 }
 

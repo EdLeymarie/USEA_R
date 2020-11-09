@@ -3,6 +3,35 @@ require(chron)
 
 #**************************************************
 
+# FindFloatName
+
+#**************************************************
+#' find the floatname within a float directory
+#'
+#' @description
+#' take the last file with the pattern "ffff_ccc_pp.*" a return the hexafloatname
+#' 
+#' @examples 
+#' 
+#' findfloatname(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*")
+#' 
+#' 
+#' 
+findfloatname<-function(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*",
+                        CycleNumber=NULL,PatternNumber=1){
+  
+if (!is.null(CycleNumber)){
+  pattern=paste("[[:alnum:]]{4}_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),".*",sep="")
+}
+  
+flist<-list.files(pattern=pattern)
+i<-which.max(file.mtime(flist))
+
+strsplit(flist[i],split="_")[[1]][1]
+}
+
+#**************************************************
+
 # Decod USEA
 
 #**************************************************
@@ -11,7 +40,7 @@ require(chron)
 #' @description
 #' call apmtdecoder.exe routine to decode .hex data files and create NKE .csv ASCII files.
 #'
-#' @param floatname hexa name of the float
+#' @param floatname hexa name of the float. If "", the floatname will automatically found.
 #' @param CycleNumber numeric : number of the cycle to decode
 #' @param PatternNumber numeric : number of the Pattern to decode
 #' @param sensors list of sensor to decode. From the list CTS5_supported_sensors
@@ -25,8 +54,15 @@ require(chron)
 #' 
 #' @export
 #'
-cts5_decode<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,subdir=".",
+cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,subdir=".",
                       Nke_ProgPath=""){
+  
+  
+  # Automatic hexa floatname
+  if (floatname==""){
+    floatname<-findfloatname(CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+  }
+  
   
   #Positionnement dans le repertoire Decoder
   if (Nke_ProgPath == ""){
@@ -492,7 +528,6 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
 #' @examples 
 #' dataMerged<-usea_concatProfile(floatname="ffff",CycleNumber=275)
 #' 
-#' @export
 #'
 
 cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,dec="."){
@@ -547,7 +582,7 @@ return(dataMerged)
 #'
 #' @param metadata is a list containing technical data including calibration coefficients 
 #' obtained by using \code{\link{cts5_readMetaSensor}}
-#' @param dataMerged is the merged data.frame obtained by \code{\link{cts5_concatProfile}}
+#' @param dataprofile data and technical files read from \code{\link{cts5_readProfile}}
 #' @param sensors list of sensor to process
 #' 
 #' @return data.frame containing the data
@@ -561,42 +596,37 @@ return(dataMerged)
 #' floatname="ffff"
 #' 
 #' Meta<-cts5_readMetaSensor(floatname=floatname)
-#' 
-#' tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
 #'
 #' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
 #'
-#' setwd("./CSV")
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 #'
-#' dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 #'
-#' dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
+#' PlotCTS5(login=login,dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
 #'
-#' PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
-#'
-#' SaveToCTS5(login = login,dataMerged = dataMerged,GPS = tech$GPS)
 #' 
 #' @export
 #'
-cts5_ProcessData<-function(metadata,dataMerged,sensor=CTS5_supported_sensors){
+cts5_ProcessData<-function(metadata,dataprofile){
   
   ### ECO
-  if ("eco" %in% sensor) {
+  if ("eco" %in% names(dataprofile$data)) {
     
     if (!is.null(metadata$SENSOR_ECO)){
     
       ## Raw or mean
-      if ("chlorophyll_a, [CN]" %in% colnames(dataMerged)){
-        dataMerged[,"chlorophyll_a, [ug/l]"]<-metadata$SENSOR_ECO$CHANNEL_01[1]*(dataMerged[,"chlorophyll_a, [CN]"]-metadata$SENSOR_ECO$CHANNEL_01[2])
-        dataMerged[,"beta_theta, [1/m.sr]"]<-metadata$SENSOR_ECO$CHANNEL_02[1]*(dataMerged[,"beta_theta, [CN]"]-metadata$SENSOR_ECO$CHANNEL_02[2])
-        dataMerged[,"colored_dissolved_organic_matter, [ppb]"]<-metadata$SENSOR_ECO$CHANNEL_03[1]*(dataMerged[,"colored_dissolved_organic_matter, [CN]"]-metadata$SENSOR_ECO$CHANNEL_03[2])
+      if ("chlorophyll_a, [CN]" %in% colnames(dataprofile$data$eco)){
+        dataprofile$data$eco[,"chlorophyll_a, [ug/l]"]<-metadata$SENSOR_ECO$CHANNEL_01[1]*(dataprofile$data$eco[,"chlorophyll_a, [CN]"]-metadata$SENSOR_ECO$CHANNEL_01[2])
+        dataprofile$data$eco[,"beta_theta, [1/m.sr]"]<-metadata$SENSOR_ECO$CHANNEL_02[1]*(dataprofile$data$eco[,"beta_theta, [CN]"]-metadata$SENSOR_ECO$CHANNEL_02[2])
+        dataprofile$data$eco[,"colored_dissolved_organic_matter, [ppb]"]<-metadata$SENSOR_ECO$CHANNEL_03[1]*(dataprofile$data$eco[,"colored_dissolved_organic_matter, [CN]"]-metadata$SENSOR_ECO$CHANNEL_03[2])
       }
       
       ## SD
-      if ("SD(chlorophyll_a, [CN])" %in% colnames(dataMerged)){
-        dataMerged[,"SD(chlorophyll_a, [ug/l])"]<-metadata$SENSOR_ECO$CHANNEL_01[1]*dataMerged[,"SD(chlorophyll_a, [CN])"]
-        dataMerged[,"SD(beta_theta, [1/m.sr])"]<-metadata$SENSOR_ECO$CHANNEL_02[1]*dataMerged[,"SD(beta_theta, [CN])"]
-        dataMerged[,"SD(colored_dissolved_organic_matter, [ppb])"]<-metadata$SENSOR_ECO$CHANNEL_03[1]*dataMerged[,"SD(colored_dissolved_organic_matter, [CN])"]
+      if ("SD(chlorophyll_a, [CN])" %in% colnames(dataprofile$data$eco)){
+        dataprofile$data$eco[,"SD(chlorophyll_a, [ug/l])"]<-metadata$SENSOR_ECO$CHANNEL_01[1]*dataprofile$data$eco[,"SD(chlorophyll_a, [CN])"]
+        dataprofile$data$eco[,"SD(beta_theta, [1/m.sr])"]<-metadata$SENSOR_ECO$CHANNEL_02[1]*dataprofile$data$eco[,"SD(beta_theta, [CN])"]
+        dataprofile$data$eco[,"SD(colored_dissolved_organic_matter, [ppb])"]<-metadata$SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored_dissolved_organic_matter, [CN])"]
         
       }
     }
@@ -607,36 +637,36 @@ cts5_ProcessData<-function(metadata,dataMerged,sensor=CTS5_supported_sensors){
   }
   
   ### OCR
-  if ("ocr" %in% sensor) {
-    if (!is.null(metadata$SENSOR_OCR) & ("Downwelling_irradiance_380nm, [CN]" %in% colnames(dataMerged))){
-      dataMerged[,"Downwelling_irradiance_380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
-        (dataMerged[,"Downwelling_irradiance_380nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_01[1])
+  if ("ocr" %in% names(dataprofile$data)) {
+    if (!is.null(metadata$SENSOR_OCR) & ("Downwelling_irradiance_380nm, [CN]" %in% colnames(dataprofile$data$ocr))){
+      dataprofile$data$ocr[,"Downwelling_irradiance_380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
+        (dataprofile$data$ocr[,"Downwelling_irradiance_380nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_01[1])
       
-      dataMerged[,"Downwelling_irradiance_412nm"]<-metadata$SENSOR_OCR$CHANNEL_02[2]*metadata$SENSOR_OCR$CHANNEL_02[3]*
-        (dataMerged[,"Downwelling_irradiance_412nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_02[1])
+      dataprofile$data$ocr[,"Downwelling_irradiance_412nm"]<-metadata$SENSOR_OCR$CHANNEL_02[2]*metadata$SENSOR_OCR$CHANNEL_02[3]*
+        (dataprofile$data$ocr[,"Downwelling_irradiance_412nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_02[1])
       
-      dataMerged[,"Downwelling_irradiance_490nm"]<-metadata$SENSOR_OCR$CHANNEL_03[2]*metadata$SENSOR_OCR$CHANNEL_03[3]*
-        (dataMerged[,"Downwelling_irradiance_490nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_03[1])
+      dataprofile$data$ocr[,"Downwelling_irradiance_490nm"]<-metadata$SENSOR_OCR$CHANNEL_03[2]*metadata$SENSOR_OCR$CHANNEL_03[3]*
+        (dataprofile$data$ocr[,"Downwelling_irradiance_490nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_03[1])
       
-      dataMerged[,"Photosynthetic_Active_Radiation"]<-metadata$SENSOR_OCR$CHANNEL_04[2]*metadata$SENSOR_OCR$CHANNEL_04[3]*
-        (dataMerged[,"Photosynthetic_Active_Radiation, [CN]"]-metadata$SENSOR_OCR$CHANNEL_04[1])
+      dataprofile$data$ocr[,"Photosynthetic_Active_Radiation"]<-metadata$SENSOR_OCR$CHANNEL_04[2]*metadata$SENSOR_OCR$CHANNEL_04[3]*
+        (dataprofile$data$ocr[,"Photosynthetic_Active_Radiation, [CN]"]-metadata$SENSOR_OCR$CHANNEL_04[1])
       
       }
   }
   
   ### crover
-  if ("crover" %in% sensor) {
-    if ("Corr_Sig_Raw, [CN]" %in% colnames(dataMerged)){
+  if ("crover" %in% names(dataprofile$data)) {
+    if ("Corr_Sig_Raw, [CN]" %in% colnames(dataprofile$data$crover)){
       CSCdark=0
       CSCcal=12766
       x=0.25
-      dataMerged[,"c_uncalibrated, [1/m]"] <- -log((dataMerged[,"Corr_Sig_Raw, [CN]"]-CSCdark)/(CSCcal-CSCdark))/x
+      dataprofile$data$crover[,"c_uncalibrated, [1/m]"] <- -log((dataprofile$data$crover[,"Corr_Sig_Raw, [CN]"]-CSCdark)/(CSCcal-CSCdark))/x
     }
   }
   
   ### DO
-  if ("do" %in% sensor) {
-    if (("c1phase_doxy [deg]" %in% colnames(dataMerged)) & ("Temperature [deg. C.]" %in% colnames(dataMerged))){
+  if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
+    if ("c1phase_doxy [deg]" %in% colnames(dataprofile$data$do)){
       
     if (is.list(metadata$SENSOR_DO)){
       coefs<-metadata$SENSOR_DO$SVU_FOIL_COEFF
@@ -645,37 +675,53 @@ cts5_ProcessData<-function(metadata,dataMerged,sensor=CTS5_supported_sensors){
       coefs<-NULL
       }
         
-    dataMerged[,"doxy_uncalibrated"]<-Process_DO_Bittig(C1phase=dataMerged[,"c1phase_doxy [deg]"],C2phase=dataMerged[,"c2phase_doxy [deg]"],temp=dataMerged[,"temp_doxy [deg. C.]"],Pres=dataMerged[,"Pressure [dbar]"],
-                                             tempCTD=dataMerged[,"Temperature [deg. C.]"],salCTD=dataMerged[,"Salinity [PSU]"],PRESCTD=dataMerged[,"Pressure [dbar]"],
+      dataprofile$data$do[,"doxy_uncalibrated"]<-Process_DO_Bittig(C1phase=dataprofile$data$do[,"c1phase_doxy [deg]"],C2phase=dataprofile$data$do[,"c2phase_doxy [deg]"],temp=dataprofile$data$do[,"temp_doxy [deg. C.]"],Pres=dataprofile$data$do[,"Pressure [dbar]"],
+                                             tempCTD=dataprofile$data$sbe41[,"Temperature [deg. C.]"],salCTD=dataprofile$data$sbe41[,"Salinity [PSU]"],PRESCTD=dataprofile$data$sbe41[,"Pressure [dbar]"],
                                              COEF = coefs)
     }
   }
   
   ### sbepH
-  if ("sbeph" %in% sensor) {
-    if (("pH [mV]" %in% colnames(dataMerged)) & ("Temperature [deg. C.]" %in% colnames(dataMerged))){
+  if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
+    if ("pH [mV]" %in% colnames(dataprofile$data$sbeph)){
       
-      pH_Uncal<-rep(NA,dim(dataMerged)[1])
+      pH_Uncal<-rep(NA,nrow(dataprofile$data$sbeph))
       
       ##DESCENT
-      ind<-dataMerged$`Number Phase`=="DES"
-      if (dim(dataMerged[ind,])[1] > 2){
+      ind<-dataprofile$data$sbeph$`Number Phase`=="DES"
+      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
         ## Il y a des donnees en descent
-        pH_Uncal[ind & (dataMerged$SensorType==22)]<-Process_pH_SBE(dataMerged[ind,])
+        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="DES")
       }
       ##ASCENT
-      ind<-dataMerged$`Number Phase`=="ASC"
-      if (dim(dataMerged[ind,])[1] > 2){
+      ind<-dataprofile$data$sbeph$`Number Phase`=="ASC"
+      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
         ## Il y a des donnees en Asc
-        pH_Uncal[ind & (dataMerged$SensorType==22)]<-Process_pH_SBE(dataMerged[ind,])
+        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="ASC")
       }
       
-      dataMerged<-cbind(dataMerged,pH_Uncal)
+      dataprofile$data$sbeph[,"pH_Uncal"]<-pH_Uncal
       
     }
   }
   
-  return(dataMerged)
+  ### Ramses
+  if (("ramses" %in% names(dataprofile$data)) & ("inifile" %in% names(dataprofile))) {
+    
+    PixelStart=dataprofile$inifile$SENSOR_14$P54
+    PixelStop=dataprofile$inifile$SENSOR_14$P55
+    PixelBinning=dataprofile$inifile$SENSOR_14$P56
+    
+    dataCal<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
+                            PixelBinning=PixelBinning,calib_file="SAM_86CC_AllCal.txt")
+    
+    dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
+    
+  }
+  
+  
+  
+  return(dataprofile)
   
 }
 
@@ -743,6 +789,93 @@ SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
   }
 }
 
+#**************************************************
+
+# read USEA data and Meta file for a profile
+
+#**************************************************
+
+#' cts5_readProfile : Concat .csv files to one data.frame
+#'
+#' @description
+#' read NKE .csv ASCII files obtained from \code{\link{cts5_decode}} and 
+#' concat them into a list
+#'
+#' @param floatname hexa name of the float. If "", the floatname will automatically found.
+#' @param CycleNumber numeric : number of the cycle to decode
+#' @param PatternNumber numeric : number of the Pattern to decode
+#' @param sensors list of sensor to decode
+#' @param dec decimal character in ASCII
+#' @param include.inifile If True, read the corresponding iniFile and add it to the list.
+#' 
+#' @return a list containing the data
+#' 
+#' 
+#' @examples 
+#' 
+#' login="lovuse001a"
+#' 
+#' Meta<-cts5_readMetaSensor(floatname=floatname)
+#'
+#' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
+#'
+#' dataprofile<-cts5_readProfile(CycleNumber=c,PatternNumber = p,include.inifile=T)
+#' 
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+#' 
+#' @export
+#'
+
+cts5_readProfile<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,dec=".",
+                           include.inifile=F,csv.subdir="./CSV"){
+  
+
+# Automatic hexa floatname
+if (floatname==""){
+  floatname<-findfloatname(CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+}  
+  
+## read technical
+dataprofile<-list(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+
+## read technical
+dataprofile$technical<-cts5_readtechnical(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+
+## read inifile
+if (include.inifile){
+  dataprofile$inifile<-cts5_readIni(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+}
+
+
+if (csv.subdir != ""){
+  setwd(csv.subdir)
+}
+
+
+## Open data
+dataprofile$data<-list()
+
+for (sensor in sensors){ #sensor<-sensors[1]
+  data<-try(cts5_readcsv(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber,sensor=sensor,dec=dec))
+  
+  if (is.data.frame(data)){
+    dataprofile$data[[sensor]]<-data[,!(colnames(data) %in% c("Number Cycle","Number Pattern","Files","SensorType"))]
+  }
+}
+
+if (csv.subdir != ""){
+  setwd("../")
+}
+
+## dataprofile NULL if no data
+if (is.null(dataprofile$technical) & (length(dataprofile$data) == 0)){
+  dataprofile<-NULL
+}
+
+return(dataprofile)
+
+}
+
 
 #**************************************************
 
@@ -757,7 +890,7 @@ SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
 #'
 #'
 #' @param inifilename filename of the ini file
-#' @param floatname hexa name of the float
+#' @param floatname hexa name of the float. If "", the floatname will automatically found.
 #' @param CycleNumber numeric : number of the cycle to look for
 #' @param PatternNumber numeric : number of the Pattern to look for
 #' 
@@ -774,16 +907,21 @@ SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
 #' 
 #' @export
 #'
-cts5_readIni<-function(inifilename="",floatname="ffff",CycleNumber,PatternNumber=1){
+cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1){
   
   
   ## Selection of the file
   if (inifilename == ""){
     ## look for the ini file which describe the cycle and pattern
     
+    # Automatic hexa floatname
+    if (floatname==""){
+      floatname<-findfloatname(CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+    }
+    
     listini<-list.files(pattern=paste("^",floatname,".*_apmt.ini",sep=""))
     listini<-cbind(listini,matrix(unlist(strsplit(listini,split="_")),ncol = 4,byrow = T)[,2:3])
-    listini<-data.frame(listini)
+    listini<-data.frame(listini,stringsAsFactors = F)
     colnames(listini)<-c("filename","c","p")
     listini$c<-as.numeric(listini$c)
     listini$p<-as.numeric(listini$p)

@@ -4,17 +4,12 @@
 \alias{cts5_readIni}
 \title{read CTS5 _apmt.ini file}
 \usage{
-cts5_readIni(
-  inifilename = "",
-  floatname = "ffff",
-  CycleNumber,
-  PatternNumber = 1
-)
+cts5_readIni(inifilename = "", floatname = "", CycleNumber, PatternNumber = 1)
 }
 \arguments{
 \item{inifilename}{filename of the ini file}
 
-\item{floatname}{hexa name of the float}
+\item{floatname}{hexa name of the float. If "", the floatname will automatically found.}
 
 \item{CycleNumber}{numeric : number of the cycle to look for}
 

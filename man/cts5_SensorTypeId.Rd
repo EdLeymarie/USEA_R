@@ -31,6 +31,7 @@ SensorType
 113 : Ramses
 114 : opus_lgt
 115 : opus_blk
+116 : ext_trig
 }
 \examples{
 cts5_SensorTypeId("")

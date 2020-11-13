@@ -181,7 +181,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @description vector of names of available sensors
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
-                          "uvp6_lpm","uvp6_blk","ramses","opus_lgt","opus_blk")
+                          "uvp6_lpm","uvp6_blk","ramses","opus_lgt","opus_blk","ext_trig")
 #' 
 
 #**************************************************
@@ -211,6 +211,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' 113 : Ramses
 #' 114 : opus_lgt
 #' 115 : opus_blk
+#' 116 : ext_trig
 #' 
 #' @examples 
 #' cts5_SensorTypeId("")
@@ -224,7 +225,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern=""){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,113,114,115)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,113,114,115,116)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -373,6 +374,12 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     # SensorType=115
   }
   
+  ##-13 ext_trig
+  if (sensor == "ext_trig"){
+    data.colnames<-NULL
+    # SensorType=116
+  }
+  
   #****************************
   #* END Sensors description
   #* **************************
@@ -471,6 +478,11 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
       Dataclean<-Dataclean[,!indNA]
     }
     
+    # Elimination processing
+    if (sensor %in% c("ext_trig")){
+      Dataclean<-Dataclean[,-grep("processing",colnames(Dataclean))]
+    }
+    
     # Conversion temps
     if (length(grep("linux",filename))>0){
       #Format Linux
@@ -483,8 +495,10 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     Dataclean$Date<-strptime(Dataclean$Date,format = "%Y-%m-%d %H:%M:%S",tz="UTC")
     
     #Forcage Numerique
-    for (i in (9:ncol(Dataclean))){
-      Dataclean[,i]<-as.numeric(Dataclean[,i])
+    if (ncol(Dataclean) >= 9 ){
+      for (i in (9:ncol(Dataclean))){
+        Dataclean[,i]<-as.numeric(Dataclean[,i])
+      }
     }
     
     
@@ -876,6 +890,42 @@ return(dataprofile)
 
 }
 
+#**************************************************
+
+# save profile to RData
+
+#**************************************************
+
+#' cts5_save2RData
+#'
+#' @description
+#' save dataprofile to RData
+#'
+#' @param dataprofile dataprofile to be saved
+#' @param login identifiant used at the beginning of the pdf filename
+#' 
+#' @examples 
+#' cts5_save2RData(dataprofile,login = login)
+#' 
+#' cts5_save2RData(dataprofile,login = login,subdir="./csv/")
+#' 
+#' @export
+#'
+
+
+cts5_save2RData<-function(dataprofile,login="",subdir=""){
+
+if (!is.null(dataprofile)){   
+    
+  CycleNumber<-dataprofile$CycleNumber
+  PatternNumber<-dataprofile$PatternNumber
+  
+  filename<-paste(subdir,login,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),".RData",sep="")
+  cat("save to:",filename,"\n",sep="")
+  
+  save(dataprofile,file = filename)
+}
+}
 
 #**************************************************
 

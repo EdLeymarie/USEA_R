@@ -25,9 +25,13 @@ if (!is.null(CycleNumber)){
 }
   
 flist<-list.files(pattern=pattern)
-i<-which.max(file.mtime(flist))
-
-strsplit(flist[i],split="_")[[1]][1]
+if (length(flist)>0){
+  i<-which.max(file.mtime(flist))
+  return(strsplit(flist[i],split="_")[[1]][1])
+}
+else {
+  return("")
+}
 }
 
 #**************************************************
@@ -903,6 +907,7 @@ return(dataprofile)
 #'
 #' @param dataprofile dataprofile to be saved
 #' @param login identifiant used at the beginning of the pdf filename
+#' @param subdir sub directory used to save the file. Must include / at the end.
 #' 
 #' @examples 
 #' cts5_save2RData(dataprofile,login = login)

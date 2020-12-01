@@ -693,7 +693,7 @@ return(Navdata1)
 #' call \code{\link{cts5_system_decode}}, \code{\link{cts5_system_parse}} and \code{\link{cts5_system_merge}}.
 #'
 #' @param Navdata already processed system files
-#' @param floatname hexa name of the float
+#' @param floatname hexa name of the float. If "" then name will be found automatically.
 #' @param OnlyNew if true and if Navdata is not null, only system files older than files already
 #' in Navdata will be processed
 #' @param sysfile_number numeric : vector of system file numbers. If null, all files available
@@ -711,16 +711,22 @@ return(Navdata1)
 #' @examples 
 #' Navdata<-cts5_system_process(floatname = "3ab3")
 #' Navdata<-cts5_system_process(floatname = "3ab3",userdefine="ICE")
+#' Navdata<-cts5_system_process(userdefine="ICE")
+#' Navdata<-cts5_system_process(userdefine="ICE",sysfile_number=125:130)
 #' 
 #' 
 #' @export
 
-cts5_system_process<-function(Navdata=NULL,floatname,OnlyNew=T,
+cts5_system_process<-function(Navdata=NULL,floatname="",OnlyNew=T,
                               sysfile_number=NULL,
                               subdir=".",
                               userdefine="",
                               AutoSaveLoad=F,
                               Nke_ProgPath=""){
+  
+if (floatname==""){
+  floatname<-findfloatname()
+}
 
 # Recherche des fichiers system
 if (is.null(sysfile_number)){

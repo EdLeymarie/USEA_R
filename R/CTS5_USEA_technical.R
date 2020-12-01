@@ -78,10 +78,15 @@ split_One_value<-function(string,value.as.numeric=T){
 #'
 
 
-cts5_readtechnical<-function(filename="",floatname="ffff",CycleNumber,PatternNumber=1){
+cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=1){
   
   # nom du fichier
   if (filename==""){
+    
+    if (floatname==""){
+      floatname<-findfloatname(CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+    }
+    
     pattern<-paste("^",floatname,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),"_technical.txt",sep="")
     filename<-list.files(pattern=pattern)[1]
   }
@@ -455,14 +460,26 @@ cts5_readMetaSensor<-function(floatname=".*",CycleNumber=NA,PatternNumber=0,file
     }
     
     if ("SENSOR_ECO" %in% names(L$SENSORS)){
-      for (i in 2:length(names(L$SENSORS$SENSOR_ECO))){
-        L$SENSORS$SENSOR_ECO[[i]]<-as.numeric(L$SENSORS$SENSOR_ECO[[i]])
+      if (length(names(L$SENSORS$SENSOR_ECO)) > 0){
+        for (i in 2:length(names(L$SENSORS$SENSOR_ECO))){
+          L$SENSORS$SENSOR_ECO[[i]]<-as.numeric(L$SENSORS$SENSOR_ECO[[i]])
+        }
+      }
+      else {
+        # For Flbb with no calib in the data frame
+        L$SENSORS$SENSOR_ECO<-NULL
       }
     }
     
     if ("SENSOR_OCR" %in% names(L$SENSORS)){
-      for (i in 2:length(names(L$SENSORS$SENSOR_OCR))){
-        L$SENSORS$SENSOR_OCR[[i]]<-as.numeric(L$SENSORS$SENSOR_OCR[[i]])
+      if (length(names(L$SENSORS$SENSOR_OCR)) > 0){
+        for (i in 2:length(names(L$SENSORS$SENSOR_OCR))){
+          L$SENSORS$SENSOR_OCR[[i]]<-as.numeric(L$SENSORS$SENSOR_OCR[[i]])
+        }
+      }
+      else {
+        # For ocr with no calib in the data frame
+        L$SENSORS$SENSOR_OCR<-NULL
       }
     }
     

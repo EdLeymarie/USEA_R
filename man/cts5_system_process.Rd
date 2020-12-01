@@ -6,7 +6,7 @@
 \usage{
 cts5_system_process(
   Navdata = NULL,
-  floatname,
+  floatname = "",
   OnlyNew = T,
   sysfile_number = NULL,
   subdir = ".",
@@ -18,7 +18,7 @@ cts5_system_process(
 \arguments{
 \item{Navdata}{already processed system files}
 
-\item{floatname}{hexa name of the float}
+\item{floatname}{hexa name of the float. If "" then name will be found automatically.}
 
 \item{OnlyNew}{if true and if Navdata is not null, only system files older than files already
 in Navdata will be processed}
@@ -47,6 +47,8 @@ this function must be call in the directory where are .hex files
 \examples{
 Navdata<-cts5_system_process(floatname = "3ab3")
 Navdata<-cts5_system_process(floatname = "3ab3",userdefine="ICE")
+Navdata<-cts5_system_process(userdefine="ICE")
+Navdata<-cts5_system_process(userdefine="ICE",sysfile_number=125:130)
 
 
 }

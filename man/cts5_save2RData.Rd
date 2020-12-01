@@ -10,6 +10,8 @@ cts5_save2RData(dataprofile, login = "", subdir = "")
 \item{dataprofile}{dataprofile to be saved}
 
 \item{login}{identifiant used at the beginning of the pdf filename}
+
+\item{subdir}{sub directory used to save the file. Must include / at the end.}
 }
 \description{
 save dataprofile to RData

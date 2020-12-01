@@ -6,7 +6,7 @@
 \usage{
 cts5_readtechnical(
   filename = "",
-  floatname = "ffff",
+  floatname = "",
   CycleNumber,
   PatternNumber = 1
 )

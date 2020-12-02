@@ -49,7 +49,8 @@ else {
 #' @param PatternNumber numeric : number of the Pattern to decode
 #' @param sensors list of sensor to decode. From the list CTS5_supported_sensors
 #' @param subdir subdir where to put .csv ASCII files
-#' @param Nke_ProgPath path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath") 
+#' @param Nke_ProgPath path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath").
+#' For Linux, if the Decoder path is in the .bashrc, you can leave this parameters empty. 
 #' 
 #' @return No return. This function create ASCII files in the subdir directory
 #' 
@@ -74,8 +75,11 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
       ProgDir=Sys.getenv("USEAR_Nke_ProgPath")
     }
     else {
-      warning("Nke_ProgPath where APMTDecrypt.exe or Decoder are must be defined. Provide Nke_ProgPath 
-              or set Sys.getenv('USEAR_Nke_ProgPath')",immediate.=T)
+      if (Sys.info()["sysname"] == "Windows"){
+        warning("Nke_ProgPath where APMTDecrypt.exe are must be defined for windows. Provide Nke_ProgPath 
+                or set Sys.getenv('USEAR_Nke_ProgPath')",immediate.=T)
+      }
+      ProgDir=""
     }
   }
   else {
@@ -140,17 +144,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
         # Decodage Linux / MacOS
         else {
           
-          #dataDir<-getwd()
-          
-          #Positionnement dans le repertoire Decoder
-          # setwd(ProgDir)
-          # inutile si on compile le decoder avec des chemins absolus et si on met le chemin du decoder dans export path 
-          
-          #filename<-paste(dataDir,"/",SensorFilename,sep="")
-          #cat(paste("./Decoder",filename,sep=" "),"\n")
-          #system(paste("./Decoder",filename,sep=" "))
-          
-          cmd<-paste(ProgDir,"/Decoder ",SensorFilename,sep="")
+          cmd<-paste(ProgDir,"Decoder ",SensorFilename,sep="")
           cat(cmd,"\n")
           system(cmd)
           

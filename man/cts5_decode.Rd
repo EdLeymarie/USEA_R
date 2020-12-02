@@ -24,7 +24,8 @@ cts5_decode(
 
 \item{subdir}{subdir where to put .csv ASCII files}
 
-\item{Nke_ProgPath}{path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath")}
+\item{Nke_ProgPath}{path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath").
+For Linux, if the Decoder path is in the .bashrc, you can leave this parameters empty.}
 }
 \value{
 No return. This function create ASCII files in the subdir directory

@@ -7,17 +7,18 @@
 cts5_readMetaSensor(
   floatname = ".*",
   CycleNumber = NA,
-  PatternNumber = 0,
+  PatternNumber = NA,
   filename = NULL
 )
 }
 \arguments{
-\item{floatname}{hexa name of the float or .* to select all float name}
+\item{floatname}{hexa name of the float or .* to select all float name.}
 
 \item{CycleNumber}{numeric : number of the cycle to decode. If NA, 
 the last file is decoded}
 
-\item{PatternNumber}{numeric : number of the Pattern to decode}
+\item{PatternNumber}{numeric : number of the Pattern to decode. If NA, 
+the last file is decoded}
 
 \item{filename}{if not null, used as meta file filename}
 }

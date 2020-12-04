@@ -405,10 +405,11 @@ else {
 #' @description
 #' read CTS5 xml files with float and sensors meta data
 #'
-#' @param floatname hexa name of the float or .* to select all float name
+#' @param floatname hexa name of the float or .* to select all float name.
 #' @param CycleNumber numeric : number of the cycle to decode. If NA, 
 #' the last file is decoded
-#' @param PatternNumber numeric : number of the Pattern to decode
+#' @param PatternNumber numeric : number of the Pattern to decode. If NA, 
+#' the last file is decoded
 #' @param filename if not null, used as meta file filename
 #' 
 #' @return list containing the Meta data
@@ -423,17 +424,25 @@ else {
 #'
 
 
-cts5_readMetaSensor<-function(floatname=".*",CycleNumber=NA,PatternNumber=0,filename=NULL){
+cts5_readMetaSensor<-function(floatname=".*",CycleNumber=NA,PatternNumber=NA,filename=NULL){
   
   if (is.null(filename)){
+    
+    # CycleNumber
     if (is.na(CycleNumber)) {
-      CycleNumber_tmp<-".*"
+      CycleNumber_tmp<-"[[:digit:]]{3}"
     }
     else {
       CycleNumber_tmp<-formatC(CycleNumber,width=3,flag="0")
     }
     
-    PatternNumber_tmp<-formatC(PatternNumber,width=2,flag="0")
+    # PatternNumber
+    if (is.na(PatternNumber)) {
+      PatternNumber_tmp<-"[[:digit:]]{2}"
+    }
+    else {
+      PatternNumber_tmp<-formatC(PatternNumber,width=2,flag="0")
+    }
     
     pattern<-paste("^",floatname,"_",CycleNumber_tmp,"_",PatternNumber_tmp,"_metadata.xml",sep="")  
     

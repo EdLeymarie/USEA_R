@@ -209,6 +209,8 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
 #*
 # Compute Ramses
 #* Input : X = c(ramses_int_time,ramses_dark_count, I) 
+#* 
+#* Output : Physical units uW/cm2/nm
 #*
 #**************************************************
 
@@ -231,6 +233,9 @@ D<-C-offset
 
 #Etape3 Integration time normalisation
 E<-D*8192/t
+
+#Change to uW/cm2/nm
+E<-E/10
   
 #Etape4 Sensitivity
 return(E/S)
@@ -239,9 +244,12 @@ return(E/S)
 
 #**************************************************
 
-Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM_86CC_AllCal.txt"){
+Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt"){
+  
+calib_file<-list.files(pattern = calib_file)[1]
   
 if (file.exists(calib_file)){
+  cat("Open RAMSES cal file: ",calib_file,"\n")
   ramses_cal<-read.table(calib_file,header = T,sep="\t")
   
   sq<-seq(PixelStart,PixelStop,by=PixelBinning)
@@ -251,10 +259,9 @@ if (file.exists(calib_file)){
   B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
   S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
   
-  DarkPixelStart = 237
-  DarkPixelStop = 254
-  B0_Dark=mean(ramses_cal$B0[DarkPixelStart:DarkPixelStop],na.rm = T)
-  B1_Dark=mean(ramses_cal$B1[DarkPixelStart:DarkPixelStop],na.rm = T)
+  indDark<-ramses_cal$Wave == -1
+  B0_Dark=mean(ramses_cal$B0[indDark],na.rm = T)
+  B1_Dark=mean(ramses_cal$B1[indDark],na.rm = T)
   
   ind<-c(grep("ramses_int_time",colnames(data)),grep("ramses_dark_count",colnames(data)),grep("ramses_raw_count",colnames(data)))
   

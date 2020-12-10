@@ -718,14 +718,24 @@ cts5_ProcessData<-function(metadata,dataprofile){
   }
   
   ### Ramses
-  if (("ramses" %in% names(dataprofile$data)) & ("inifile" %in% names(dataprofile))) {
+  if ("ramses" %in% names(dataprofile$data)) {
     
-    PixelStart=dataprofile$inifile$SENSOR_14$P54
-    PixelStop=dataprofile$inifile$SENSOR_14$P55
-    PixelBinning=dataprofile$inifile$SENSOR_14$P56
+    if ("inifile" %in% names(dataprofile)){
+      PixelStart=dataprofile$inifile$SENSOR_14$P54
+      PixelStop=dataprofile$inifile$SENSOR_14$P55
+      PixelBinning=dataprofile$inifile$SENSOR_14$P56
+    }
+    else {
+      # default configuration valid for datalogger mode
+      PixelStart=1
+      PixelStop=length(grep("ramses_raw_count",colnames(dataprofile$data$ramses)))
+      PixelBinning=1
+      
+      warning("RAMSES calibration: No inifile found. Apply default setting")
+    }
     
     dataCal<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
-                            PixelBinning=PixelBinning,calib_file="SAM_86CC_AllCal.txt")
+                            PixelBinning=PixelBinning,calib_file="SAM.*AllCal.txt")
     
     dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
     

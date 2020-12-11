@@ -84,7 +84,7 @@ for (l in 1:length(datalogger)){
 for (i in 1:length(logger$data)){
   logger$data[[i]]<-cbind(0,logger$data[[i]][,1],"ASC","(RW)",logger$data[[i]][,-1])
   colnames(logger$data[[i]])<-paste("V",1:ncol(logger$data[[i]]),sep="")
-  colnames(logger$data[[i]])[1:4]<-c("Pressure [dbar]","Date","Number Phase","processing")
+  colnames(logger$data[[i]])[1:4]<-c("Pressure_dbar","Date","PhaseName","processing")
   
   logger$data[[i]]<-data.frame(logger$data[[i]],stringsAsFactors = F,check.names = F)
   
@@ -97,24 +97,24 @@ for (i in 1:length(logger$data)){
 
 ## sbe41
 if (!is.null(logger$data$sbe41)){
-  logger$data$sbe41$`Pressure [dbar]`<-logger$data$sbe41$V5
+  logger$data$sbe41$Pressure_dbar<-logger$data$sbe41$V5
   logger$data$sbe41<-logger$data$sbe41[,-5]
-  colnames(logger$data$sbe41)[-(1:4)]<-c("Temperature [deg. C.]","Salinity [PSU]")
+  colnames(logger$data$sbe41)[-(1:4)]<-c("Temperature_degC","Salinity_PSU")
 }
 
 ## do
 if (!is.null(logger$data$do)){
-  colnames(logger$data$do)[-(1:4)]<-c("c1phase_doxy [deg]","c2phase_doxy [deg]","temp_doxy [deg. C.]")
+  colnames(logger$data$do)[-(1:4)]<-c("c1phase_deg","c2phase_deg","tempdoxy_degC")
 }
 
 ## eco
 if (!is.null(logger$data$eco)){
-  colnames(logger$data$eco)[-(1:4)]<-c("chlorophyll_a, [CN]","beta_theta, [CN]","colored_dissolved_organic_matter, [CN]")
+  colnames(logger$data$eco)[-(1:4)]<-c("chlorophyll-a_CN","beta-theta_CN","colored-dissolved-organic-matter_CN")
 }
 
 ## ocr
 if (!is.null(logger$data$ocr)){
-  colnames(logger$data$ocr)[-(1:4)]<-c("Downwelling_irradiance_380nm, [CN]","Downwelling_irradiance_412nm, [CN]","Downwelling_irradiance_490nm, [CN]","Photosynthetic_Active_Radiation, [CN]")
+  colnames(logger$data$ocr)[-(1:4)]<-c("Downwelling-irradiance-380nm_CN","Downwelling-irradiance-412nm_CN","Downwelling-irradiance-490nm_CN","Photosynthetic-Active-Radiation_CN")
 }
 
 

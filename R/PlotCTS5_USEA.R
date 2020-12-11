@@ -17,23 +17,23 @@ plotCTD<-function(data,ylim=NULL){
 if (!is.null(data)){
 
 #density
-data<-cbind(data,swRho(data[,"Salinity [PSU]"],data[,"Temperature [deg. C.]"],data[,"Pressure [dbar]"]))
+data<-cbind(data,swRho(data[,"Salinity_PSU"],data[,"Temperature_degC"],data[,"Pressure_dbar"]))
 dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"Density"
 #swSigmaT
-data<-cbind(data,swSigmaT(data[,"Salinity [PSU]"], temperature=data[,"Temperature [deg. C.]"], pressure=data[,"Pressure [dbar]"]))
+data<-cbind(data,swSigmaT(data[,"Salinity_PSU"], temperature=data[,"Temperature_degC"], pressure=data[,"Pressure_dbar"]))
 dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
 
   phaseToPlot<-c("DES","ASC")
-  phaseToPlot<-phaseToPlot[phaseToPlot %in% unique(data[,"Number Phase"])]
+  phaseToPlot<-phaseToPlot[phaseToPlot %in% unique(data[,"PhaseName"])]
 
   for (ph in phaseToPlot){        
-    ind<-data[,"Number Phase"]==ph
-    plot(data$swSigmaT[ind],-data[ind,"Pressure [dbar]"],type="l",col=1,xlab="potential density anomaly",ylab="Depth",ylim=ylim)
+    ind<-data[,"PhaseName"]==ph
+    plot(data$swSigmaT[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="potential density anomaly",ylab="Depth",ylim=ylim)
     par(new=TRUE)
-    plot(data[ind,"Salinity [PSU]"],-data[ind,"Pressure [dbar]"],type="l",axes=FALSE,col=4,xlab="",ylab="")
+    plot(data[ind,"Salinity_PSU"],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
     axis(3,col=4,col.axis=4)
     par(new=TRUE)
-    plot(data[ind,"Temperature [deg. C.]"],-data[ind,"Pressure [dbar]"],type="l",axes=FALSE,col=2,xlab="",ylab="")
+    plot(data[ind,"Temperature_degC"],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=2,xlab="",ylab="")
     axis(3,col=2,col.axis=2,line=2)
     par(new=FALSE)
     legend("bottomleft",legend=paste("CTD:",ph))
@@ -41,12 +41,12 @@ dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
     ## ISA
     if ((ph=="ASC") & (dim(data)[1]>1)){
       #ISA Antarctique
-      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],50:1,ties = "mean")
+      InterpT<-approx(data[,"Pressure_dbar",],data[,"Temperature_degC"],50:1,ties = "mean")
       RunM<-RunMedian(InterpT$y)
       ISA_Antarctique<-min(RunM[InterpT$x<=20],na.rm=TRUE)
       
       #ISA Baffin
-      InterpT<-approx(data[,"Pressure [dbar]",],data[,"Temperature [deg. C.]"],30:1,ties = "mean")
+      InterpT<-approx(data[,"Pressure_dbar",],data[,"Temperature_degC"],30:1,ties = "mean")
       RunM<-RunMedian(InterpT$y)
       ISA_Baffin<-min(RunM[InterpT$x<=10],na.rm=TRUE)
       
@@ -73,18 +73,18 @@ PlotEcoStd<-function(data,technical=TRUE){
   if (technical){
     
     #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("EcoPuck",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
     #Plot Ecart
-    ind<-which(data[,"Number Phase"] == "ASC")
+    ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
-      depth<-data$`Pressure [dbar]`[ind]
+      depth<-data$Pressure_dbar[ind]
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta ECO",xlab="delta [db]",ylab="depth [db]")
@@ -93,25 +93,25 @@ PlotEcoStd<-function(data,technical=TRUE){
   }
   
   #Plot Chla
-  Chla<-data[,"chlorophyll_a, [ug/l]"]
+  Chla<-data[,"chlorophyll-a_ug/l"]
   if (sum(!is.na(Chla))>2){ 
-    plot(NULL,NULL,xlim=range(Chla,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="Chla [ug/l]",ylab="depth")
-    for (i in unique(data[,"Number Phase"])){
-      lines(Chla[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+    plot(NULL,NULL,xlim=range(Chla,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="Chla [ug/l]",ylab="depth")
+    for (i in unique(data[,"PhaseName"])){
+      lines(Chla[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
   }
   #Plot BB
-  bb<-data[,"beta_theta, [1/m.sr]"]
+  bb<-data[,"beta-theta_1/msr"]
   if (sum(!is.na(bb))>2){
-    plot(NULL,NULL,xlim=range(bb,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="bb [1/m.sr]",ylab="depth")
-    for (i in unique (data[,"Number Phase"])){
-      lines(bb[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+    plot(NULL,NULL,xlim=range(bb,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="bb [1/m.sr]",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(bb[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
   }
   #Plot CDOM
-  cdom<-data[,"colored_dissolved_organic_matter, [ppb]"]
+  cdom<-data[,"colored-dissolved-organic-matter_ppb"]
   if (sum(!is.na(cdom))>2){
-    plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
-    for (i in unique (data[,"Number Phase"])){
-      lines(cdom[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))}
+    plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(cdom[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
   }
 }
 
@@ -122,25 +122,25 @@ PlotOCR4<-function(data,meta,technical=TRUE){
   #Plot technical
   if (technical){
     #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("OCR",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
     #Plot Ecart
-    ind<-which(data[,"Number Phase"] == "ASC")
+    ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){   
-      depth<-data$`Pressure [dbar]`[ind]
+      depth<-data$Pressure_dbar[ind]
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta OCR",xlab="delta [db]",ylab="depth [db]")
       }
   }
   
   #Plot Radio
-  for (rad in c("Downwelling_irradiance_380nm","Downwelling_irradiance_412nm","Downwelling_irradiance_490nm","Photosynthetic_Active_Radiation")){
+  for (rad in c("Downwelling-irradiance-380nm","Downwelling-irradiance-412nm","Downwelling-irradiance-490nm","Photosynthetic-Active-Radiation")){
     temp<-data[,rad]
     temp<-temp-min(temp,na.rm=TRUE) #normalisation au minimum
     #temp[temp<0]<-NA
@@ -148,9 +148,9 @@ PlotOCR4<-function(data,meta,technical=TRUE){
     xlim=range(temp,na.rm = TRUE, finite = TRUE)
     if (xlim[2]<=0){xlim[2]<-1}  
     if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
-    plot(NULL,NULL,xlim=xlim,ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab=rad,ylab="depth",log="x")
-    for (i in unique(data[,"Number Phase"])){
-      lines(temp[data[,"Number Phase"]==i],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    plot(NULL,NULL,xlim=xlim,ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab=rad,ylab="depth",log="x")
+    for (i in unique(data[,"PhaseName"])){
+      lines(temp[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
       }
   }
   
@@ -170,18 +170,18 @@ PlotOptode<-function(data,technical=TRUE){
   #Plot technical
   if (technical){
     #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("DO",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
     #Plot Ecart
-    ind<-which(data[,"Number Phase"] == "ASC")
+    ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
-      depth<-data$`Pressure [dbar]`[ind]
+      depth<-data$Pressure_dbar[ind]
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta DO",xlab="delta [db]",ylab="depth [db]")
@@ -192,9 +192,9 @@ PlotOptode<-function(data,technical=TRUE){
   #PlotDO
   if (dim(data)[1]>5){
   
-    plot(NULL,NULL,xlim=range(data[,"doxy_uncalibrated"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="doxy_uncalibrated",ylab="depth")
-    for (i in unique (data[,"Number Phase"])){
-      lines(data[data[,"Number Phase"]==i,"doxy_uncalibrated"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    plot(NULL,NULL,xlim=range(data[,"doxy_uncalibrated"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="doxy_uncalibrated",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(data[data[,"PhaseName"]==i,"doxy_uncalibrated"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
   }
   
@@ -212,18 +212,18 @@ PlotCROVER<-function(data,technical=TRUE){
   #Plot technical
   if (technical){
     #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("cRover",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
     #Plot Ecart
-    ind<-which(data[,"Number Phase"] == "ASC")
+    ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
-      depth<-data$`Pressure [dbar]`[ind]
+      depth<-data$Pressure_dbar[ind]
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta CROVER",xlab="delta [db]",ylab="depth [db]")
@@ -234,9 +234,9 @@ PlotCROVER<-function(data,technical=TRUE){
   #Plot c
   if (dim(data)[1]>5){
     
-    plot(NULL,NULL,xlim=range(data[,"c_uncalibrated, [1/m]"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="c_uncalibrated, [1/m]",ylab="depth")
-    for (i in unique (data[,"Number Phase"])){
-      lines(data[data[,"Number Phase"]==i,"c_uncalibrated, [1/m]"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    plot(NULL,NULL,xlim=range(data[,"c-uncalibrated_1/m"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="c-uncalibrated_1/m",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(data[data[,"PhaseName"]==i,"c-uncalibrated_1/m"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
   }
   
@@ -254,18 +254,18 @@ PlotSUNA<-function(data,technical=TRUE){
   #Plot technical
   if (technical){
     #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("SUNA",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
     #Plot Ecart
-    ind<-which(data[,"Number Phase"] == "ASC")
+    ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
-      depth<-data$`Pressure [dbar]`[ind]
+      depth<-data$Pressure_dbar[ind]
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta SUNA",xlab="delta [db]",ylab="depth [db]")
@@ -276,9 +276,9 @@ PlotSUNA<-function(data,technical=TRUE){
   #PlotSUNA
   if (dim(data)[1]>=5){
     
-    plot(NULL,NULL,xlim=range(data[,"nitrate_concentration, [micoMol/l]"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="nitrate_concentration, [micoMol/l]",ylab="depth")
-    for (i in unique (data[,"Number Phase"])){
-      lines(data[data[,"Number Phase"]==i,"nitrate_concentration, [micoMol/l]"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    plot(NULL,NULL,xlim=range(data[,"nitrate-concentration_uMol/l"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="nitrate-concentration_uMol/l",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(data[data[,"PhaseName"]==i,"nitrate-concentration_uMol/l"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
     
     
@@ -288,7 +288,7 @@ PlotSUNA<-function(data,technical=TRUE){
     temp<-temp[,temp[1,]>0]
     
     
-    depth_breaks <- pretty(data$`Pressure [dbar]`, n = 50)
+    depth_breaks <- pretty(data$Pressure_dbar, n = 50)
     cs <- list(cols = tim.colors(length(depth_breaks) - 1),breaks = depth_breaks,name = "",unit = "",labels = seq(1,length(depth_breaks), 5))
     cols <- cs.use(depth_breaks, cs)
     
@@ -312,18 +312,18 @@ PlotSbepH<-function(data,technical=TRUE){
   #Plot technical
   if (technical){
     #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("pH",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
     #Plot Ecart
-    ind<-which(data[,"Number Phase"] == "ASC")
+    ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
-      depth<-data$`Pressure [dbar]`[ind]
+      depth<-data$Pressure_dbar[ind]
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta pH",xlab="delta [db]",ylab="depth [db]")
@@ -334,9 +334,9 @@ PlotSbepH<-function(data,technical=TRUE){
   #PlotpH
   if (dim(data)[1]>5){
     
-    plot(NULL,NULL,xlim=range(data[,"pH_Uncal"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="pH_uncalibrated",ylab="depth")
-    for (i in unique (data[,"Number Phase"])){
-      lines(data[data[,"Number Phase"]==i,"pH_Uncal"],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])))
+    plot(NULL,NULL,xlim=range(data[,"pH_Uncal"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="pH_uncalibrated",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(data[data[,"PhaseName"]==i,"pH_Uncal"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
   }
   
@@ -348,19 +348,19 @@ PlotUVP_lpm<-function(data,technical=TRUE){
   
   #Plot Chronologie
   if (technical){
-    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("UVP6",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
   }
   
   #Plot Ecart
-  ind<-which(data[,"Number Phase"] == "ASC")
+  ind<-which(data[,"PhaseName"] == "ASC")
   if (length(ind)>2){  
-    depth<-data$`Pressure [dbar]`[ind]
+    depth<-data$Pressure_dbar[ind]
     
     delta<-depth[-length(depth)]-depth[-1]
     plot(delta,-depth[-1],log="x",main="delta UVP",xlab="delta [db]",ylab="depth [db]")
@@ -369,7 +369,7 @@ PlotUVP_lpm<-function(data,technical=TRUE){
   
   #### Class
   title_list<-c("Octopus NPart_Class1-6","Octopus NPart_Class7-12","Octopus NPart_Class13-18")
-  class_list<-rbind(5:10,11:16,17:22)
+  class_list<-rbind(7:12,13:18,19:24)
   
   for (i in 1:length(title_list)){
     temp<-data[,class_list[i,]]
@@ -377,12 +377,12 @@ PlotUVP_lpm<-function(data,technical=TRUE){
       temp.min<-min(temp[temp>0])
       temp.max<-max(temp)
       
-      plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
+      plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
       title(main=title_list[i])
       for (j in 1:6){
         if (sum(temp[,j]>0)>4){
-          for (i in unique(data[,"Number Phase"])){
-            lines(temp[data[,"Number Phase"]==i,j],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])),lty=j)}
+          for (i in unique(data[,"PhaseName"])){
+            lines(temp[data[,"PhaseName"]==i,j],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])),lty=j)}
         }
       }
       
@@ -399,19 +399,19 @@ PlotUVP_blk<-function(data,technical=TRUE){
   
   #Plot Chronologie
   if (technical){
-    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("UVP6 Black",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
   }
   
   #Plot Ecart
-  ind<-which(data[,"Number Phase"] == "ASC")
+  ind<-which(data[,"PhaseName"] == "ASC")
   if (length(ind)>2){  
-    depth<-data$`Pressure [dbar]`[ind]
+    depth<-data$Pressure_dbar[ind]
     
     delta<-depth[-length(depth)]-depth[-1]
     plot(delta,-depth[-1],log="x",main="delta UVP black",xlab="delta [db]",ylab="depth [db]")
@@ -419,17 +419,17 @@ PlotUVP_blk<-function(data,technical=TRUE){
   
   
   #### Class
-    temp<-data[,6:10]
+    temp<-data[,7:11]
     if (sum(temp>0) > 2){
       temp.min<-min(temp[temp>0])
       temp.max<-max(temp)
       
-      plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure [dbar]"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
+      plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
       title(main="UVP black count")
       for (j in 1:5){
         if (sum(temp[,j]>0)>4){
-          for (i in unique (data[,"Number Phase"])){
-            lines(temp[data[,"Number Phase"]==i,j],-data[data[,"Number Phase"]==i,"Pressure [dbar]"],col=match(i,unique(data[,"Number Phase"])),lty=j)}
+          for (i in unique (data[,"PhaseName"])){
+            lines(temp[data[,"PhaseName"]==i,j],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])),lty=j)}
         }
       }
       
@@ -446,36 +446,36 @@ PlotRamses<-function(data,technical=TRUE){
   #Plot technical
   if (technical){
     #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure [dbar]"],col=match(data[,"Number Phase"],unique(data[,"Number Phase"])),xlab="time",ylab="depth",type="b")
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main=paste("Ramses",rev(data$date)[1],sep=" "))
-    ind<-which(data[,"Number Phase"] %in% c("PRE","DES"))
-    rangedescent<-range(data[ind,"Pressure [dbar]"])
-    ind<-which(data[,"Number Phase"]=="ASC")
-    rangeascent<-range(data[ind,"Pressure [dbar]"])
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
     #Plot Ecart
-    ind<-which(data[,"Number Phase"] == "ASC")
+    ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
-      depth<-data$`Pressure [dbar]`[ind]
+      depth<-data$Pressure_dbar[ind]
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta Ramses",xlab="delta [db]",ylab="depth [db]")
     }
     
     ## IntTime et Tilt
-    ind<-which(data[,"Number Phase"] == "ASC")
-    plot(data$ramses_int_time[ind],-data[ind,"Pressure [dbar]"],type="l",col=1,xlab="Integration Time",ylab="Depth")
+    ind<-which(data[,"PhaseName"] == "ASC")
+    plot(data$ramses_int_time[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="Integration Time",ylab="Depth")
     par(new=TRUE)
-    plot(data$ramses_tilt1[ind],-data[ind,"Pressure [dbar]"],type="l",axes=FALSE,col=4,xlab="",ylab="")
+    plot(data$ramses_tilt1[ind],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
     axis(3,col=4,col.axis=4)
     
   }    
   
   ## Data
   
-  breaks <- pretty(data$`Pressure [dbar]`, n = 25)
-  cols <- cm.colors(length(breaks)-1)[cut(data$`Pressure [dbar]`,breaks = breaks)]
+  breaks <- pretty(data$Pressure_dbar, n = 25)
+  cols <- cm.colors(length(breaks)-1)[cut(data$Pressure_dbar,breaks = breaks)]
   
   indraw<-grep("ramses_raw_count",colnames(data))
   if (length(indraw)>0){
@@ -554,7 +554,7 @@ if (!is.null(dataprofile)){
   
     
   #CTD
-  #ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,"Number Phase"] %in% c("DES","ASC"))
+  #ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,PhaseName] %in% c("DES","ASC"))
   if ("sbe41" %in% names(dataprofile$data)){
     data<-dataprofile$data$sbe41
     plotCTD(data)
@@ -567,7 +567,7 @@ if (!is.null(dataprofile)){
   
   #PlotEcoStd
   if ("eco" %in% names(dataprofile$data)){
-    if ("chlorophyll_a, [ug/l]" %in% colnames(dataprofile$data$eco)){
+    if ("chlorophyll-a_ug/l" %in% colnames(dataprofile$data$eco)){
       data<-dataprofile$data$eco
       PlotEcoStd(data,technical=technical)
     }
@@ -575,7 +575,7 @@ if (!is.null(dataprofile)){
   
   #PlotOCR504
   if ("ocr" %in% names(dataprofile$data)){  
-    if ("Downwelling_irradiance_380nm" %in% colnames(dataprofile$data$ocr)){
+    if ("Downwelling-irradiance-380nm" %in% colnames(dataprofile$data$ocr)){
       data<-dataprofile$data$ocr
       PlotOCR4(data,meta,technical=technical)
     }
@@ -583,7 +583,7 @@ if (!is.null(dataprofile)){
     
   #PlotcRover
   if ("crover" %in% names(dataprofile$data)){  
-    if ("c_uncalibrated, [1/m]" %in% colnames(dataprofile$data$crover)){
+    if ("c-uncalibrated_1/m" %in% colnames(dataprofile$data$crover)){
       data<-dataprofile$data$crover
       PlotCROVER(data,technical=technical)
     }

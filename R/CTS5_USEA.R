@@ -276,7 +276,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   pattern<-paste("^",floatname,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),"_",sensor,".*.csv",sep="")
   filename<-list.files(pattern=pattern)[1]
   
-  DepthName<-"Pressure [dbar]"
+  DepthName<-"Pressure_dbar"
   
   #****************************
   #* BEGIN Sensors description
@@ -284,51 +284,51 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   ##-1 sbe41
   if (sensor == "sbe41"){
-    data.colnames<-c("Temperature [deg. C.]","Salinity [PSU]")
+    data.colnames<-c("Temperature_degC","Salinity_PSU")
     # SensorType=0
   }
   
   ##-2 do
   if (sensor == "do"){
-    data.colnames<-c("c1phase_doxy [deg]","c2phase_doxy [deg]","temp_doxy [deg. C.]")
+    data.colnames<-c("c1phase_deg","c2phase_deg","tempdoxy_degC")
     # SensorType=3
   }
   
   ##-3 eco
   if (sensor == "eco"){
-    data.colnames<-c("chlorophyll_a, [CN]","beta_theta, [CN]","colored_dissolved_organic_matter, [CN]")
+    data.colnames<-c("chlorophyll-a_CN","beta-theta_CN","colored-dissolved-organic-matter_CN")
     # SensorType=9
   }
   
   ##-4 ocr
   if (sensor == "ocr"){
-    data.colnames<-c("Downwelling_irradiance_380nm, [CN]","Downwelling_irradiance_412nm, [CN]","Downwelling_irradiance_490nm, [CN]","Photosynthetic_Active_Radiation, [CN]")
+    data.colnames<-c("Downwelling-irradiance-380nm_CN","Downwelling-irradiance-412nm_CN","Downwelling-irradiance-490nm_CN","Photosynthetic-Active-Radiation_CN")
     # SensorType=12
   }
   
   ##-5 crover
   if (sensor == "crover"){
-    data.colnames<-c("Corr_Sig_Raw, [CN]")
+    data.colnames<-c("Corr-Sig-Raw_CN")
     # SensorType=18
   }
   
   ##-6 suna
   if (sensor == "suna"){
     data.colnames<-c("CTDtempsuna","CTDsalsuna","SunaInterTemp","SunaSpectroTemp","SunaInterHumidty","SunaDarkSpectrumMean",
-                     "SunaDarkSpectrumSD","nitrate_concentration, [micoMol/l]","SunaAbsorbanceFitResuduals",paste("OutSpectrum",1:90,sep=""))
+                     "SunaDarkSpectrumSD","nitrate-concentration_uMol/l","SunaAbsorbanceFitResuduals",paste("OutSpectrum",1:90,sep=""))
     # SensorType=21
   }
   
   ##-7 sbeph
   if (sensor == "sbeph"){
-    data.colnames<-"pH [mV]"
+    data.colnames<-"pH_mV"
     # SensorType=22
   }
   
   ##-8 uvp6_lpm
   if (sensor == "uvp6_lpm"){
     OctopusClass<-c(64, 80.6, 102, 128, 161, 203, 256, 323, 406, 512, 645, 813, 1020, 1290, 1630, 2050, 2580, 3250, 4100)
-    OctopusClass<-paste("[",OctopusClass[1:18],",",OctopusClass[2:19],"[ (um)",sep="")
+    OctopusClass<-paste("[",OctopusClass[1:18],",",OctopusClass[2:19],"[(um)",sep="")
     
     data.colnames<-c(paste("NP_",OctopusClass,sep=""),paste("MG_",OctopusClass,sep=""))
     
@@ -454,7 +454,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
       
     }
     
-    colnames(Dataclean)[3:7]<-c("Number Cycle","Number Pattern","Number Phase","Files","SensorType")
+    colnames(Dataclean)[3:7]<-c("NumberCycle","NumberPattern","PhaseName","Files","SensorType")
     
     if (sensor %in% c("uvp6_lpm")){
       Dataclean<-cbind(Dataclean[,2],Dataclean[,9],Dataclean[,3:8],Dataclean[,1],Dataclean[,-(1:9)])
@@ -544,7 +544,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
 
 cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,dec="."){
   
-EnTeteCom<-c("Pressure [dbar]","Date","Number Cycle","Number Pattern","Number Phase","Files","SensorType","processing")
+EnTeteCom<-c("Pressure_dbar","Date","NumberCycle","NumberPattern","PhaseName","Files","SensorType","processing")
 
 dataMerged<-cts5_readcsv(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber,sensor=sensors[1],dec=dec)  
 
@@ -595,11 +595,11 @@ return(dataMerged)
 #' @param metadata is a list containing technical data including calibration coefficients 
 #' obtained by using \code{\link{cts5_readMetaSensor}}
 #' @param dataprofile data and technical files read from \code{\link{cts5_readProfile}}
-#' @param sensors list of sensor to process
+#' @param ProcessUncalibrated if True, process physical data with default calibration if needed
 #' 
 #' @return data.frame containing the data
 #' 
-#' @details calibration coefficients are usually in 00_technical.txt file.
+#' @details calibration coefficients are usually in 00_metadata.xml file.
 #' 
 #' @examples 
 #' 
@@ -620,93 +620,110 @@ return(dataMerged)
 #' 
 #' @export
 #'
-cts5_ProcessData<-function(metadata,dataprofile){
+cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
   ### ECO
   if ("eco" %in% names(dataprofile$data)) {
     
     if (!is.null(metadata$SENSOR_ECO)){
-    
-      ## Raw or mean
-      if ("chlorophyll_a, [CN]" %in% colnames(dataprofile$data$eco)){
-        dataprofile$data$eco[,"chlorophyll_a, [ug/l]"]<-metadata$SENSOR_ECO$CHANNEL_01[1]*(dataprofile$data$eco[,"chlorophyll_a, [CN]"]-metadata$SENSOR_ECO$CHANNEL_01[2])
-        dataprofile$data$eco[,"beta_theta, [1/m.sr]"]<-metadata$SENSOR_ECO$CHANNEL_02[1]*(dataprofile$data$eco[,"beta_theta, [CN]"]-metadata$SENSOR_ECO$CHANNEL_02[2])
-        dataprofile$data$eco[,"colored_dissolved_organic_matter, [ppb]"]<-metadata$SENSOR_ECO$CHANNEL_03[1]*(dataprofile$data$eco[,"colored_dissolved_organic_matter, [CN]"]-metadata$SENSOR_ECO$CHANNEL_03[2])
-      }
       
-      ## SD
-      if ("SD(chlorophyll_a, [CN])" %in% colnames(dataprofile$data$eco)){
-        dataprofile$data$eco[,"SD(chlorophyll_a, [ug/l])"]<-metadata$SENSOR_ECO$CHANNEL_01[1]*dataprofile$data$eco[,"SD(chlorophyll_a, [CN])"]
-        dataprofile$data$eco[,"SD(beta_theta, [1/m.sr])"]<-metadata$SENSOR_ECO$CHANNEL_02[1]*dataprofile$data$eco[,"SD(beta_theta, [CN])"]
-        dataprofile$data$eco[,"SD(colored_dissolved_organic_matter, [ppb])"]<-metadata$SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored_dissolved_organic_matter, [CN])"]
-        
-      }
+      SENSOR_ECO<-metadata$SENSOR_ECO
     }
     else {
       cat("!! Warning : No ECO calibration found \n")
+      
+      if (ProcessUncalibrated){
+        cat("!! Default calibration is used \n")
+        SENSOR_ECO<-list(CHANNEL_01=c(0.0073,47.0000),CHANNEL_02=c(1.753e-06,4.700e+01),CHANNEL_03=c(0.0907,50.0000))
+      }
+      
+      
     }
+      
     
+    ## Raw or mean
+    if ("chlorophyll-a_CN" %in% colnames(dataprofile$data$eco)){
+      dataprofile$data$eco[,"chlorophyll-a_ug/l"]<-SENSOR_ECO$CHANNEL_01[1]*(dataprofile$data$eco[,"chlorophyll-a_CN"]-SENSOR_ECO$CHANNEL_01[2])
+      dataprofile$data$eco[,"beta-theta_1/msr"]<-SENSOR_ECO$CHANNEL_02[1]*(dataprofile$data$eco[,"beta-theta_CN"]-SENSOR_ECO$CHANNEL_02[2])
+      dataprofile$data$eco[,"colored-dissolved-organic-matter_ppb"]<-SENSOR_ECO$CHANNEL_03[1]*(dataprofile$data$eco[,"colored-dissolved-organic-matter_CN"]-SENSOR_ECO$CHANNEL_03[2])
+    }
+      
+    ## SD
+    if ("SD(chlorophyll-a_CN)" %in% colnames(dataprofile$data$eco)){
+      dataprofile$data$eco[,"SD(chlorophyll-a_ug/l)"]<-SENSOR_ECO$CHANNEL_01[1]*dataprofile$data$eco[,"SD(chlorophyll-a_CN)"]
+      dataprofile$data$eco[,"SD(beta-theta_1/msr)"]<-SENSOR_ECO$CHANNEL_02[1]*dataprofile$data$eco[,"SD(beta-theta_CN)"]
+      dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_ppb)"]<-SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_CN)"]
+      }
   }
   
   ### OCR
   if ("ocr" %in% names(dataprofile$data)) {
-    if (!is.null(metadata$SENSOR_OCR) & ("Downwelling_irradiance_380nm, [CN]" %in% colnames(dataprofile$data$ocr))){
-      dataprofile$data$ocr[,"Downwelling_irradiance_380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
-        (dataprofile$data$ocr[,"Downwelling_irradiance_380nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_01[1])
+    if (!is.null(metadata$SENSOR_OCR) & ("Downwelling-irradiance-380nm_CN" %in% colnames(dataprofile$data$ocr))){
+      dataprofile$data$ocr[,"Downwelling-irradiance-380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
+        (dataprofile$data$ocr[,"Downwelling-irradiance-380nm_CN"]-metadata$SENSOR_OCR$CHANNEL_01[1])
       
-      dataprofile$data$ocr[,"Downwelling_irradiance_412nm"]<-metadata$SENSOR_OCR$CHANNEL_02[2]*metadata$SENSOR_OCR$CHANNEL_02[3]*
-        (dataprofile$data$ocr[,"Downwelling_irradiance_412nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_02[1])
+      dataprofile$data$ocr[,"Downwelling-irradiance-412nm"]<-metadata$SENSOR_OCR$CHANNEL_02[2]*metadata$SENSOR_OCR$CHANNEL_02[3]*
+        (dataprofile$data$ocr[,"Downwelling-irradiance-412nm_CN"]-metadata$SENSOR_OCR$CHANNEL_02[1])
       
-      dataprofile$data$ocr[,"Downwelling_irradiance_490nm"]<-metadata$SENSOR_OCR$CHANNEL_03[2]*metadata$SENSOR_OCR$CHANNEL_03[3]*
-        (dataprofile$data$ocr[,"Downwelling_irradiance_490nm, [CN]"]-metadata$SENSOR_OCR$CHANNEL_03[1])
+      dataprofile$data$ocr[,"Downwelling-irradiance-490nm"]<-metadata$SENSOR_OCR$CHANNEL_03[2]*metadata$SENSOR_OCR$CHANNEL_03[3]*
+        (dataprofile$data$ocr[,"Downwelling-irradiance-490nm_CN"]-metadata$SENSOR_OCR$CHANNEL_03[1])
       
-      dataprofile$data$ocr[,"Photosynthetic_Active_Radiation"]<-metadata$SENSOR_OCR$CHANNEL_04[2]*metadata$SENSOR_OCR$CHANNEL_04[3]*
-        (dataprofile$data$ocr[,"Photosynthetic_Active_Radiation, [CN]"]-metadata$SENSOR_OCR$CHANNEL_04[1])
+      dataprofile$data$ocr[,"Photosynthetic-Active-Radiation"]<-metadata$SENSOR_OCR$CHANNEL_04[2]*metadata$SENSOR_OCR$CHANNEL_04[3]*
+        (dataprofile$data$ocr[,"Photosynthetic-Active-Radiation_CN"]-metadata$SENSOR_OCR$CHANNEL_04[1])
       
       }
   }
   
   ### crover
-  if ("crover" %in% names(dataprofile$data)) {
-    if ("Corr_Sig_Raw, [CN]" %in% colnames(dataprofile$data$crover)){
+  if (("crover" %in% names(dataprofile$data)) & ProcessUncalibrated) {
+    if ("Corr-Sig-Raw_CN" %in% colnames(dataprofile$data$crover)){
       CSCdark=0
       CSCcal=12766
       x=0.25
-      dataprofile$data$crover[,"c_uncalibrated, [1/m]"] <- -log((dataprofile$data$crover[,"Corr_Sig_Raw, [CN]"]-CSCdark)/(CSCcal-CSCdark))/x
+      dataprofile$data$crover[,"c-uncalibrated_1/m"] <- -log((dataprofile$data$crover[,"Corr-Sig-Raw_CN"]-CSCdark)/(CSCcal-CSCdark))/x
     }
   }
   
   ### DO
   if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
-    if ("c1phase_doxy [deg]" %in% colnames(dataprofile$data$do)){
+    if ("c1phase_deg" %in% colnames(dataprofile$data$do)){
       
     if (is.list(metadata$SENSOR_DO)){
       coefs<-metadata$SENSOR_DO$SVU_FOIL_COEFF
     }
       else {
+      cat("!! Warning : No DO calibration found \n")
       coefs<-NULL
+      
+      if (ProcessUncalibrated){
+        cat("!! Default calibration is used \n")
+        coefs <- c(5.6725661e-03,8.2915275e-05,1.0033795e-06,6.2236942e-02,-9.3470722e-05,-1.4554620e-02,1.2110645e-03) # From Henry
+      }
+      
       }
         
-      dataprofile$data$do[,"doxy_uncalibrated"]<-Process_DO_Bittig(C1phase=dataprofile$data$do[,"c1phase_doxy [deg]"],C2phase=dataprofile$data$do[,"c2phase_doxy [deg]"],temp=dataprofile$data$do[,"temp_doxy [deg. C.]"],Pres=dataprofile$data$do[,"Pressure [dbar]"],
-                                             tempCTD=dataprofile$data$sbe41[,"Temperature [deg. C.]"],salCTD=dataprofile$data$sbe41[,"Salinity [PSU]"],PRESCTD=dataprofile$data$sbe41[,"Pressure [dbar]"],
+      if (!is.null(coefs)){
+      dataprofile$data$do[,"doxy_uncalibrated"]<-Process_DO_Bittig(C1phase=dataprofile$data$do[,"c1phase_deg"],C2phase=dataprofile$data$do[,"c2phase_deg"],temp=dataprofile$data$do[,"tempdoxy_degC"],Pres=dataprofile$data$do[,"Pressure_dbar"],
+                                             tempCTD=dataprofile$data$sbe41[,"Temperature_degC"],salCTD=dataprofile$data$sbe41[,"Salinity_PSU"],PRESCTD=dataprofile$data$sbe41[,"Pressure_dbar"],
                                              COEF = coefs)
+      }
     }
   }
   
   ### sbepH
   if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
-    if ("pH [mV]" %in% colnames(dataprofile$data$sbeph)){
+    if (("pH_mV" %in% colnames(dataprofile$data$sbeph)) & ProcessUncalibrated){
       
       pH_Uncal<-rep(NA,nrow(dataprofile$data$sbeph))
       
       ##DESCENT
-      ind<-dataprofile$data$sbeph$`Number Phase`=="DES"
+      ind<-dataprofile$data$sbeph$PhaseName=="DES"
       if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
         ## Il y a des donnees en descent
         pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="DES")
       }
       ##ASCENT
-      ind<-dataprofile$data$sbeph$`Number Phase`=="ASC"
+      ind<-dataprofile$data$sbeph$PhaseName=="ASC"
       if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
         ## Il y a des donnees en Asc
         pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="ASC")
@@ -788,8 +805,8 @@ cts5_ProcessData<-function(metadata,dataprofile){
 SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
   
   if (!is.null(dim(dataMerged))){  
-    filename<-paste(subdir,"/",login,"_",formatC(unique(dataMerged[,"Number Cycle"]),width=3,flag="0"),"_",
-                    formatC(unique(dataMerged[,"Number Pattern"]),width=2,flag="0"),".csv",sep="")
+    filename<-paste(subdir,"/",login,"_",formatC(unique(dataMerged[,"NumberCycle"]),width=3,flag="0"),"_",
+                    formatC(unique(dataMerged[,"NumberPattern"]),width=2,flag="0"),".csv",sep="")
     cat("save data : ",filename,"\n")
     
     if (!is.null(GPS)){
@@ -881,7 +898,7 @@ for (sensor in sensors){ #sensor<-sensors[1]
   data<-try(cts5_readcsv(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber,sensor=sensor,dec=dec))
   
   if (is.data.frame(data)){
-    dataprofile$data[[sensor]]<-data[,!(colnames(data) %in% c("Number Cycle","Number Pattern","Files","SensorType"))]
+    dataprofile$data[[sensor]]<-data[,!(colnames(data) %in% c("NumberCycle","NumberPattern","Files","SensorType"))]
   }
 }
 

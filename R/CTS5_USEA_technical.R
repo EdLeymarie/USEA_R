@@ -360,12 +360,12 @@ if (!is.null(dataprofile$technical) & (length(dataprofile$data)>0)){
     
       temp<-dataprofile$data[[SensorType]]
       
-      temp<-c(nrow(temp[temp$`Number Phase`=="DES",]),
-              nrow(temp[temp$`Number Phase`=="PAR",]),
-              nrow(temp[temp$`Number Phase`=="DEE",]),
-              nrow(temp[temp$`Number Phase`=="SHP",]),
-              nrow(temp[temp$`Number Phase`=="ASC",]),
-              nrow(temp[temp$`Number Phase`=="SUR",]))
+      temp<-c(nrow(temp[temp$PhaseName=="DES",]),
+              nrow(temp[temp$PhaseName=="PAR",]),
+              nrow(temp[temp$PhaseName=="DEE",]),
+              nrow(temp[temp$PhaseName=="SHP",]),
+              nrow(temp[temp$PhaseName=="ASC",]),
+              nrow(temp[temp$PhaseName=="SUR",]))
     }
     else {
       temp<-rep(0,6)

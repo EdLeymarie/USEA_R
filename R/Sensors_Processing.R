@@ -85,19 +85,19 @@ Process_DO_Bittig <- function(C1phase,C2phase,temp, Pres,tempCTD,salCTD, PRESCTD
 Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coefsp=c(2.5064E-05,-4.4107E-08,4.7311E-11,-2.8822E-14,9.2132E-18,-1.1965E-21)){
   phtot=NULL
   
-  dataCTD<-data$sbe41[data$sbe41$`Number Phase`==NumberPhase,]
-  datapH<-data$sbeph[data$sbeph$`Number Phase`==NumberPhase,]
+  dataCTD<-data$sbe41[data$sbe41$PhaseName==NumberPhase,]
+  datapH<-data$sbeph[data$sbeph$PhaseName==NumberPhase,]
   
-  if ((length(datapH$`pH [mV]`)>10) & (length(dataCTD$`Temperature [deg. C.]`)>10)){
+  if ((length(datapH$pH_mV)>10) & (length(dataCTD$Temperature_degC)>10)){
     #il y a assez de data
     
     #interpolation des donnees CTD
-    t<-approxfun(dataCTD$`Pressure [dbar]`,dataCTD$`Temperature [deg. C.]`,rule = 2,ties="mean")
-    S<-approxfun(dataCTD$`Pressure [dbar]`,dataCTD$`Salinity [PSU]`,rule = 2,ties="mean")
+    t<-approxfun(dataCTD$Pressure_dbar,dataCTD$Temperature_degC,rule = 2,ties="mean")
+    S<-approxfun(dataCTD$Pressure_dbar,dataCTD$Salinity_PSU,rule = 2,ties="mean")
     
     #calcul
-    Press<-datapH$`Pressure [dbar]`
-    Vrs<-datapH$`pH [mV]`
+    Press<-datapH$Pressure_dbar
+    Vrs<-datapH$pH_mV
     Temp<-t(Press)
     Tk<-273.15+Temp #degrees Kelvin
     Salt<-S(Press)

@@ -24,8 +24,8 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
   if (!is.null(dim(dataMerged))){
     
     ## Enregistrement 
-    NAME<-paste(login,formatC(unique(dataMerged$`Number Cycle`),width=3,flag="0"),
-                formatC(unique(dataMerged$`Number Pattern`),width=2,flag="0"),sep="-")
+    NAME<-paste(login,formatC(unique(dataMerged$NumberCycle),width=3,flag="0"),
+                formatC(unique(dataMerged$NumberPattern),width=2,flag="0"),sep="-")
     
     
     ## Ajout GPS
@@ -76,7 +76,7 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       colnames(dataUVP)[(8+18):(8+35)]<-paste("GREY_ SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
 
       ## LPM Ascent
-      ind<-dataUVP$`Number Phase`=="ASC"
+      ind<-dataUVP$PhaseName=="ASC"
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_LPM.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
@@ -89,7 +89,7 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
         }
       
       ## LPM Parking
-      ind<-dataUVP$`Number Phase`=="PAR"
+      ind<-dataUVP$PhaseName=="PAR"
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_LPM.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-PAR_",UVP6SN,"_TIME_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
@@ -123,14 +123,14 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       colnames(dataUVP)[8:(8+4)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:5,sep="")
       
       ## Black Ascent
-      ind<-dataUVP$`Number Phase`=="ASC"
+      ind<-dataUVP$PhaseName=="ASC"
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
       }
       
       ## Black Parking
-      ind<-dataUVP$`Number Phase`=="PAR"
+      ind<-dataUVP$PhaseName=="PAR"
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_BLACK.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-PAR_",UVP6SN,"_TIME_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")

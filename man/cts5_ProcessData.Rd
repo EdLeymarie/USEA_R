@@ -4,7 +4,7 @@
 \alias{cts5_ProcessData}
 \title{Process data to physical values}
 \usage{
-cts5_ProcessData(metadata, dataprofile)
+cts5_ProcessData(metadata, dataprofile, ProcessUncalibrated = F)
 }
 \arguments{
 \item{metadata}{is a list containing technical data including calibration coefficients 
@@ -12,7 +12,7 @@ obtained by using \code{\link{cts5_readMetaSensor}}}
 
 \item{dataprofile}{data and technical files read from \code{\link{cts5_readProfile}}}
 
-\item{sensors}{list of sensor to process}
+\item{ProcessUncalibrated}{if True, process physical data with default calibration if needed}
 }
 \value{
 data.frame containing the data
@@ -21,7 +21,7 @@ data.frame containing the data
 apply processing to raw values in order to compute physical values
 }
 \details{
-calibration coefficients are usually in 00_technical.txt file.
+calibration coefficients are usually in 00_metadata.xml file.
 }
 \examples{
 

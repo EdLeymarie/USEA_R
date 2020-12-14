@@ -141,17 +141,20 @@ PlotOCR4<-function(data,meta,technical=TRUE){
   
   #Plot Radio
   for (rad in c("Downwelling-irradiance-380nm","Downwelling-irradiance-412nm","Downwelling-irradiance-490nm","Photosynthetic-Active-Radiation")){
+  
     temp<-data[,rad]
-    temp<-temp-min(temp,na.rm=TRUE) #normalisation au minimum
+    #temp<-temp-min(temp,na.rm=TRUE) #normalisation au minimum
     #temp[temp<0]<-NA
     
     xlim=range(temp,na.rm = TRUE, finite = TRUE)
     if (xlim[2]<=0){xlim[2]<-1}  
     if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
-    plot(NULL,NULL,xlim=xlim,ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab=rad,ylab="depth",log="x")
+    plot(NULL,NULL,xlim=xlim,ylim=range(-data[!(data$PhaseName=="PAR"),"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab=rad,ylab="depth",log="x")
     for (i in unique(data[,"PhaseName"])){
-      lines(temp[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+      if (i != "PAR"){
+        lines(temp[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
       }
+    }
   }
   
 }
@@ -283,18 +286,20 @@ PlotSUNA<-function(data,technical=TRUE){
     
     
     ##Spectre
-    indSpec<-grep("OutSpectrum",colnames(data))
-    temp<-data[,indSpec]
-    temp<-temp[,temp[1,]>0]
-    
-    
-    depth_breaks <- pretty(data$Pressure_dbar, n = 50)
-    cs <- list(cols = tim.colors(length(depth_breaks) - 1),breaks = depth_breaks,name = "",unit = "",labels = seq(1,length(depth_breaks), 5))
-    cols <- cs.use(depth_breaks, cs)
-    
-    matplot(t(temp),lty=1,type="l",xlab="pixel",ylab="Suna counts",col=cols) #
-    
-    cs.draw(cs,horiz=T,width = 0.25,pos=1,side = 1)
+    if (technical){
+      indSpec<-grep("OutSpectrum",colnames(data))
+      temp<-data[,indSpec]
+      temp<-temp[,temp[1,]>0]
+      
+      
+      depth_breaks <- pretty(data$Pressure_dbar, n = 50)
+      cs <- list(cols = tim.colors(length(depth_breaks) - 1),breaks = depth_breaks,name = "",unit = "",labels = seq(1,length(depth_breaks), 5))
+      cols <- cs.use(depth_breaks, cs)
+      
+      matplot(t(temp),lty=1,type="l",xlab="pixel",ylab="Suna counts",col=cols) #
+      
+      cs.draw(cs,horiz=T,width = 0.25,pos=1,side = 1)
+    }
     
   }
   
@@ -355,17 +360,16 @@ PlotUVP_lpm<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
-  }
   
-  #Plot Ecart
-  ind<-which(data[,"PhaseName"] == "ASC")
-  if (length(ind)>2){  
-    depth<-data$Pressure_dbar[ind]
-    
-    delta<-depth[-length(depth)]-depth[-1]
-    plot(delta,-depth[-1],log="x",main="delta UVP",xlab="delta [db]",ylab="depth [db]")
+    #Plot Ecart
+    ind<-which(data[,"PhaseName"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$Pressure_dbar[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta UVP",xlab="delta [db]",ylab="depth [db]")
+    }
   }
-  
   
   #### Class
   title_list<-c("Octopus NPart_Class1-6","Octopus NPart_Class7-12","Octopus NPart_Class13-18")
@@ -406,17 +410,17 @@ PlotUVP_blk<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
-  }
   
-  #Plot Ecart
-  ind<-which(data[,"PhaseName"] == "ASC")
-  if (length(ind)>2){  
-    depth<-data$Pressure_dbar[ind]
-    
-    delta<-depth[-length(depth)]-depth[-1]
-    plot(delta,-depth[-1],log="x",main="delta UVP black",xlab="delta [db]",ylab="depth [db]")
-  }
   
+    #Plot Ecart
+    ind<-which(data[,"PhaseName"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$Pressure_dbar[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta UVP black",xlab="delta [db]",ylab="depth [db]")
+    }
+  }
   
   #### Class
     temp<-data[,7:11]

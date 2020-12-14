@@ -996,60 +996,79 @@ cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1){
     }
     
     listini<-list.files(pattern=paste("^",floatname,".*_apmt.ini",sep=""))
-    listini<-cbind(listini,matrix(unlist(strsplit(listini,split="_")),ncol = 4,byrow = T)[,2:3])
-    listini<-data.frame(listini,stringsAsFactors = F)
-    colnames(listini)<-c("filename","c","p")
-    listini$c<-as.numeric(listini$c)
-    listini$p<-as.numeric(listini$p)
     
-    ind<-((CycleNumber >= listini$c) & (PatternNumber > listini$p)) | (CycleNumber > listini$c)
-
-    ind<-max(which(ind))
+    ## More than one inifile
+    if (length(listini)>1){
+      listini<-cbind(listini,matrix(unlist(strsplit(listini,split="_")),ncol = 4,byrow = T)[,2:3])
+      listini<-data.frame(listini,stringsAsFactors = F)
+      colnames(listini)<-c("filename","c","p")
+      listini$c<-as.numeric(listini$c)
+      listini$p<-as.numeric(listini$p)
+      
+      ind<-((CycleNumber >= listini$c) & (PatternNumber > listini$p)) | (CycleNumber > listini$c)
+  
+      ind<-max(which(ind))
+      
+      inifilename<-listini$filename[ind]
+    }
     
-    inifilename<-listini$filename[ind]
+    ## One inifile
+    if (length(listini)==1){
+      inifilename<-listini
+    }
+    
+    if (length(listini)==0){
+      warning("No Inifile for pattern:",paste("^",floatname,".*_apmt.ini",sep=""),"\n")
+    }
     
   }
   
   
   ## read and Parse
-  cat("open:",inifilename,"\n")
-  data<-scan(inifilename,sep="\n",what=character(0))
-  
-  ## 1: split [balise]
-  ind<-grep("^\\[",data)
-  ind<-c(ind,length(data)+1)
-  
-  inifile<-list()
-  
-  for (i in 1:(length(ind)-1)){
-    balisename<-substr(data[ind[i]],2,nchar(data[ind[i]])-1)
-    inifile[[balisename]]<-data[(ind[i]+1):(ind[i+1]-1)]
-  }
-  
-  ## 2: Analyse
-  for (i in 1:length(inifile)){
+  if (file.exists(inifilename)){
+    cat("open:",inifilename,"\n")
+    data<-scan(inifilename,sep="\n",what=character(0))
     
-    inifile[[i]]<-as.list(inifile[[i]])
-    for (j in 1:length(inifile[[i]])){
-      s<-inifile[[i]][[j]][1]
-      
-      s1<-strsplit(s,split = "=")[[1]][1]
-      s2<-strsplit(s,split = "=")[[1]][2]
-      
-      #detection type numeric
-      val<-suppressWarnings(as.numeric(s2))
-      
-      names(inifile[[i]])[j]<-s1
-      if (is.na(val)){
-        inifile[[i]][[j]]<-s2
-      } else {
-        inifile[[i]][[j]]<-as.numeric(s2)
-      }
-      
+    ## 1: split [balise]
+    ind<-grep("^\\[",data)
+    ind<-c(ind,length(data)+1)
+    
+    inifile<-list()
+    
+    for (i in 1:(length(ind)-1)){
+      balisename<-substr(data[ind[i]],2,nchar(data[ind[i]])-1)
+      inifile[[balisename]]<-data[(ind[i]+1):(ind[i+1]-1)]
     }
+    
+    ## 2: Analyse
+    for (i in 1:length(inifile)){
+      
+      inifile[[i]]<-as.list(inifile[[i]])
+      for (j in 1:length(inifile[[i]])){
+        s<-inifile[[i]][[j]][1]
+        
+        s1<-strsplit(s,split = "=")[[1]][1]
+        s2<-strsplit(s,split = "=")[[1]][2]
+        
+        #detection type numeric
+        val<-suppressWarnings(as.numeric(s2))
+        
+        names(inifile[[i]])[j]<-s1
+        if (is.na(val)){
+          inifile[[i]][[j]]<-s2
+        } else {
+          inifile[[i]][[j]]<-as.numeric(s2)
+        }
+        
+      }
+    }
+    
+    return(inifile)
   }
-  
-  return(inifile)
+  else {
+    warning("No Inifile:",inifilename,"\n")
+    return(NULL)
+  }
   
 }
 

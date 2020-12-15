@@ -17,11 +17,11 @@ require(chron)
 #' 
 #' 
 #' 
-findfloatname<-function(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*",
+findfloatname<-function(pattern="^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*",
                         CycleNumber=NULL,PatternNumber=1){
   
 if (!is.null(CycleNumber)){
-  pattern=paste("[[:alnum:]]{4}_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),".*",sep="")
+  pattern=paste("^[[:alnum:]]{4}_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),".*",sep="")
 }
   
 flist<-list.files(pattern=pattern)

@@ -372,7 +372,7 @@ PlotUVP_lpm<-function(data,technical=TRUE){
   }
   
   #### Class
-  title_list<-c("Octopus NPart_Class1-6","Octopus NPart_Class7-12","Octopus NPart_Class13-18")
+  title_list<-c("UVP6 NPart_Class1-6","UVP6 NPart_Class7-12","UVP6 NPart_Class13-18")
   class_list<-rbind(7:12,13:18,19:24)
   
   for (i in 1:length(title_list)){
@@ -423,7 +423,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
   }
   
   #### Class
-    temp<-data[,7:11]
+    temp<-data[,6:10]
     if (sum(temp>0) > 2){
       temp.min<-min(temp[temp>0])
       temp.max<-max(temp)
@@ -624,7 +624,7 @@ if (!is.null(dataprofile)){
     
   #PlotUVP_blk
   if ("uvp6_blk" %in% names(dataprofile$data)){  
-    data<-dataprofile$data$uvp6_lpm
+    data<-dataprofile$data$uvp6_blk
     PlotUVP_blk(data,technical=technical)
   }        
   

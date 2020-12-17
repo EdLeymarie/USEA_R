@@ -6,41 +6,35 @@
 #'
 #'
 #' @param login login of the float used as prefix
-#' @param dataMerged Merged data obtained by \code{\link{cts5_concatProfile}}
+#' @param dataprofile Merged data obtained by \code{\link{cts5_readProfile}}
 #' @param subdir sub directory where to save the data
-#' @param GPS GPS data to be included in the csv. obtained by \code{\link{cts5_readtechnical}}
 #' 
-#' @details 
+#' @examples 
 #' 
-#' GPS could also be set as a vector:
-#' GPS<-c(Lat,Lon)
+#' Save_UVP62EcoTaxa(login,dataprofile,Meta$SENSORS$SENSOR_UVP6$HW_CONF,subdir="./uvp6/")
+#' 
 #' 
 #' 
 #' @export
 #'
 #SaveToCTS5 : Entete normalisee CTS5, sep="\t"
-Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NULL){
+Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
   
-  if (!is.null(dim(dataMerged))){
+  if (!is.null(dim(dataprofile$data$uvp6_lpm))){
     
     ## Enregistrement 
-    NAME<-paste(login,formatC(unique(dataMerged$NumberCycle),width=3,flag="0"),
-                formatC(unique(dataMerged$NumberPattern),width=2,flag="0"),sep="-")
+    NAME<-paste(subdir,login,"-",formatC(unique(dataprofile$CycleNumber),width=3,flag="0"),"-",
+                formatC(unique(dataprofile$PatternNumber),width=2,flag="0"),sep="")
     
     
     ## Ajout GPS
     Lat<-NA
     Lon<-NA
-    if (!is.null(GPS)){
-      Lat<-as.numeric(GPS[1])
-      Lon<-as.numeric(GPS[2])
+    if (!is.null(dataprofile$technical)){
+      Lat<-as.numeric(dataprofile$technical$GPS$`lat (deg)`)
+      Lon<-as.numeric(dataprofile$technical$GPS$`lon (deg)`)
     }
     
-    ## Formatage des colonnes
-    dataTemp<-cbind(dataMerged[,2:1],Lat,Lon,dataMerged[,-(1:2)])
-    dataTemp[,1]<-format(dataTemp[,1],format="%Y%m%dT%H%M%S")
-    colnames(dataTemp)[1:2]<-c("DATE_TIME","PRES_decibar")
-    colnames(dataTemp)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
     
     ## Formatage UVP6_HW_CONF
     UVP6_HW_CONF<-strsplit(UVP6_HW_CONF,split = ",")[[1]]
@@ -58,15 +52,20 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
     
     #**************************************************************
     ## 1- data LPM
-    ind<-(dataTemp[,"SensorType"]==109)
-    if (sum(ind)>0){
+    if (nrow(dataprofile$data$uvp6_lpm)>0){
+      
+      ## Formatage des colonnes
+      dataUVP<-cbind(dataprofile$data$uvp6_lpm[,1:2],Lat,Lon,dataprofile$data$uvp6_lpm[,-(1:2)])
+      dataUVP[,1]<-format(dataUVP[,1],format="%Y%m%dT%H%M%S")
+      colnames(dataUVP)[1:2]<-c("DATE_TIME","PRES_decibar")
+      colnames(dataUVP)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
       
       
-      indcol<-c(1:4,7,grep("NSamples",colnames(dataTemp)),grep("UVP6_Temp",colnames(dataTemp))
-                ,grep("NP_.*(um)",colnames(dataTemp))
-                ,grep("MG_.*(um)",colnames(dataTemp)))
+      indcol<-c(1:5,grep("NSamples",colnames(dataUVP)),grep("UVP6_Temp",colnames(dataUVP))
+                ,grep("NP_.*(um)",colnames(dataUVP))
+                ,grep("MG_.*(um)",colnames(dataUVP)))
       
-      dataUVP<-dataTemp[ind,indcol]
+      dataUVP<-dataUVP[,indcol]
       
       #Formatage Colonnes
       
@@ -74,6 +73,19 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       
       colnames(dataUVP)[8:(8+17)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
       colnames(dataUVP)[(8+18):(8+35)]<-paste("GREY_ SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
+      
+      ## LPM DESCENT
+      ind<-dataUVP$PhaseName=="DES"
+      if (sum(ind)>0){
+        cat("writing:",paste(NAME,"-DES_",UVP6SN,"_DEPTH_LPM.txt",sep=""),"\n")
+        write.table(dataUVP[ind,-5],file = paste(NAME,"-DES_",UVP6SN,"_DEPTH_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
+        
+        ### Fichier META que si il y a des données.
+        cat("writing:",paste(NAME,"-DES_",UVP6SN,"_DEPTH_META.txt",sep=""),"\n")
+        write.table(UVP6_Meta,file = paste(NAME,"-DES_",UVP6SN,"_DEPTH_META.txt",sep=""),col.names = F,row.names = F,quote = F,sep="\t")
+        
+        
+      }
 
       ## LPM Ascent
       ind<-dataUVP$PhaseName=="ASC"
@@ -105,13 +117,18 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
     
     #**************************************************************
     ## 2- data BLACK
-    ind<-(dataTemp[,"SensorType"]==110)
-    if (sum(ind)>0){
+    if (nrow(dataprofile$data$uvp6_blk)>0){
       
-      indcol<-c(1:4,7,grep("uvp-blk_Internal_temp",colnames(dataTemp))
-                ,grep("uvp-blk_Count",colnames(dataTemp)))
+      ## Formatage des colonnes
+      dataUVP<-cbind(dataprofile$data$uvp6_blk[,1:2],Lat,Lon,dataprofile$data$uvp6_blk[,-(1:2)])
+      dataUVP[,1]<-format(dataUVP[,1],format="%Y%m%dT%H%M%S")
+      colnames(dataUVP)[1:2]<-c("DATE_TIME","PRES_decibar")
+      colnames(dataUVP)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
       
-      dataUVP<-dataTemp[ind,indcol]
+      indcol<-c(1:5,grep("NSamples",colnames(dataUVP)),grep("uvp-blk_Internal_temp",colnames(dataUVP))
+                ,grep("uvp-blk_Count",colnames(dataUVP)))
+      
+      dataUVP<-dataUVP[,indcol]
       
       #Formatage Colonnes
       
@@ -121,6 +138,13 @@ Save_UVP62EcoTaxa<-function(login,dataMerged,UVP6_HW_CONF=NULL,subdir=".",GPS=NU
       #Names
       colnames(dataUVP)[6:7]<-c("IMAGE_NUMBER_PARTICLES","TEMP_PARTICLES")
       colnames(dataUVP)[8:(8+4)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:5,sep="")
+      
+      ## Black Descent
+      ind<-dataUVP$PhaseName=="DES"
+      if (sum(ind)>0){
+        cat("writing:",paste(NAME,"-DES_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),"\n")
+        write.table(dataUVP[ind,-5],file = paste(NAME,"-DES_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
+      }
       
       ## Black Ascent
       ind<-dataUVP$PhaseName=="ASC"

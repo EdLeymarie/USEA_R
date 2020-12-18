@@ -625,6 +625,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   ### ECO
   if ("eco" %in% names(dataprofile$data)) {
     
+    SENSOR_ECO<-NULL
+    
     if (!is.null(metadata$SENSOR_ECO)){
       
       SENSOR_ECO<-metadata$SENSOR_ECO
@@ -640,20 +642,21 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       
     }
       
-    
-    ## Raw or mean
-    if ("chlorophyll-a_CN" %in% colnames(dataprofile$data$eco)){
-      dataprofile$data$eco[,"chlorophyll-a_ug/l"]<-SENSOR_ECO$CHANNEL_01[1]*(dataprofile$data$eco[,"chlorophyll-a_CN"]-SENSOR_ECO$CHANNEL_01[2])
-      dataprofile$data$eco[,"beta-theta_1/msr"]<-SENSOR_ECO$CHANNEL_02[1]*(dataprofile$data$eco[,"beta-theta_CN"]-SENSOR_ECO$CHANNEL_02[2])
-      dataprofile$data$eco[,"colored-dissolved-organic-matter_ppb"]<-SENSOR_ECO$CHANNEL_03[1]*(dataprofile$data$eco[,"colored-dissolved-organic-matter_CN"]-SENSOR_ECO$CHANNEL_03[2])
-    }
-      
-    ## SD
-    if ("SD(chlorophyll-a_CN)" %in% colnames(dataprofile$data$eco)){
-      dataprofile$data$eco[,"SD(chlorophyll-a_ug/l)"]<-SENSOR_ECO$CHANNEL_01[1]*dataprofile$data$eco[,"SD(chlorophyll-a_CN)"]
-      dataprofile$data$eco[,"SD(beta-theta_1/msr)"]<-SENSOR_ECO$CHANNEL_02[1]*dataprofile$data$eco[,"SD(beta-theta_CN)"]
-      dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_ppb)"]<-SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_CN)"]
+    if (!is.null(SENSOR_ECO)){
+      ## Raw or mean
+      if ("chlorophyll-a_CN" %in% colnames(dataprofile$data$eco)){
+        dataprofile$data$eco[,"chlorophyll-a_ug/l"]<-SENSOR_ECO$CHANNEL_01[1]*(dataprofile$data$eco[,"chlorophyll-a_CN"]-SENSOR_ECO$CHANNEL_01[2])
+        dataprofile$data$eco[,"beta-theta_1/msr"]<-SENSOR_ECO$CHANNEL_02[1]*(dataprofile$data$eco[,"beta-theta_CN"]-SENSOR_ECO$CHANNEL_02[2])
+        dataprofile$data$eco[,"colored-dissolved-organic-matter_ppb"]<-SENSOR_ECO$CHANNEL_03[1]*(dataprofile$data$eco[,"colored-dissolved-organic-matter_CN"]-SENSOR_ECO$CHANNEL_03[2])
       }
+        
+      ## SD
+      if ("SD(chlorophyll-a_CN)" %in% colnames(dataprofile$data$eco)){
+        dataprofile$data$eco[,"SD(chlorophyll-a_ug/l)"]<-SENSOR_ECO$CHANNEL_01[1]*dataprofile$data$eco[,"SD(chlorophyll-a_CN)"]
+        dataprofile$data$eco[,"SD(beta-theta_1/msr)"]<-SENSOR_ECO$CHANNEL_02[1]*dataprofile$data$eco[,"SD(beta-theta_CN)"]
+        dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_ppb)"]<-SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_CN)"]
+      }
+    }
   }
   
   ### OCR

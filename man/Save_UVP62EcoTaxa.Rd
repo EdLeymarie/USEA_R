@@ -4,27 +4,22 @@
 \alias{Save_UVP62EcoTaxa}
 \title{save UVP6 data to EcoPart csv format}
 \usage{
-Save_UVP62EcoTaxa(
-  login,
-  dataMerged,
-  UVP6_HW_CONF = NULL,
-  subdir = ".",
-  GPS = NULL
-)
+Save_UVP62EcoTaxa(login, dataprofile, UVP6_HW_CONF = NULL, subdir = "")
 }
 \arguments{
 \item{login}{login of the float used as prefix}
 
-\item{dataMerged}{Merged data obtained by \code{\link{cts5_concatProfile}}}
+\item{dataprofile}{Merged data obtained by \code{\link{cts5_readProfile}}}
 
 \item{subdir}{sub directory where to save the data}
-
-\item{GPS}{GPS data to be included in the csv. obtained by \code{\link{cts5_readtechnical}}}
 }
 \description{
 save UVP6 data to EcoPart csv format
 }
-\details{
-GPS could also be set as a vector:
-GPS<-c(Lat,Lon)
+\examples{
+
+Save_UVP62EcoTaxa(login,dataprofile,Meta$SENSORS$SENSOR_UVP6$HW_CONF,subdir="./uvp6/")
+
+
+
 }

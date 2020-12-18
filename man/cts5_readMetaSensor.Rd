@@ -5,14 +5,14 @@
 \title{read CTS5 Metadata file.}
 \usage{
 cts5_readMetaSensor(
-  floatname = ".*",
-  CycleNumber = NA,
-  PatternNumber = NA,
+  floatname = "",
+  CycleNumber = NULL,
+  PatternNumber = NULL,
   filename = NULL
 )
 }
 \arguments{
-\item{floatname}{hexa name of the float or .* to select all float name.}
+\item{floatname}{hexa name of the float or .* to select all float name. If "" the floatname of the last file transmitted will be used}
 
 \item{CycleNumber}{numeric : number of the cycle to decode. If NA, 
 the last file is decoded}

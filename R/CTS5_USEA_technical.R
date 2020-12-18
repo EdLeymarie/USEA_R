@@ -405,7 +405,7 @@ else {
 #' @description
 #' read CTS5 xml files with float and sensors meta data
 #'
-#' @param floatname hexa name of the float or .* to select all float name.
+#' @param floatname hexa name of the float or .* to select all float name. If "" the floatname of the last file transmitted will be used
 #' @param CycleNumber numeric : number of the cycle to decode. If NA, 
 #' the last file is decoded
 #' @param PatternNumber numeric : number of the Pattern to decode. If NA, 
@@ -424,12 +424,18 @@ else {
 #'
 
 
-cts5_readMetaSensor<-function(floatname=".*",CycleNumber=NA,PatternNumber=NA,filename=NULL){
+cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,filename=NULL){
   
   if (is.null(filename)){
     
+    # Automatic hexa floatname
+    if (floatname==""){
+      floatname<-findfloatname(CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+    }  
+    
+    
     # CycleNumber
-    if (is.na(CycleNumber)) {
+    if (is.null(CycleNumber)) {
       CycleNumber_tmp<-"[[:digit:]]{3}"
     }
     else {
@@ -437,7 +443,7 @@ cts5_readMetaSensor<-function(floatname=".*",CycleNumber=NA,PatternNumber=NA,fil
     }
     
     # PatternNumber
-    if (is.na(PatternNumber)) {
+    if (is.null(PatternNumber)) {
       PatternNumber_tmp<-"[[:digit:]]{2}"
     }
     else {

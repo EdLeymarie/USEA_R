@@ -5,7 +5,7 @@
 \title{find the floatname within a float directory}
 \usage{
 findfloatname(
-  pattern = "[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*",
+  pattern = "^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*",
   CycleNumber = NULL,
   PatternNumber = 1
 )

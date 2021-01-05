@@ -327,10 +327,10 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   ##-8 uvp6_lpm
   if (sensor == "uvp6_lpm"){
-    OctopusClass<-c(64, 80.6, 102, 128, 161, 203, 256, 323, 406, 512, 645, 813, 1020, 1290, 1630, 2050, 2580, 3250, 4100)
-    OctopusClass<-paste("[",OctopusClass[1:18],",",OctopusClass[2:19],"[(um)",sep="")
+    # OctopusClass<-c(64, 80.6, 102, 128, 161, 203, 256, 323, 406, 512, 645, 813, 1020, 1290, 1630, 2050, 2580, 3250, 4100)
+    # OctopusClass<-paste("[",OctopusClass[1:18],",",OctopusClass[2:19],"[(um)",sep="")
     
-    data.colnames<-c(paste("NP_",OctopusClass,sep=""),paste("MG_",OctopusClass,sep=""))
+    data.colnames<-c(paste("NP_Class",1:18,sep=""),paste("MG_Class",1:18,sep=""))
     
     
     data.colnames<-c("Nimages","UVP6_Temp",
@@ -675,6 +675,16 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         (dataprofile$data$ocr[,"Photosynthetic-Active-Radiation_CN"]-metadata$SENSOR_OCR$CHANNEL_04[1])
       
       }
+  }
+  
+  ### uvp6_lpm
+  if ("uvp6_lpm" %in% names(dataprofile$data)) {
+    if (!is.null(metadata$SENSOR_UVP6)){
+      uvp6_Size_class<-strsplit(metadata$SENSOR_UVP6$HW_CONF,split=",")[[1]][26:43]
+      data.colnames<-c(paste("NP_Size_",uvp6_Size_class,sep=""),paste("MG_Size_",uvp6_Size_class,sep=""))
+      
+      colnames(dataprofile$data$uvp6_lpm)[7:42]<-data.colnames
+    }
   }
   
   ### crover

@@ -62,8 +62,8 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
       
       
       indcol<-c(1:5,grep("NSamples",colnames(dataUVP)),grep("UVP6_Temp",colnames(dataUVP))
-                ,grep("NP_.*(um)",colnames(dataUVP))
-                ,grep("MG_.*(um)",colnames(dataUVP)))
+                ,grep("NP_",colnames(dataUVP))
+                ,grep("MG_",colnames(dataUVP)))
       
       dataUVP<-dataUVP[,indcol]
       

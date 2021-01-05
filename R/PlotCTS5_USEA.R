@@ -566,7 +566,15 @@ if (!is.null(dataprofile)){
     mydate<-max(as.POSIXct(dataprofile$data$sbe41[,"Date"],origin = "1970-01-01",tz="UTC"))
     mtext(paste("float:",login,", cycle:",CycleNumber,", pattern:",PatternNumber,", date:",mydate),side=3,line=-1,outer=T,cex=0.6,adj=0.95)
     
+    # if (!is.null(dataprofile$technical$GPS)){
+    #   mtext(paste("Lat: ",dataprofile$technical$GPS$`lat (deg)`,
+    #               ", Lon:",dataprofile$technical$GPS$`lon (deg)`,sep = ""),side=3,line=1,outer=T,cex=0.6,adj=0.95)
+    #   
+    # }
   }
+  
+  
+
   
   
   #PlotEcoStd

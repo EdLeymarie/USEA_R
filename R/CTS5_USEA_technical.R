@@ -106,6 +106,9 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
     ind<-c(ind,length(data)+1)
     
     technical<-list()
+    technical$filename=filename
+    
+    technical$floatname=strsplit(filename,split="_")[[1]][1]
     
     for (i in 1:(length(ind)-1)){
       balisename<-substr(data[ind[i]],2,nchar(data[ind[i]])-1)
@@ -170,7 +173,7 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
         
         # traitement specifique
         if (key %in% c("Flotation","Descent","Deep profile")){
-          technical$PROFILE[[i]]$value<-as.numeric(strsplit(s2,split=" ")[[1]][1])
+          technical$PROFILE[[i]]$volume<-as.numeric(strsplit(s2,split=" ")[[1]][1])
           s3<-strsplit(s2,split=" ")[[1]][3]
           technical$PROFILE[[i]]$Nvalve<-as.numeric(substr(s3,2,nchar(s3)-1))
         }
@@ -186,7 +189,7 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
         }
         
         if (key %in% c("Ascent")){
-          technical$PROFILE[[i]]$vol<-as.numeric(strsplit(s2,split=" ")[[1]][1])
+          technical$PROFILE[[i]]$volume<-as.numeric(strsplit(s2,split=" ")[[1]][1])
           s3<-strsplit(s2,split=" ")[[1]][3]
           s3<-substr(s3,2,nchar(s3)-1)
           technical$PROFILE[[i]]$Npump<-as.numeric(strsplit(s3,split="/")[[1]][1])
@@ -206,7 +209,10 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
         key<-strsplit(s,split = "=")[[1]][1]
         s2<-strsplit(s,split = "=")[[1]][2]
         
-        names(technical$DATA)[i]<-key
+        # pour la key Download, il peut y avoir plusieurs entres !
+        if (!key %in% names(technical$DATA)){
+          names(technical$DATA)[i]<-key
+        }
         
         if (key == "Upload"){
           s3<-strsplit(s2,split=" ")[[1]]
@@ -217,10 +223,24 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
         }
         
         if (key == "Download"){
-          s3<-strsplit(s2,split=" ")[[1]]
-          technical$DATA[[i]]<-list(cmd_accepted=as.numeric(substr(s3[3],2,10)))
-          technical$DATA[[i]]$cmd_refused<-as.numeric(s3[5])
-          technical$DATA[[i]]$cmd_unknown<-as.numeric(s3[7])
+          
+          if (!is.list(technical$DATA$Download)){
+            technical$DATA$Download<-list()
+          }
+          
+          if (sum(grep("command file",s2))>0){
+            s3<-strsplit(s2,split=" ")[[1]]
+            technical$DATA$Download$cmd_accepted=as.numeric(substr(s3[3],2,10))
+            technical$DATA$Download$cmd_refused<-as.numeric(s3[5])
+            technical$DATA$Download$cmd_unknown<-as.numeric(s3[7])
+          }
+          
+          if (sum(grep("script file",s2))>0){
+            s3<-strsplit(s2,split=" ")[[1]]
+            technical$DATA$Download$script=1
+          }
+          
+          
         }
         
         if (key == "Pattern"){
@@ -228,9 +248,15 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
         }
         
         if (!(key %in% c("Upload","Pattern","Download"))){
-          technical$DATA[[i]]<-as.numeric(strsplit(strsplit(s2,split=" ")[[1]][1],split="\\/")[[1]])
+          technical$DATA[[i]]<-list(pts=as.numeric(strsplit(strsplit(s2,split=" ")[[1]][1],split="\\/")[[1]]))
+          technical$DATA[[i]]$TotalPts=sum(technical$DATA[[i]]$pts)
         }
       }
+      
+      
+      ## Elimination des elements sans nom
+      technical$DATA[is.na(names(technical$DATA))]<-NULL
+      
     }
     
     ## POWER
@@ -344,7 +370,7 @@ if (!is.null(dataprofile$technical) & (length(dataprofile$data)>0)){
   sensorList<-sensorList[!(sensorList %in% c("Upload","Pattern","Download"))]
     
   for (sensor in sensorList){ #sensor<-"SBE41"
-    DataCount<-dataprofile$technical$DATA[[sensor]]
+    DataCount<-dataprofile$technical$DATA[[sensor]]$pts
     
     #On elimine le cas subsurface
     if (sensor == "SBE41"){
@@ -553,17 +579,49 @@ list_time_as_character<-function(list){
 #'
 #' @param pattern pattern used to select files
 #' @param CycleNumber vector of cycle number to read. If Null, all technical files are read.
-#' @param include_tech0 not used
+#' @param include_tech0 If True, include 00_technical files
+#' @param FromLastReset IF True, start from the last 00_technical files
 #' 
 #' @return a data.frame 
+#' 
+#' @examples 
+#' 
+#' ## Scan Alarms
+#' tech<-cts5_readalltech()
+#' cbind(tech$Cycle_Number,tech$Pattern_Number,tech[,grep("ALARM",colnames(tech))])
 #' 
 #' 
 #' @export
 #'
 
-cts5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,include_tech0=FALSE){
+cts5_readalltech<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,include_tech0=FALSE,FromLastReset=T){
   
   filenames<-list.files(pattern=pattern)
+  
+  if (length(filenames)>1){
+    filetab<-matrix(unlist(strsplit(filenames,split="_")),ncol=4,byrow = T)
+    
+    #We start from the last 00_technical
+    if (FromLastReset){
+      ind<-filetab[,3]=="00"
+      if (sum(ind)>0){
+        filetab<-filetab[max(which(ind)):length(ind),]
+        filenames<-filenames[max(which(ind)):length(ind)]
+      }
+    }
+    
+    #remove 00_technical
+    if ((!include_tech0) & (length(filenames)>1)){
+      ind<-filetab[,3]=="00"
+      if (sum(ind)>0){
+        filetab<-filetab[!ind]
+        filenames<-filenames[!ind]
+      }
+    }
+    
+    
+    
+  }
   
   if (!is.null(CycleNumber)){
     CycleV<-as.numeric(matrix(unlist(strsplit(filenames,split="_")),ncol=4,byrow = T)[,2])
@@ -584,12 +642,12 @@ cts5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,inclu
       
       dataTech<-list_time_as_character(dataTech)
       
-      dataTech<-c(filename,as.numeric(strsplit(filename,split="_")[[1]][2:3]),
+      dataTech<-c(as.numeric(strsplit(filename,split="_")[[1]][2:3]),
                   unlist(dataTech))
       
       dataTech<-as.data.frame(t(dataTech),stringsAsFactors = F)
       
-      names(dataTech)[1:3]<-c("filename","Cycle_Number","Pattern_Number")
+      names(dataTech)[1:2]<-c("Cycle_Number","Pattern_Number")
       
       #Forcage du nom Alarm a Alarm1
       ind<-names(dataTech) == "ALARM"
@@ -653,7 +711,7 @@ cts5_AllTech_inTab<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,inclu
     warning("no technical file")
   }
   
-  
+
   
   
   return(result)
@@ -756,4 +814,174 @@ cts5_create_kml<-function(pattern=".*technical.*.txt",output="PositionAPMT.kml",
   
 }
 
+#**************************************************
+#' Plot Technical informations in one plot
+#'
+#' @description
+#' Plot Technical informations in one plot
+#'
+#' @param tech technical data read from \code{\link{cts5_readalltech}}
+#' @param output name of the pdf file
+#' @param floatname name of the float to add on the plot
+#' @param toplot list of information to plot
+#' 
+#' @return a data.frame 
+#' 
+#' @examples 
+#' tech<-cts5_readalltech()
+#' cts5_PlotTechnical(tech,floatname=tech$floatname[1])
+#' 
+#' @export
+#'
 
+cts5_PlotTechnical<-function(tech,output="Plot_technical.pdf",floatname="",mfrow=c(4,3),
+                   toplot=c("Date","Pi","Vbatt(V)","Volumes","HydroActions","EV/Pump","Depths","Data","Iridium","Commands","Power","ALARM")){
+  
+  cat("create:",output,"\n",sep="")
+  pdf(file=output, paper="A4",width = 0, height = 0)
+  par(mfrow=mfrow,xpd = TRUE)
+  
+  
+  # Cycle / Date
+  if ("Date" %in% toplot ){
+    ind<-grep("PROFILE.Ascent end.time",colnames(tech))
+    
+    timeTemp<-tech[,ind]
+    timeTemp[timeTemp==""]<-NA
+    
+    if (sum(ind)>0){
+      plot(as.POSIXlt(timeTemp,tz="UTC"),1:dim(tech)[1],type="b",
+           xlab="date",ylab="Profile",main = "Profile vs date")
+    }
+  }
+  
+  if ("Pi" %in% toplot ){
+      ind<-grep("Pi \\(mbar",colnames(tech))
+      if (sum(ind)>0){
+        plot(1:dim(tech)[1],tech[,ind],xlab="profile",ylab=colnames(tech)[ind],main = colnames(tech)[ind],type="b")
+      }
+  }
+  
+  #"Vbatt(V)"
+  if ("Vbatt(V)" %in% toplot ){
+    ind<-grep("Vbatt",colnames(tech))
+    if (sum(ind)>0){
+      matplot(1:dim(tech)[1],tech[,ind],pch=1,xlab="profile",ylab="(V)",type="b")  
+      title(main="Vbatt(V)")
+      legend("topleft",inset = c(0, -0.1),legend=c("Vbatt(V)","Vbatt-peak-min(V)"),lty=1,col=1:2,cex=0.5,ncol=2,bty="n")
+    }
+  }
+  
+  mtext(paste("float:",floatname,", Process:",as.character(Sys.time())),side=3,line=-1,outer=T,cex=0.6,adj=0.95)
+  
+  #Volumes
+  if ("Volumes" %in% toplot ){
+    ind<-c(grep("Descent.volume",colnames(tech)),grep("Ascent.volume",colnames(tech)),
+           grep("Flotation.volume",colnames(tech)))
+    if (sum(ind)>0){
+      matplot(1:dim(tech)[1],tech[,ind],pch=1,xlab="profile",ylab="(cc)",type="b")  
+      title(main="Volumes")
+      legend("topleft",inset = c(0, -0.1),legend=c("Descent(cc)","Ascent(cc)","Flotation(cc)"),lty=1,col=1:3,cex=0.5,ncol=3,bty="n")
+    }
+  }
+  
+  #HydroActions
+  if ("HydroActions" %in% toplot ){
+    ind<-c(grep("Descent.Nvalve",colnames(tech)),grep("Ascent.Npump",colnames(tech)))
+    if (sum(ind)>0){
+      matplot(1:dim(tech)[1],tech[,ind],pch=1,xlab="profile",ylab="(N)",type="b")  
+      title(main=c("Descent(N), Ascent(N)"))
+      legend("topleft",inset = c(0, -0.1),legend=c("Descent(N)","Ascent(N)","Ascent_takeoff(N)"),lty=1,col=1:3,cex=0.5,ncol=3,bty="n")
+    }
+  }
+  
+  ## "EV/Pump"
+  if ("EV/Pump" %in% toplot ){
+    ind<-grep("POWER.EV",colnames(tech))
+    if (sum(ind)>0){
+      matplot(1:dim(tech)[1],tech[,ind],pch=1,xlab="profile",ylab="time (cs)",type="b")  
+      title(main=c("EV(cs), Pump(cs)"))
+      legend("topleft",inset = c(0, -0.1),legend=c("EV(cs)","Pump(cs)"),lty=1,col=1:2,cex=0.5,ncol=2,bty="n")
+    }
+  }
+  
+  ## Depths
+  if ("Depths" %in% toplot ){
+    ind<-c(grep("PROFILE.Park.MinDepth",colnames(tech)),grep("PROFILE.Park.MaxDepth",colnames(tech)),
+           grep("Ascent.from",colnames(tech)))
+    if (sum(ind)>0){
+      matplot(1:dim(tech)[1],tech[,ind],pch=1,xlab="profile",ylab="Depth (dbar)",type="b")  
+      title(main="Depths")
+      legend("topleft",inset = c(0, -0.1),legend=c("Park Min depth","Park Maxdepth","Ascent.from"),lty=1,col=1:3,cex=0.5,ncol=3,bty="n")
+    }
+  }
+  
+  ## Data
+  if ("Data" %in% toplot ){
+    ind<-grep("DATA.*.TotalPts",colnames(tech))
+    if (sum(ind)>0){
+      matplot(1:dim(tech)[1],tech[,ind],pch=1:4,xlab="profile",ylab="Points per Sensor",type="b")  
+      sensornames<-colnames(tech)[ind]
+      sensornames<-unlist(strsplit(sensornames,split="\\."))
+      sensornames<-sensornames[!(sensornames %in% c("DATA","TotalPts"))]
+      legend("topleft",inset = c(0, -0.15),legend=sensornames,pch=1:4,lty=1:5,col=1:6,ncol=4,cex=0.5,bty="n") 
+    }
+  }
+  
+  ## "Iridium"
+  if ("Iridium" %in% toplot ){
+    if (sum(grep("DATA.Upload",colnames(tech)))>0){
+      plot(1:dim(tech)[1],tech[,"DATA.Upload.volume"],xlab="profile",ylab="Upload(ko)",type="b")
+      par(new=TRUE)
+      plot(1:dim(tech)[1],tech[,"DATA.Upload.speed"],type="b",axes=FALSE,col=4,xlab="",ylab="")
+      axis(4,col=4,col.axis=4)
+      title(main="Upload Ko and Ko/min")
+      
+      # plot(1:dim(tech)[1],tech[,"DATA.Upload.Nfiles"],xlab="profile",ylab="Upload(files)",type="b")
+      # par(new=TRUE)
+      # plot(1:dim(tech)[1],tech[,"DATA.Upload.Nsessions"],type="b",axes=FALSE,col=4,xlab="",ylab="")
+      # axis(4,col=4,col.axis=4)
+      # title(main="Upload Nbr Files and Iridium session")
+    }
+  }
+  
+  ## "Commands"
+  if ("Commands" %in% toplot ){
+    ind<-grep("DATA.Download",colnames(tech))
+    if (sum(ind)>0){
+      matplot(1:dim(tech)[1],tech[,ind],type="p",pch=16,xlab="profile",ylab="Count")
+      legend("topleft",inset = c(0, -0.1),legend=c("Command_Accepted","Command_Refused","Command_Unknown","Script"),pch=16,col=1:4,ncol=2,cex=0.5,bty="n") 
+      title(main="telecommands")
+    }
+  }
+  
+  ## "Power"
+  if ("Power" %in% toplot ){
+    ind<-c(grep("POWER.*min",colnames(tech)),grep("POWER.GPS",colnames(tech)))
+    matplot(1:dim(tech)[1],tech[,ind],type="l",pch=1,xlab="profile",ylab="time (min/s)",log="y")
+    legend("topleft",inset = c(0, -0.3),legend=colnames(tech)[ind],lty=1:5,col=1:6,ncol=2,cex=0.5,bty="n") 
+    #title(main="Power")
+  }
+  
+  ## "ALARM"
+  if ("ALARM" %in% toplot ){
+    alarm<-cbind(tech$Cycle_Number,tech$Pattern_Number,tech[,grep("ALARM",colnames(tech))])
+    #delete (N)
+    alarmU<-NULL
+    for (c in 3:ncol(alarm)){
+      alarm[,c]<-unlist(lapply(alarm[,c],FUN=function(x){strsplit(x,split="\\(")[[1]][1]}))
+      alarmU<-c(alarmU,alarm[,c])
+    }
+    
+    alarmU<-unique(alarmU)
+    alarmU<-alarmU[!is.na(alarmU)]
+    plot(NULL,NULL,xlab="Profile",ylab="ALARM",xlim=c(1,dim(tech)[1]),ylim=c(0,ncol(alarm)-2),main="Alarms")
+    for (c in 3:ncol(alarm)){
+      points(1:dim(tech)[1],rep(c-2,dim(tech)[1]),pch=16,col=match(alarm[,c],alarmU))
+    }
+    legend("bottomleft",alarmU,col=1:length(alarmU),pch=16,cex=0.5,bty="n")
+  } 
+  
+  dev.off()
+  
+}

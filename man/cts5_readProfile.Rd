@@ -38,7 +38,7 @@ concat them into a list
 
 login="lovuse001a"
 
-Meta<-cts5_readMetaSensor(floatname=floatname)
+Meta<-cts5_readMetaSensor()
 
 cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 

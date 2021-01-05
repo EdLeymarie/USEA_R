@@ -829,7 +829,7 @@ cts5_create_kml<-function(pattern=".*technical.*.txt",output="PositionAPMT.kml",
 #' 
 #' @examples 
 #' tech<-cts5_readalltech()
-#' cts5_PlotTechnical(tech,floatname=tech$floatname[1])
+#' cts5_PlotTechnical(tech,output="Plot_technical.pdf",floatname=tech$floatname[1])
 #' 
 #' @export
 #'

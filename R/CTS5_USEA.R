@@ -516,21 +516,17 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
 
 #**************************************************
 
-# Concat USEA data for a profile
+# convert to ASCII
 
 #**************************************************
 
-#' cts5_concatProfile : Concat .csv files to one data.frame
+#' convert dataprofile list object to one data.frame
 #'
 #' @description
-#' read NKE .csv ASCII files obtained from \code{\link{cts5_decode}} and 
-#' concat them into one data.frame
-#'
-#' @param floatname hexa name of the float
-#' @param CycleNumber numeric : number of the cycle to decode
-#' @param PatternNumber numeric : number of the Pattern to decode
-#' @param sensors list of sensor to decode
-#' @param dec decimal character in ASCII
+#' convert dataprofile list object to one data.frame
+#' 
+#' @param dataprofile data list from \code{\link{cts5_readprofile}} or \code{\link{cts5_ProcessData}}
+#' @param AddGPS if TRUE, add GPS from technical
 #' 
 #' @return data.frame containing the data
 #' 
@@ -538,20 +534,45 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
 #' as explained in \code{\link{cts5_readcsv}}
 #' 
 #' @examples 
-#' dataMerged<-usea_concatProfile(floatname="ffff",CycleNumber=275)
 #' 
+#' login="lovuse001a"
+#' 
+#' Meta<-cts5_readMetaSensor()
+#'
+#' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
+#'
+#' dataprofile<-cts5_readProfile(CycleNumber=c,PatternNumber = p,include.inifile=T)
+#' 
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+#' 
+#' dataMerged<-cts5_convert2Ascii(dataprofile)
+#' 
+#' cts5_save2Ascii(login = login,dataMerged = dataMerged,subdir="./csv/")
+#' 
+#' @export
 #'
 
-cts5_concatProfile<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensors=CTS5_supported_sensors,dec="."){
+cts5_convert2Ascii<-function(dataprofile,AddGPS=T){
   
-EnTeteCom<-c("Pressure_dbar","Date","NumberCycle","NumberPattern","PhaseName","Files","SensorType","processing")
+EnTeteCom<-c("Pressure_dbar","Date","CycleNumber","PatternNumber","PhaseName","SensorType","processing")
 
-dataMerged<-cts5_readcsv(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber,sensor=sensors[1],dec=dec)  
+dataMerged<-NULL
 
-if (length(sensors)>1){
-  for (sensor in sensors[-1]){
+if (!is.null(dataprofile$data)){
+
+  dataMerged<-dataprofile$data[[1]]
+  dataMerged$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[1]),nrow(dataMerged))
+  dataMerged$CycleNumber<-rep(dataprofile$CycleNumber,nrow(dataMerged))
+  dataMerged$PatternNumber<-rep(dataprofile$PatternNumber,nrow(dataMerged))
+  dataMerged<-cbind(dataMerged[,EnTeteCom],dataMerged[,!(colnames(dataMerged) %in% EnTeteCom)])
+
+  if (length(dataprofile$data)>1){
+    for (i in 2:length(dataprofile$data)){
     
-    data<-try(cts5_readcsv(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber,sensor=sensor,dec=dec))
+    data<-dataprofile$data[[i]]
+    data$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[i]),nrow(data))
+    data$CycleNumber<-rep(dataprofile$CycleNumber,nrow(data))
+    data$PatternNumber<-rep(dataprofile$PatternNumber,nrow(data))
     
     if (is.data.frame(data)){
       addCol<-colnames(data)[!(colnames(data) %in% EnTeteCom)]
@@ -568,17 +589,33 @@ if (length(sensors)>1){
       else {
         dataMerged<-data
       }
-      
+    }
       
     }
-    
-    
   }
-}
 
-## Tri temporel
-if (!is.null(dataMerged)){
-  dataMerged<-dataMerged[order(dataMerged$Date),]
+  ## Tri temporel
+  if (!is.null(dataMerged)){
+    dataMerged<-dataMerged[order(dataMerged$Date),]
+  }
+  
+  ## AddGPS
+  if (AddGPS){
+    if (!is.null(dataprofile$technical$GPS)){
+      GPS<-dataprofile$technical$GPS
+      dataMerged<-cbind(dataMerged[,1:2],NA,NA,dataMerged[,-(1:2)])
+      dataMerged<-rbind(dataMerged,NA)
+      dataMerged[dim(dataMerged)[1],c(1,3:6,9)]<-c(0,GPS$`lat (deg)`,GPS$`lon (deg)`,as.numeric(dataMerged[1,5:6]),-1)
+      
+      ##temp
+      dataMerged[,2]<-as.numeric(dataMerged[,2])
+      dataMerged[dim(dataMerged)[1],2]<-as.numeric(GPS$time)
+      dataMerged[,2]<-as.POSIXct(dataMerged[,2],origin = "1970-01-01",tz="UTC")
+      
+      colnames(dataMerged)[3:4]<-c("lat_deg","lon_deg")
+      
+    }
+  }
 }
 
 return(dataMerged)
@@ -605,13 +642,11 @@ return(dataMerged)
 #' 
 #' login="lovuse001a"
 #' 
-#' floatname="ffff"
-#' 
-#' Meta<-cts5_readMetaSensor(floatname=floatname)
+#' Meta<-cts5_readMetaSensor()
 #'
-#' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
+#' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 #'
-#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+#' dataprofile<-cts5_readProfile(CycleNumber=c,PatternNumber = p,include.inifile=T)
 #'
 #' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 #'
@@ -785,56 +820,34 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
 #'
 #'
 #' @param login login of the float used as prefix
-#' @param dataMerged Merged data obtained by \code{\link{cts5_concatProfile}}
+#' @param dataMerged Merged data obtained by \code{\link{cts5_convert2Ascii}}
 #' @param subdir sub directory where to save the data
-#' @param GPS GPS data to be included in the csv. Provided as a list ("time","lat (deg),"lon (deg)"). 
-#' obtained by \code{\link{cts5_readtechnical}}.
 #' 
 #' @examples 
 #' 
 #' login="lovuse001a"
 #' 
-#' floatname="ffff"
+#' Meta<-cts5_readMetaSensor()
+#'
+#' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
+#'
+#' dataprofile<-cts5_readProfile(CycleNumber=c,PatternNumber = p,include.inifile=T)
 #' 
-#' Meta<-cts5_readMetaSensor(floatname=floatname)
+#' dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 #' 
-#' tech<-cts5_readtechnical(floatname=floatname,CycleNumber=c,PatternNumber = p)
-#'
-#' cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
-#'
-#' setwd("./CSV")
-#'
-#' dataMerged<-cts5_concatProfile(floatname=floatname,CycleNumber=c,PatternNumber = p)
-#'
-#' dataMerged<-cts5_ProcessData(Meta$SENSORS,dataMerged)
-#'
-#' PlotCTS5(login=login,dataMerged,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
-#'
-#' SaveToCTS5(login = login,dataMerged = dataMerged,GPS = tech$GPS)
+#' dataMerged<-cts5_convert2Ascii(dataprofile)
+#' 
+#' cts5_save2Ascii(login = login,dataMerged = dataMerged,subdir="./csv/")
 #' 
 #' @export
 #'
-#SaveToCTS5 : Entete normalisee CTS5, sep="\t"
-SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
+
+cts5_save2Ascii<-function(login,dataMerged,subdir="./csv/"){
   
   if (!is.null(dim(dataMerged))){  
-    filename<-paste(subdir,"/",login,"_",formatC(unique(dataMerged[,"NumberCycle"]),width=3,flag="0"),"_",
-                    formatC(unique(dataMerged[,"NumberPattern"]),width=2,flag="0"),".csv",sep="")
+    filename<-paste(subdir,login,"_",formatC(unique(dataMerged[,"CycleNumber"]),width=3,flag="0"),"_",
+                    formatC(unique(dataMerged[,"PatternNumber"]),width=2,flag="0"),".csv",sep="")
     cat("save data : ",filename,"\n")
-    
-    if (!is.null(GPS)){
-      dataMerged<-cbind(dataMerged[,1:2],NA,NA,dataMerged[,-(1:2)])
-      dataMerged<-rbind(dataMerged,NA)
-      dataMerged[dim(dataMerged)[1],c(1,3:6,9)]<-c(0,GPS$`lat (deg)`,GPS$`lon (deg)`,as.numeric(dataMerged[1,5:6]),-1)
-      
-      ##temp
-      dataMerged[,2]<-as.numeric(dataMerged[,2])
-      dataMerged[dim(dataMerged)[1],2]<-as.numeric(GPS$time)
-      dataMerged[,2]<-as.POSIXct(dataMerged[,2],origin = "1970-01-01",tz="UTC")
-      
-      colnames(dataMerged)[3:4]<-c("lat (deg)","lon (deg)")
-      
-    }
     
     write.table(dataMerged,filename,col.names=TRUE,row.names=FALSE,sep="\t",quote = FALSE)  
     
@@ -867,7 +880,7 @@ SaveToCTS5<-function(login,dataMerged,subdir=".",GPS=NULL){
 #' 
 #' login="lovuse001a"
 #' 
-#' Meta<-cts5_readMetaSensor(floatname=floatname)
+#' Meta<-cts5_readMetaSensor()
 #'
 #' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 #'

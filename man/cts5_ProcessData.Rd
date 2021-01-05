@@ -27,13 +27,11 @@ calibration coefficients are usually in 00_metadata.xml file.
 
 login="lovuse001a"
 
-floatname="ffff"
+Meta<-cts5_readMetaSensor()
 
-Meta<-cts5_readMetaSensor(floatname=floatname)
+cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 
-cts5_decode(floatname=floatname,CycleNumber=c,PatternNumber = p,subdir="./CSV")
-
-dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
+dataprofile<-cts5_readProfile(CycleNumber=c,PatternNumber = p,include.inifile=T)
 
 dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 

@@ -281,7 +281,9 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   #****************************
   #* BEGIN Sensors description
   #* **************************
-  
+
+  data.colnames<-NULL
+    
   ##-1 sbe41
   if (sensor == "sbe41"){
     data.colnames<-c("Temperature_degC","Salinity_PSU")
@@ -558,7 +560,7 @@ EnTeteCom<-c("Pressure_dbar","Date","CycleNumber","PatternNumber","PhaseName","S
 
 dataMerged<-NULL
 
-if (!is.null(dataprofile$data)){
+if (length(dataprofile$data)>0){
 
   dataMerged<-dataprofile$data[[1]]
   dataMerged$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[1]),nrow(dataMerged))

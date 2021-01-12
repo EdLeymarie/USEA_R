@@ -60,7 +60,7 @@ else {
 #' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 #' 
 #' cts5_system_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,
-#' Nke_ProgPath="D:/Data/Provor_USEA/USEA_R")
+#' Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 #' 
 #' @export
 #'
@@ -776,6 +776,12 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
         ## Il y a des donnees en descent
         pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="DES")
+      }
+      ##PArk
+      ind<-dataprofile$data$sbeph$PhaseName=="PAR"
+      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
+        ## Il y a des donnees en Parking
+        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="PAR")
       }
       ##ASCENT
       ind<-dataprofile$data$sbeph$PhaseName=="ASC"

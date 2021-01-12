@@ -155,7 +155,7 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
         s<-technical$PROFILE[[i]][1]
        
         s1<-strsplit(s,split = "=")[[1]][2]
-        s2<-strsplit(s,split = "=")[[1]][3]
+        s2<-paste(strsplit(s,split = "=")[[1]][-(1:2)],collapse = " ")
         
         #key
         time<-paste(strsplit(s1,split = " ")[[1]][1:2],collapse = " ")
@@ -186,6 +186,14 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
           s3<-strsplit(s2,split=" ")[[1]][1]
           technical$PROFILE[[i]]$MinDepth<-as.numeric(strsplit(s3,split="/")[[1]][1])
           technical$PROFILE[[i]]$MaxDepth<-as.numeric(strsplit(s3,split="/")[[1]][2])
+          
+          s3<-strsplit(s2,split=" ")[[1]][3]
+          s3<-substr(s3,2,nchar(s3)-1)
+          s3<-strsplit(s3,split="/")[[1]]
+          technical$PROFILE[[i]]$Nvalve<-as.numeric(s3[1])
+          technical$PROFILE[[i]]$Npump<-as.numeric(s3[2])
+          
+          
         }
         
         if (key %in% c("Ascent")){
@@ -852,6 +860,10 @@ cts5_PlotTechnical<-function(tech,output="Plot_technical.pdf",floatname="",mfrow
     if (sum(ind)>0){
       plot(as.POSIXlt(timeTemp,tz="UTC"),1:dim(tech)[1],type="b",
            xlab="date",ylab="Profile",main = "Profile vs date")
+      
+      legend("topleft",legend=paste(c("First :","Last :"),range(as.POSIXlt(timeTemp,tz="UTC"))),
+             lty=NULL,bty="n",cex=0.6)
+      
     }
   }
   
@@ -866,7 +878,7 @@ cts5_PlotTechnical<-function(tech,output="Plot_technical.pdf",floatname="",mfrow
   if ("Vbatt(V)" %in% toplot ){
     ind<-grep("Vbatt",colnames(tech))
     if (sum(ind)>0){
-      matplot(1:dim(tech)[1],tech[,ind],pch=1,xlab="profile",ylab="(V)",type="b")  
+      matplot(1:dim(tech)[1],tech[,ind],pch=1,lty=1,xlab="profile",ylab="(V)",type="b")  
       title(main="Vbatt(V)")
       legend("topleft",inset = c(0, -0.1),legend=c("Vbatt(V)","Vbatt-peak-min(V)"),lty=1,col=1:2,cex=0.5,ncol=2,bty="n")
     }
@@ -887,11 +899,12 @@ cts5_PlotTechnical<-function(tech,output="Plot_technical.pdf",floatname="",mfrow
   
   #HydroActions
   if ("HydroActions" %in% toplot ){
-    ind<-c(grep("Descent.Nvalve",colnames(tech)),grep("Ascent.Npump",colnames(tech)))
+    ind<-c(grep("Descent.Nvalve",colnames(tech)),grep("Ascent.Npump",colnames(tech)),
+           grep("Park.Nvalve",colnames(tech)),grep("Park.Npump",colnames(tech)))
     if (sum(ind)>0){
       matplot(1:dim(tech)[1],tech[,ind],pch=1,xlab="profile",ylab="(N)",type="b")  
-      title(main=c("Descent(N), Ascent(N)"))
-      legend("topleft",inset = c(0, -0.1),legend=c("Descent(N)","Ascent(N)","Ascent_takeoff(N)"),lty=1,col=1:3,cex=0.5,ncol=3,bty="n")
+      title(main=c("EV/Pump actions (N)"))
+      legend("topleft",inset = c(0, -0.15),legend=c("Descent","Ascent","Ascent_takeoff","Park.Nvalve","Park.Npump"),lty=1,col=1:5,cex=0.5,ncol=3,bty="n")
     }
   }
   

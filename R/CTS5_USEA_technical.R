@@ -586,6 +586,7 @@ list_time_as_character<-function(list){
 #' read all _technical.txt files and return results in a data.frame
 #'
 #' @param pattern pattern used to select files
+#' @param filenames vector of files to read. exclude all other options 
 #' @param CycleNumber vector of cycle number to read. If Null, all technical files are read.
 #' @param include_tech0 If True, include 00_technical files
 #' @param FromLastReset IF True, start from the last 00_technical files
@@ -602,46 +603,48 @@ list_time_as_character<-function(list){
 #' @export
 #'
 
-cts5_readalltech<-function(pattern=".*_technical.*.txt",CycleNumber=NULL,include_tech0=FALSE,FromLastReset=T){
+cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumber=NULL,include_tech0=FALSE,FromLastReset=T){
   
-  filenames<-list.files(pattern=pattern)
-  
-  if (length(filenames)>1){
-    filetab<-matrix(unlist(strsplit(filenames,split="_")),ncol=4,byrow = T)
+  if (is.null(filenames)){
+    filenames<-list.files(pattern=pattern)
     
-    #We start from the last 00_technical
-    if (FromLastReset){
-      ind<-filetab[,3]=="00"
-      if (sum(ind)>0){
-        filetab<-filetab[max(which(ind)):length(ind),]
-        filenames<-filenames[max(which(ind)):length(ind)]
+    if (length(filenames)>1){
+      filetab<-matrix(unlist(strsplit(filenames,split="_")),ncol=4,byrow = T)
+      
+      #We start from the last 00_technical
+      if (FromLastReset){
+        ind<-filetab[,3]=="00"
+        if (sum(ind)>0){
+          filetab<-filetab[max(which(ind)):length(ind),]
+          filenames<-filenames[max(which(ind)):length(ind)]
+        }
       }
+      
+      #remove 00_technical
+      if ((!include_tech0) & (length(filenames)>1)){
+        ind<-filetab[,3]=="00"
+        if (sum(ind)>0){
+          filetab<-filetab[!ind]
+          filenames<-filenames[!ind]
+        }
+      }
+      
+      
+      
     }
     
-    #remove 00_technical
-    if ((!include_tech0) & (length(filenames)>1)){
-      ind<-filetab[,3]=="00"
-      if (sum(ind)>0){
-        filetab<-filetab[!ind]
-        filenames<-filenames[!ind]
-      }
+    if (!is.null(CycleNumber)){
+      CycleV<-as.numeric(matrix(unlist(strsplit(filenames,split="_")),ncol=4,byrow = T)[,2])
+      
+      ind<-CycleV %in% CycleNumber
+      
+      filenames<-filenames[ind]
     }
-    
-    
-    
-  }
-  
-  if (!is.null(CycleNumber)){
-    CycleV<-as.numeric(matrix(unlist(strsplit(filenames,split="_")),ncol=4,byrow = T)[,2])
-    
-    ind<-CycleV %in% CycleNumber
-    
-    filenames<-filenames[ind]
   }
   
   result<-NULL
   
-  if (length(filenames)>1){
+  if (length(filenames)>=1){
   
     for (filename in filenames){ #filename<-filenames[9]
       

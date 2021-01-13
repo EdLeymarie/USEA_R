@@ -6,6 +6,7 @@
 \usage{
 cts5_readalltech(
   pattern = ".*_technical.*.txt",
+  filenames = NULL,
   CycleNumber = NULL,
   include_tech0 = FALSE,
   FromLastReset = T
@@ -13,6 +14,8 @@ cts5_readalltech(
 }
 \arguments{
 \item{pattern}{pattern used to select files}
+
+\item{filenames}{vector of files to read. exclude all other options}
 
 \item{CycleNumber}{vector of cycle number to read. If Null, all technical files are read.}
 

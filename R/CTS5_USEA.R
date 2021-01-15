@@ -432,32 +432,34 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
       # suppression des non numeriques
       datatemp<-datatemp[!is.na(datatemp[,2]),]
       
-      # identification des phases
-      if (Data[ind[i],1]=="[DESCENT]"){NumberPhase<-"DES"}
-      if (Data[ind[i],1]=="[PARK]"){NumberPhase<-"PAR"}
-      if (Data[ind[i],1]=="[DEEP_PROFILE]"){NumberPhase<-"DEE"}
-      if (Data[ind[i],1]=="[SHORT_PARK]"){NumberPhase<-"SHP"}
-      if (Data[ind[i],1]=="[ASCENT]"){NumberPhase<-"ASC"}
-      if (Data[ind[i],1]=="[SURFACE]"){NumberPhase<-"SUR"}
+      if (nrow(datatemp)>0){
       
-      # En mode Park et Surface le processing est RW obligatoirement
-      if (NumberPhase %in% c("PAR","SHP","SUR")){
-        datatemp$processing<-"(RW)"
-      }
-      
-      # Reorganisation des donnees en fonction du processing
-      for (pro in unique(datatemp$processing)){
-        if (pro == "(AM)(MD)"){
-          datatemp[datatemp$processing == pro,(6+Sensor_NChannel):(6+2*Sensor_NChannel)]<-datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(4+2*Sensor_NChannel)]
-          datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(3+2*Sensor_NChannel)]<-NA
+        # identification des phases
+        if (Data[ind[i],1]=="[DESCENT]"){NumberPhase<-"DES"}
+        if (Data[ind[i],1]=="[PARK]"){NumberPhase<-"PAR"}
+        if (Data[ind[i],1]=="[DEEP_PROFILE]"){NumberPhase<-"DEE"}
+        if (Data[ind[i],1]=="[SHORT_PARK]"){NumberPhase<-"SHP"}
+        if (Data[ind[i],1]=="[ASCENT]"){NumberPhase<-"ASC"}
+        if (Data[ind[i],1]=="[SURFACE]"){NumberPhase<-"SUR"}
+        
+        # En mode Park et Surface le processing est RW obligatoirement
+        if (NumberPhase %in% c("PAR","SHP","SUR")){
+          datatemp$processing<-"(RW)"
         }
+        
+        # Reorganisation des donnees en fonction du processing
+        for (pro in unique(datatemp$processing)){
+          if (pro == "(AM)(MD)"){
+            datatemp[datatemp$processing == pro,(6+Sensor_NChannel):(6+2*Sensor_NChannel)]<-datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(4+2*Sensor_NChannel)]
+            datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(3+2*Sensor_NChannel)]<-NA
+          }
+        }
+        
+        
+        datatemp<-cbind(datatemp[,c(2,1)],CycleNumber,PatternNumber,NumberPhase,as.character(filename),SensorType,datatemp[,-(1:2)])
+        
+        Dataclean<-rbind(Dataclean,datatemp)
       }
-      
-      
-      datatemp<-cbind(datatemp[,c(2,1)],CycleNumber,PatternNumber,NumberPhase,as.character(filename),SensorType,datatemp[,-(1:2)])
-      
-      Dataclean<-rbind(Dataclean,datatemp)
-      
       
     }
     

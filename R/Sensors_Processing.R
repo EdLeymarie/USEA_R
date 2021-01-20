@@ -88,7 +88,7 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
   dataCTD<-data$sbe41[data$sbe41$PhaseName==NumberPhase,]
   datapH<-data$sbeph[data$sbeph$PhaseName==NumberPhase,]
   
-  if ((length(datapH$pH_mV)>10) & (length(dataCTD$Temperature_degC)>10)){
+  if ((length(datapH$pH_mV)>5) & (length(dataCTD$Temperature_degC)>5)){
     #il y a assez de data
     
     #interpolation des donnees CTD
@@ -199,6 +199,10 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
     
     
     
+  }
+  else {
+    warning("Not enough data for pH processing in phase :",NumberPhase)
+    phtot<-rep(NA,length(datapH$pH_mV))
   }
   
   return(phtot)

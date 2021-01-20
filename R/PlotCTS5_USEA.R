@@ -445,6 +445,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
 
 #**************************************************
 #Plot Ramses
+# data<-dataprofile$data$ramses[dataprofile$data$ramses$PhaseName=="ASC",]
 PlotRamses<-function(data,technical=TRUE){
   
   #Plot technical
@@ -469,33 +470,58 @@ PlotRamses<-function(data,technical=TRUE){
     
     ## IntTime et Tilt
     ind<-which(data[,"PhaseName"] == "ASC")
-    plot(data$ramses_int_time[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="Integration Time",ylab="Depth")
+    plot(data$ramses_int_time[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="Integration Time (ms)",ylab="Depth",main="Tilt and Integration Time")
     par(new=TRUE)
-    plot(data$ramses_tilt1[ind],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
+    plot(apply(cbind(data$ramses_tilt1[ind],data$ramses_tilt2[ind]),1,mean),-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
     axis(3,col=4,col.axis=4)
     
   }    
   
   ## Data
+  data<-data[data$PhaseName=="ASC",]
   
-  breaks <- pretty(data$Pressure_dbar, n = 25)
-  cols <- cm.colors(length(breaks)-1)[cut(data$Pressure_dbar,breaks = breaks)]
+  depth_breaks <- pretty(data$Pressure_dbar, n = 50)
+  cs <- list(cols = tim.colors(length(depth_breaks)-1),breaks = depth_breaks,name = "depth",unit = "(db)",labels = seq(1,length(depth_breaks), 5))
+  #cols <- cs.use(depth_breaks, cs)
+  cols = tim.colors(length(depth_breaks)-1)[cut(data$Pressure_dbar,breaks = depth_breaks)]
   
-  indraw<-grep("ramses_raw_count",colnames(data))
-  if (length(indraw)>0){
-    matplot(1:length(indraw),t(data[,indraw]),lty=1,pch=0,type="l",xlab="pixel",ylab = "Ramses Irradiance Count",col=cols)
-  }
+  #breaks <- pretty(data$Pressure_dbar, n = 50)
+  #cols <- cm.colors(length(breaks)-1)[cut(data$Pressure_dbar,breaks = breaks)]
+  #cols <- rainbow(length(breaks)-1)[cut(data$Pressure_dbar,breaks = breaks)]
+  
+  # indraw<-grep("ramses_raw_count",colnames(data))
+  # if (length(indraw)>0){
+  #   matplot(1:length(indraw),t(data[,indraw]),lty=1,pch=0,type="l",xlab="pixel",ylab = "Ramses Irradiance Count",col=cols)
+  # }
   
   indsig<-grep("ramses_sig",colnames(data))
   if (length(indsig)>0){
     waves<-colnames(data)[indsig]
     waves<-as.numeric(matrix(unlist(strsplit(waves,split="_")),ncol=3,byrow = T)[,3])
     
-    matplot(waves,t(data[,indsig]),lty=1,pch=0,type="l",ylab = "Ramses Irradiance physical",col=cols,log="y")
+    matplot(waves,t(data[,indsig]),lty=1,pch=0,type="l",xlab="wavelegnth (nm)",ylab = "Ramses Irradiance physical",col=cols,log="y")
+    
+    cs.draw(cs,horiz=T,width =  max(t(data[,indsig]),na.rm = T)/2,pos= max(t(data[,indsig]),na.rm = T),side = 1)
+
+  
+    ## profil
+    wavelist<-seq(300,800,by=10)
+    wavelist<-wavelist[(wavelist>min(waves)) & (wavelist<max(waves))]
+    colpal<-rev(rainbow(length(wavelist),end=0.8))
+    
+    
+    datatemp<-data[,indsig]
+    temp<-NULL
+    for (i in 1:length(wavelist)){
+      temp<-cbind(temp,apply(datatemp[,abs(waves-wavelist[i])<5],1,mean))
+    }
+    matplot(temp,-data$Pressure_dbar,lty=1,type="l",log="x",col=colpal,xlab="Ramses Irradiance physical",ylab="Depth")
+    ind<-seq(from=1,to=length(wavelist),by=5)
+    if (max(ind) < length(wavelist)){ind<-c(ind,length(wavelist))}
+    legend("bottomright",legend=wavelist[ind],col=colpal[ind],lty=1)
+
+    
   }
-  
-  
-  
 }
 
 #**************************************************

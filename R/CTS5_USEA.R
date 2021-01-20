@@ -814,10 +814,13 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       warning("RAMSES calibration: No inifile found. Apply default setting")
     }
     
-    dataCal<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
-                            PixelBinning=PixelBinning,calib_file="SAM.*AllCal.txt")
+    if (length(grep("ramses_sig",colnames(dataprofile$data$ramses)))==0){
     
-    dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
+      dataCal<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
+                              PixelBinning=PixelBinning,calib_file="SAM.*AllCal.txt")
+      
+      dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
+    }
     
   }
   

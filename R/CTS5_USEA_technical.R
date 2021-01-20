@@ -742,32 +742,41 @@ cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumb
 #' read  _technical.txt files and create a KML file to be read with Google Earth
 #'
 #' @param pattern pattern used to select files
+#' @param filenamelist list of files to open
 #' @param output name of the KML file
 #' @param CycleToProcess vector of float cycle to include in the KML file. If Null, all cycle will be included
 #' @param start First Cycle number to process. 
 #'
 #' @return a KML file
 #' 
-#' @details 
+#' @examples  
 #' 
+#' # Automatic
 #' CTS5_create_kml()
+#' 
+#' # with filenamelist
+#' tech<-cts5_readalltech()
+#' cts5_create_kml(filenamelist=tech$filename)
 #'  
 #' 
 #' @export
 #'
 
 
-cts5_create_kml<-function(pattern=".*technical.*.txt",output="PositionAPMT.kml",start=1,CycleToProcess=NULL,path=".",id="cycle"){
+cts5_create_kml<-function(pattern=".*technical.*.txt",filenamelist=NULL,output="PositionAPMT.kml",start=1,CycleToProcess=NULL,path=".",id="cycle"){
   setwd(path)
-  filenamelist<-list.files(pattern=pattern)
   
-  if (pattern==".*technical.*.txt"){
-    vectnum<-as.numeric(matrix(unlist(strsplit(filenamelist,split="_")),ncol=4,byrow=TRUE)[,2]) 
-    filenamelist<-filenamelist[vectnum>=start]
+  if (is.null(filenamelist)) {
+    filenamelist<-list.files(pattern=pattern)
     
-    if (!is.null(CycleToProcess)){
+    if (pattern==".*technical.*.txt"){
       vectnum<-as.numeric(matrix(unlist(strsplit(filenamelist,split="_")),ncol=4,byrow=TRUE)[,2]) 
-      filenamelist<-filenamelist[vectnum %in% CycleToProcess]
+      filenamelist<-filenamelist[vectnum>=start]
+      
+      if (!is.null(CycleToProcess)){
+        vectnum<-as.numeric(matrix(unlist(strsplit(filenamelist,split="_")),ncol=4,byrow=TRUE)[,2]) 
+        filenamelist<-filenamelist[vectnum %in% CycleToProcess]
+      }
     }
   }
   

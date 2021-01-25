@@ -480,7 +480,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     }
     
     # Elimination des colonnes NA pour suna et ramses
-    if (sensor %in% c("suna","ramses","opus_lgt")){
+    if (sensor %in% c("eco","suna","ramses","opus_lgt")){
       indNA<-apply(Dataclean,2,function(c){all(is.na(c))})
       Dataclean<-Dataclean[,!indNA]
     }
@@ -690,14 +690,22 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       ## Raw or mean
       if ("chlorophyll-a_CN" %in% colnames(dataprofile$data$eco)){
         dataprofile$data$eco[,"chlorophyll-a_ug/l"]<-SENSOR_ECO$CHANNEL_01[1]*(dataprofile$data$eco[,"chlorophyll-a_CN"]-SENSOR_ECO$CHANNEL_01[2])
+      }
+      if ("beta-theta_CN" %in% colnames(dataprofile$data$eco)){
         dataprofile$data$eco[,"beta-theta_1/msr"]<-SENSOR_ECO$CHANNEL_02[1]*(dataprofile$data$eco[,"beta-theta_CN"]-SENSOR_ECO$CHANNEL_02[2])
+      }
+      if ("colored-dissolved-organic-matter_CN" %in% colnames(dataprofile$data$eco)){
         dataprofile$data$eco[,"colored-dissolved-organic-matter_ppb"]<-SENSOR_ECO$CHANNEL_03[1]*(dataprofile$data$eco[,"colored-dissolved-organic-matter_CN"]-SENSOR_ECO$CHANNEL_03[2])
       }
         
       ## SD
       if ("SD(chlorophyll-a_CN)" %in% colnames(dataprofile$data$eco)){
         dataprofile$data$eco[,"SD(chlorophyll-a_ug/l)"]<-SENSOR_ECO$CHANNEL_01[1]*dataprofile$data$eco[,"SD(chlorophyll-a_CN)"]
+      }
+      if ("SD(beta-theta_CN)" %in% colnames(dataprofile$data$eco)){  
         dataprofile$data$eco[,"SD(beta-theta_1/msr)"]<-SENSOR_ECO$CHANNEL_02[1]*dataprofile$data$eco[,"SD(beta-theta_CN)"]
+      }
+      if ("SD(colored-dissolved-organic-matter_CN)" %in% colnames(dataprofile$data$eco)){
         dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_ppb)"]<-SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_CN)"]
       }
     }

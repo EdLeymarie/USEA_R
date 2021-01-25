@@ -52,9 +52,9 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
     
     #**************************************************************
     ## 1- data LPM
-    if (nrow(dataprofile$data$uvp6_lpm)>0){
+    if ((nrow(dataprofile$data$uvp6_lpm)>0) & (nrow(dataprofile$data$uvp6_blk)>0)){
       
-      ## Formatage des colonnes
+      ## Formatage des colonnes lpm
       dataUVP<-cbind(dataprofile$data$uvp6_lpm[,1:2],Lat,Lon,dataprofile$data$uvp6_lpm[,-(1:2)])
       dataUVP[,1]<-format(dataUVP[,1],format="%Y%m%dT%H%M%S")
       colnames(dataUVP)[1:2]<-c("DATE_TIME","PRES_decibar")
@@ -74,11 +74,37 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
       colnames(dataUVP)[8:(8+17)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
       colnames(dataUVP)[(8+18):(8+35)]<-paste("GREY_ SIZE_SPECTRA_PARTICLES_class_",1:18,sep="")
       
+      
+      ## Formatage des colonnes blk
+      dataUVPblk<-cbind(dataprofile$data$uvp6_blk[,1:2],Lat,Lon,dataprofile$data$uvp6_blk[,-(1:2)])
+      dataUVPblk[,1]<-format(dataUVPblk[,1],format="%Y%m%dT%H%M%S")
+      colnames(dataUVPblk)[1:2]<-c("DATE_TIME","PRES_decibar")
+      colnames(dataUVPblk)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
+      
+      indcol<-c(1:5,grep("NSamples",colnames(dataUVPblk)),grep("uvp-blk_Internal_temp",colnames(dataUVPblk))
+                ,grep("uvp-blk_Count",colnames(dataUVPblk)))
+      
+      dataUVPblk<-dataUVPblk[,indcol]
+      
+      #Formatage Colonnes
+      
+      # On ajoute une colonne de 1 car le black est en raw
+      dataUVPblk<-cbind(dataUVPblk[,1:5],1,dataUVPblk[,-(1:5)])
+      
+      #Names
+      colnames(dataUVPblk)[6:7]<-c("IMAGE_NUMBER_PARTICLES","TEMP_PARTICLES")
+      colnames(dataUVPblk)[8:(8+4)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:5,sep="")
+      
       ## LPM DESCENT
       ind<-dataUVP$PhaseName=="DES"
-      if (sum(ind)>0){
+      indblk<-dataUVPblk$PhaseName=="DES"
+
+      if ((sum(ind)>0) & (sum(indblk)>0)){
         cat("writing:",paste(NAME,"-DES_",UVP6SN,"_DEPTH_LPM.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-DES_",UVP6SN,"_DEPTH_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
+        
+        cat("writing:",paste(NAME,"-DES_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),"\n")
+        write.table(dataUVPblk[indblk,-5],file = paste(NAME,"-DES_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
         
         ### Fichier META que si il y a des données.
         cat("writing:",paste(NAME,"-DES_",UVP6SN,"_DEPTH_META.txt",sep=""),"\n")
@@ -89,10 +115,15 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
 
       ## LPM Ascent
       ind<-dataUVP$PhaseName=="ASC"
+      indblk<-dataUVPblk$PhaseName=="ASC"
+
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_LPM.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
-      
+        
+        cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),"\n")
+        write.table(dataUVPblk[indblk,-5],file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
+        
         ### Fichier META que si il y a des données.
         cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_META.txt",sep=""),"\n")
         write.table(UVP6_Meta,file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_META.txt",sep=""),col.names = F,row.names = F,quote = F,sep="\t")
@@ -102,10 +133,15 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
       
       ## LPM Parking
       ind<-dataUVP$PhaseName=="PAR"
+      indblk<-dataUVPblk$PhaseName=="PAR"
+
       if (sum(ind)>0){
         cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_LPM.txt",sep=""),"\n")
         write.table(dataUVP[ind,-5],file = paste(NAME,"-PAR_",UVP6SN,"_TIME_LPM.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
       
+        cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_BLACK.txt",sep=""),"\n")
+        write.table(dataUVPblk[indblk,-5],file = paste(NAME,"-PAR_",UVP6SN,"_TIME_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
+        
         ### Fichier META que si il y a des données.
         cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_META.txt",sep=""),"\n")
         write.table(UVP6_Meta,file = paste(NAME,"-PAR_",UVP6SN,"_TIME_META.txt",sep=""),col.names = F,row.names = F,quote = F,sep="\t")
@@ -115,52 +151,6 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
       
     }
     
-    #**************************************************************
-    ## 2- data BLACK
-    if (nrow(dataprofile$data$uvp6_blk)>0){
-      
-      ## Formatage des colonnes
-      dataUVP<-cbind(dataprofile$data$uvp6_blk[,1:2],Lat,Lon,dataprofile$data$uvp6_blk[,-(1:2)])
-      dataUVP[,1]<-format(dataUVP[,1],format="%Y%m%dT%H%M%S")
-      colnames(dataUVP)[1:2]<-c("DATE_TIME","PRES_decibar")
-      colnames(dataUVP)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
-      
-      indcol<-c(1:5,grep("NSamples",colnames(dataUVP)),grep("uvp-blk_Internal_temp",colnames(dataUVP))
-                ,grep("uvp-blk_Count",colnames(dataUVP)))
-      
-      dataUVP<-dataUVP[,indcol]
-      
-      #Formatage Colonnes
-      
-      # On ajoute une colonne de 1 car le black est en raw
-      dataUVP<-cbind(dataUVP[,1:5],1,dataUVP[,-(1:5)])
-      
-      #Names
-      colnames(dataUVP)[6:7]<-c("IMAGE_NUMBER_PARTICLES","TEMP_PARTICLES")
-      colnames(dataUVP)[8:(8+4)]<-paste("NB_SIZE_SPECTRA_PARTICLES_class_",1:5,sep="")
-      
-      ## Black Descent
-      ind<-dataUVP$PhaseName=="DES"
-      if (sum(ind)>0){
-        cat("writing:",paste(NAME,"-DES_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),"\n")
-        write.table(dataUVP[ind,-5],file = paste(NAME,"-DES_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
-      }
-      
-      ## Black Ascent
-      ind<-dataUVP$PhaseName=="ASC"
-      if (sum(ind)>0){
-        cat("writing:",paste(NAME,"-ASC_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),"\n")
-        write.table(dataUVP[ind,-5],file = paste(NAME,"-ASC_",UVP6SN,"_DEPTH_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
-      }
-      
-      ## Black Parking
-      ind<-dataUVP$PhaseName=="PAR"
-      if (sum(ind)>0){
-        cat("writing:",paste(NAME,"-PAR_",UVP6SN,"_TIME_BLACK.txt",sep=""),"\n")
-        write.table(dataUVP[ind,-5],file = paste(NAME,"-PAR_",UVP6SN,"_TIME_BLACK.txt",sep=""),col.names = T,row.names = F,quote = F,sep="\t")
-      }
-      
-    }
     
   }
   

@@ -6,6 +6,7 @@
 \usage{
 cts5_create_kml(
   pattern = ".*technical.*.txt",
+  filenamelist = NULL,
   output = "PositionAPMT.kml",
   start = 1,
   CycleToProcess = NULL,
@@ -15,6 +16,8 @@ cts5_create_kml(
 }
 \arguments{
 \item{pattern}{pattern used to select files}
+
+\item{filenamelist}{list of files to open}
 
 \item{output}{name of the KML file}
 
@@ -28,6 +31,15 @@ a KML file
 \description{
 read  _technical.txt files and create a KML file to be read with Google Earth
 }
-\details{
+\examples{
+ 
+
+# Automatic
 CTS5_create_kml()
+
+# with filenamelist
+tech<-cts5_readalltech()
+cts5_create_kml(filenamelist=tech$filename)
+ 
+
 }

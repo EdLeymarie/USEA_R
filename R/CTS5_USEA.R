@@ -1126,6 +1126,166 @@ cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1){
 
 #**************************************************
 
+# cts5_NextPatternInfos
+
+#**************************************************
+#' Provides information about the next pattern
+#'
+#' @description
+#' Provides information about the next pattern including the next surface time estimated
+#' 
+#'
+#'
+#' @param dataprofile data and technical files read from \code{\link{cts5_readProfile}}
+#' 
+#' @return list containing the information
+#' \itemize{
+#'  \item{NextSurface_time: }{Estimated date for the next surfacing}
+#'  \item{NextCycle: }{Next Cycle Number}
+#'  \item{NextPattern: }{Next Pattern Number}
+#'  \item{NextDuration: }{Duration (in hours) of the next pattern}
+#'  \item{NextPatternIni: }{Ini section of the Next Pattern}
+#' }
+#' 
+#' 
+#' @details must be used where the ini files could be found.
+#' 
+#' @examples 
+#' 
+#' dataprofile<-cts5_readProfile(CycleNumber=c,PatternNumber = p,include.inifile=T)
+#' NPI<-cts5_NextPatternInfos(dataprofile)
+#' 
+#' @export
+#'
+cts5_NextPatternInfos<-function(dataprofile){
+  
+if (!is.null(dataprofile$technical)){
+  
+  floatname = dataprofile$floatname
+  CurCycle<-dataprofile$CycleNumber
+  CurPatt<-dataprofile$PatternNumber
+  
+  ## CurrentTime
+  CurrentTime<-dataprofile$technical$PROFILE$`Ascent end`$time
+  
+  ## iniFile
+  iniFile<-dataprofile$inifile
+  
+  if (is.null(iniFile)){
+    iniFile<-cts5_readIni(floatname = floatname,CycleNumber = CurCycle,PatternNumber = CurPatt)
+  }
+  
+  ## Test if a new iniFile exist
+  NewIni<-paste(floatname,"_",formatC(CurCycle,width=3,flag="0"),"_",formatC(CurPatt,width=2,flag="0"),"_apmt.ini",sep="")
+  if (file.exists(NewIni)){
+    iniFile<-cts5_readIni(inifilename=NewIni)
+  }
+  
+  ## Add 30 min at surface
+  CurrentTime<-CurrentTime+1800
+  
+  if (!is.null(iniFile)){
+  
+    PatternList<-grep("PATTERN_",names(iniFile))
+    
+    ActivatedPattern<-NULL
+    
+    for (i in PatternList){
+      if (tolower(iniFile[[i]][1])=="true"){
+        ActivatedPattern<-c(ActivatedPattern,as.numeric(strsplit(names(iniFile)[i],split="_")[[1]][2]))
+      }
+    }
+    
+    ## Next Pattern
+    NextPatt<-ActivatedPattern>CurPatt
+    if (sum(NextPatt)==0){
+      NextPatt<-min(ActivatedPattern)
+      NextCycle<-CurCycle+1
+    }
+    else {
+      NextPatt<-min(ActivatedPattern[NextPatt])
+      NextCycle<-CurCycle
+    }
+    
+    ## Next Pattern Config
+    ini_NextPatt<-iniFile[[paste("PATTERN_",formatC(NextPatt,width=2,flag="0"),sep="")]]
+    
+    
+    ## Analyze and Forcast
+    NextSurface<-NA
+    
+    # Profile define by depth
+    if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="false")){
+      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+      NextSurface<-CurrentTime+PatternDuration
+    }
+    
+    # Profile define by depth and synchro
+    if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="true")){
+      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+      NextSurface<-CurrentTime+PatternDuration
+      HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
+      
+      #Time in second
+      HSync_s<-3600*hours(HSync)+60*minutes(HSync)+seconds(HSync)
+      NextSurface_s<-3600*hours(NextSurface)+60*minutes(NextSurface)+seconds(NextSurface)
+      
+      #NextSurface
+      NextSurface<-paste(format(NextSurface,format="%Y/%m/%d"),format(HSync,format="%H:%M:%S"))
+      NextSurface<-strptime(NextSurface,format = "%Y/%m/%d %H:%M:%S",tz="UTC")
+      
+      # Sync not possible in the same day
+      if (NextSurface_s>HSync_s){
+        NextSurface<-NextSurface+86400
+      }
+      
+    }
+    
+    # Profile define by time
+    if ((ini_NextPatt$P3>0) & (tolower(ini_NextPatt$P7)=="false")){
+      NextSurface<-CurrentTime+ini_NextPatt$P3
+    }
+    
+    # Profile define by time and synchro
+    if ((ini_NextPatt$P3>0) & (tolower(ini_NextPatt$P7)=="true")){
+      NextSurface<-CurrentTime+ini_NextPatt$P3
+      HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
+      
+      #Time in second
+      HSync_s<-3600*hours(HSync)+60*minutes(HSync)+seconds(HSync)
+      NextSurface_s<-3600*hours(NextSurface)+60*minutes(NextSurface)+seconds(NextSurface)
+      
+      #NextSurface
+      NextSurface<-paste(format(NextSurface,format="%Y/%m/%d"),format(HSync,format="%H:%M:%S"))
+      NextSurface<-strptime(NextSurface,format = "%Y/%m/%d %H:%M:%S",tz="UTC")
+      
+      # Sync not possible in the same day
+      if (NextSurface_s>HSync_s){
+        NextSurface<-NextSurface+86400
+      }
+      
+    }
+    
+    NextDuration<-difftime(NextSurface,CurrentTime,units = "s")
+    
+    return(list(NextSurface_time=NextSurface,NextCycle=NextCycle,NextPattern=NextPatt,
+                NextDuration=NextDuration,NextPatternIni=ini_NextPatt))
+  }
+  else {
+    warning("No ini file")
+    return(NULL)
+  }
+  
+}
+else {
+  warning("No technical information")
+  return(NULL)
+}
+  
+}
+
+#**************************************************
+
 #' create a _command.txt files by comparing inifiles
 #'
 #' @description

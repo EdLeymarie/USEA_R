@@ -293,12 +293,13 @@ PlotSUNA<-function(data,technical=TRUE){
       
       
       depth_breaks <- pretty(data$Pressure_dbar, n = 50)
-      cs <- list(cols = tim.colors(length(depth_breaks) - 1),breaks = depth_breaks,name = "",unit = "",labels = seq(1,length(depth_breaks), 5))
-      cols <- cs.use(depth_breaks, cs)
+      #cs <- list(cols = tim.colors(length(depth_breaks) - 1),breaks = depth_breaks,name = "",unit = "",labels = seq(1,length(depth_breaks), 5))
+      #cols <- cs.use(depth_breaks, cs)
+      cols = tim.colors(length(depth_breaks)-1)[cut(data$Pressure_dbar,breaks = depth_breaks)]
       
       matplot(t(temp),lty=1,type="l",xlab="pixel",ylab="Suna counts",col=cols) #
       
-      cs.draw(cs,horiz=T,width = 0.25,pos=1,side = 1)
+      #cs.draw(cs,horiz=T,width = 0.25,pos=1,side = 1)
     }
     
   }

@@ -35,7 +35,7 @@ read  _technical.txt files and create a KML file to be read with Google Earth
  
 
 # Automatic
-CTS5_create_kml()
+cts5_create_kml()
 
 # with filenamelist
 tech<-cts5_readalltech()

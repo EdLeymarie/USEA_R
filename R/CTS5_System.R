@@ -34,6 +34,9 @@ ConvDeg<-function(str){
   return(pos)
 }
 ##**************************************************
+#*** Input "UTC=21-04-13 09:39:05 Lat=3305.86498S Long=01352.03987E"
+#** Ouput : Lat: -33.09775 , Lon: 13.86733 (Position dd.ddddd) 
+
 ConvUTC<-function(str){
 
 cat(str,"(Position ddmm.mmmm)","\n")

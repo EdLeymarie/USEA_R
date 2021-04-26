@@ -752,7 +752,7 @@ cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumb
 #' @examples  
 #' 
 #' # Automatic
-#' CTS5_create_kml()
+#' cts5_create_kml()
 #' 
 #' # with filenamelist
 #' tech<-cts5_readalltech()
@@ -1010,3 +1010,4 @@ cts5_PlotTechnical<-function(tech,output="Plot_technical.pdf",floatname="",mfrow
   dev.off()
   
 }
+

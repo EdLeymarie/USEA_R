@@ -107,11 +107,13 @@ PlotEcoStd<-function(data,technical=TRUE){
       lines(bb[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
   }
   #Plot CDOM
-  cdom<-data[,"colored-dissolved-organic-matter_ppb"]
-  if (sum(!is.na(cdom))>2){
-    plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
-    for (i in unique (data[,"PhaseName"])){
-      lines(cdom[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
+  if ("colored-dissolved-organic-matter_ppb" %in% colnames(data)){
+    cdom<-data[,"colored-dissolved-organic-matter_ppb"]
+    if (sum(!is.na(cdom))>2){
+      plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
+      for (i in unique (data[,"PhaseName"])){
+        lines(cdom[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
+    }
   }
 }
 

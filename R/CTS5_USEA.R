@@ -501,6 +501,9 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     }
     Dataclean$Date<-strptime(Dataclean$Date,format = "%Y-%m-%d %H:%M:%S",tz="UTC")
     
+    ## Tri chronologique pour Multi-Parking
+    Dataclean<-Dataclean[order(Dataclean$Date),]
+    
     #Forcage Numerique
     if (ncol(Dataclean) >= 9 ){
       for (i in (9:ncol(Dataclean))){
@@ -1229,63 +1232,119 @@ if (!is.null(dataprofile$technical)){
     
     ## Analyze and Forcast
     NextSurface<-NA
+    SynchroMode=""
     
-    # Profile define by depth
-    if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="false")){
-      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
-      NextSurface<-CurrentTime+PatternDuration
-    }
+    # Test MultiParking
+    MultiP_Flag<- length(strsplit(as.character(ini_NextPatt$P1),split = ";")[[1]]) > 1
     
-    # Profile define by depth and synchro
-    if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="true")){
-      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
-      NextSurface<-CurrentTime+PatternDuration
-      HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
+    if (!MultiP_Flag){
       
-      #Time in second
-      HSync_s<-3600*hours(HSync)+60*minutes(HSync)+seconds(HSync)
-      NextSurface_s<-3600*hours(NextSurface)+60*minutes(NextSurface)+seconds(NextSurface)
       
-      #NextSurface
-      NextSurface<-paste(format(NextSurface,format="%Y/%m/%d"),format(HSync,format="%H:%M:%S"))
-      NextSurface<-strptime(NextSurface,format = "%Y/%m/%d %H:%M:%S",tz="UTC")
-      
-      # Sync not possible in the same day
-      if (NextSurface_s>HSync_s){
-        NextSurface<-NextSurface+86400
+      # Case 1 : Profile define by depth
+      if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="false")){
+        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+        NextSurface<-CurrentTime+PatternDuration
+        SynchroMode="Depth"
       }
       
-    }
-    
-    # Profile define by time
-    if ((ini_NextPatt$P3>0) & (tolower(ini_NextPatt$P7)=="false")){
-      NextSurface<-CurrentTime+ini_NextPatt$P3
-    }
-    
-    # Profile define by time and synchro
-    if ((ini_NextPatt$P3>0) & (tolower(ini_NextPatt$P7)=="true")){
-      NextSurface<-CurrentTime+ini_NextPatt$P3
-      HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
-      
-      #Time in second
-      HSync_s<-3600*hours(HSync)+60*minutes(HSync)+seconds(HSync)
-      NextSurface_s<-3600*hours(NextSurface)+60*minutes(NextSurface)+seconds(NextSurface)
-      
-      #NextSurface
-      NextSurface<-paste(format(NextSurface,format="%Y/%m/%d"),format(HSync,format="%H:%M:%S"))
-      NextSurface<-strptime(NextSurface,format = "%Y/%m/%d %H:%M:%S",tz="UTC")
-      
-      # Sync not possible in the same day
-      if (NextSurface_s>HSync_s){
-        NextSurface<-NextSurface+86400
+      # Case 2 : Profile define by depth and synchro
+      if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="true")){
+        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+        NextSurface<-CurrentTime+PatternDuration
+        HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
+        
+        #Time in second
+        HSync_s<-3600*hours(HSync)+60*minutes(HSync)+seconds(HSync)
+        NextSurface_s<-3600*hours(NextSurface)+60*minutes(NextSurface)+seconds(NextSurface)
+        
+        #NextSurface
+        NextSurface<-paste(format(NextSurface,format="%Y/%m/%d"),format(HSync,format="%H:%M:%S"))
+        NextSurface<-strptime(NextSurface,format = "%Y/%m/%d %H:%M:%S",tz="UTC")
+        
+        # Sync not possible in the same day
+        if (NextSurface_s>HSync_s){
+          NextSurface<-NextSurface+86400
+        }
+        
+        SynchroMode="Depth-surfaceTime"
+        
       }
       
+      # Case 3 : Profile define by duration
+      if ((ini_NextPatt$P3>0) & (tolower(ini_NextPatt$P7)=="false")){
+        NextSurface<-CurrentTime+ini_NextPatt$P3
+        SynchroMode="Duration"
+      }
+      
+      # Case 4 : Profile define by time and synchro
+      if ((ini_NextPatt$P3>0) & (tolower(ini_NextPatt$P7)=="true")){
+        NextSurface<-CurrentTime+ini_NextPatt$P3
+        HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
+        
+        #Time in second
+        HSync_s<-3600*hours(HSync)+60*minutes(HSync)+seconds(HSync)
+        NextSurface_s<-3600*hours(NextSurface)+60*minutes(NextSurface)+seconds(NextSurface)
+        
+        #NextSurface
+        NextSurface<-paste(format(NextSurface,format="%Y/%m/%d"),format(HSync,format="%H:%M:%S"))
+        NextSurface<-strptime(NextSurface,format = "%Y/%m/%d %H:%M:%S",tz="UTC")
+        
+        # Sync not possible in the same day
+        if (NextSurface_s>HSync_s){
+          NextSurface<-NextSurface+86400
+        }
+        
+        SynchroMode="Duration-surfaceTime"
+        
+      }
+    }
+    
+    # MultiParking case
+    if (MultiP_Flag){
+      MultiP_time<- as.numeric(strsplit(as.character(ini_NextPatt$P8),split = ";")[[1]])
+      
+      ## Pattern Duration without parkings
+      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+      
+      ## plus parkings
+      PatternDuration<- PatternDuration + sum(MultiP_time)
+      
+      # Case 5 : MultiP No synchro
+      if (tolower(ini_NextPatt$P7)=="false"){
+        NextSurface<- CurrentTime + PatternDuration
+        
+        SynchroMode="MultiP-Duration"
+      }
+      
+      # Case 6 : MultiP with synchro
+      if (tolower(ini_NextPatt$P7)=="true"){
+        NextSurface<- CurrentTime + PatternDuration
+
+        HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
+        
+        #Time in second
+        HSync_s<-3600*hours(HSync)+60*minutes(HSync)+seconds(HSync)
+        NextSurface_s<-3600*hours(NextSurface)+60*minutes(NextSurface)+seconds(NextSurface)
+        
+        #NextSurface
+        NextSurface<-paste(format(NextSurface,format="%Y/%m/%d"),format(HSync,format="%H:%M:%S"))
+        NextSurface<-strptime(NextSurface,format = "%Y/%m/%d %H:%M:%S",tz="UTC")
+        
+        # Sync not possible in the same day
+        if (NextSurface_s>HSync_s){
+          NextSurface<-NextSurface+86400
+        }
+        
+        SynchroMode="MultiP-surfaceTime"
+        
+      }
+
     }
     
     NextDuration<-difftime(NextSurface,CurrentTime,units = "s")
     
     return(list(NextSurface_time=NextSurface,NextCycle=NextCycle,NextPattern=NextPatt,
-                NextDuration=NextDuration,NextPatternIni=ini_NextPatt))
+                NextDuration=NextDuration,NextPatternIni=ini_NextPatt,SynchroMode=SynchroMode))
   }
   else {
     warning("No ini file")

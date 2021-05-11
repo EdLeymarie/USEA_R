@@ -753,7 +753,7 @@ if (!is.null(Navdata)){
   
   #Only files older than in the Navdata
   if (OnlyNew){
-  sysfile_number<-sysfile_number[sysfile_number > min(Navdata$sysFileNumber)]
+  sysfile_number<-sysfile_number[sysfile_number > max(Navdata$sysFileNumber)]
   }
 }
   

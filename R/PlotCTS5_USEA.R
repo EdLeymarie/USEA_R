@@ -528,6 +528,24 @@ PlotRamses<-function(data,technical=TRUE){
 }
 
 #**************************************************
+#Plot External - Trig (Pump)
+# data<-dataprofile$data$ext_trig
+Plotext_trig<-function(data,technical=TRUE){
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main="External Trig")
+    
+    legend("topright",legend=unique(data[,"PhaseName"]),pch = 16,col=1:length(unique(data[,"PhaseName"])),bty="n")
+    
+  }
+
+  
+}
+
+#**************************************************
 
 ## Concatenation plots
 
@@ -669,6 +687,12 @@ if (!is.null(dataprofile)){
   if ("ramses" %in% names(dataprofile$data)){  
       data<-dataprofile$data$ramses
       PlotRamses(data,technical=technical)
+  }   
+  
+  #ext_trig
+  if ("ext_trig" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$ext_trig
+    Plotext_trig(data,technical=technical)
   }   
   
   if (!add){

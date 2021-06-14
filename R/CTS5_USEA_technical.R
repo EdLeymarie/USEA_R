@@ -825,9 +825,45 @@ cts5_create_kml<-function(pattern=".*technical.*.txt",filenamelist=NULL,output="
     datapoint[,2]<-as.numeric(datapoint[,2])
     dimnames(datapoint)[[2]]<-c("Lon","Lat","name","filename","infos")
     
-    coordinates(datapoint)<-c("Lon","Lat")
-    proj4string(datapoint) <- CRS("+proj=longlat +datum=WGS84")
-    writeOGR(datapoint,output, layer="APMT",driver="KML")
+    # Utilisation de rgdal et sp
+    # coordinates(datapoint)<-c("Lon","Lat")
+    # proj4string(datapoint) <- CRS("+proj=longlat +datum=WGS84")
+    # writeOGR(datapoint,output, layer="APMT",driver="KML")
+    
+    # kml in manual
+    
+    #header
+    kmlf<-c('<kml xmlns="http://www.opengis.net/kml/2.2">',
+            '<Document id="root_doc">',
+            '<Schema name="APMT" id="APMT">',
+	          '<SimpleField name="filename" type="string"></SimpleField>',
+	          '<SimpleField name="infos" type="string"></SimpleField>',
+            '</Schema>',
+            '<Folder><name>APMT</name>')
+    
+    #Point
+    for (i in 1:nrow(datapoint)){
+      kmlf<-c(kmlf,
+              '<Placemark>',
+              paste('<name>',datapoint$name[i],'</name>',sep=""),
+              '<ExtendedData><SchemaData schemaUrl="#APMT">',
+              paste('<SimpleData name="filename">',datapoint$filename[i],'</SimpleData>',sep=""),
+              paste('<SimpleData name="infos">',
+                    datapoint$infos[i],'</SimpleData>',sep=""),
+              '</SchemaData></ExtendedData>',
+              paste('<Point><coordinates>',
+                    datapoint$Lon[i],',',datapoint$Lat[i],
+                    '</coordinates></Point>',sep=""),
+              '</Placemark>')
+    }
+    
+    #kml End
+    kmlf<-c(kmlf,'</Folder>','</Document></kml>')
+    
+    
+    #write
+    write(kmlf,file=output)
+    
   }
   
   #  return(datapoint)

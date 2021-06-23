@@ -184,7 +184,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @description vector of names of available sensors
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
-                          "uvp6_lpm","uvp6_blk","ramses","opus_lgt","opus_blk","ext_trig")
+                          "uvp6_lpm","uvp6_blk","ramses","opus_lgt","opus_blk","ext_trig","mpe")
 #' 
 
 #**************************************************
@@ -215,6 +215,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' 114 : opus_lgt
 #' 115 : opus_blk
 #' 116 : ext_trig
+#' 117 : mpe
 #' 
 #' @examples 
 #' cts5_SensorTypeId("")
@@ -228,7 +229,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern=""){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,113,114,115,116)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,113,114,115,116,117)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -383,6 +384,12 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   if (sensor == "ext_trig"){
     data.colnames<-NULL
     # SensorType=116
+  }
+  
+  ##-14 MPE
+  if (sensor == "mpe"){
+    data.colnames<-c("Voltage","Temperature")
+    # SensorType=117
   }
   
   #****************************
@@ -839,6 +846,15 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
     }
     
+  }
+  
+  ### MPE
+  if ("mpe" %in% names(dataprofile$data)) {
+    if (!is.null(metadata$SENSOR_MPE) & ("Voltage" %in% colnames(dataprofile$data$mpe))){
+      
+      dataprofile$data$mpe[,"Physical"]<-as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])*dataprofile$data$mpe$Voltage
+
+    }
   }
   
   

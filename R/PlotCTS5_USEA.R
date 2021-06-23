@@ -528,6 +528,60 @@ PlotRamses<-function(data,technical=TRUE){
 }
 
 #**************************************************
+#Plot mpe 
+PlotMPE<-function(data,technical=TRUE){
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("MPE",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    #Plot Ecart
+    ind<-which(data[,"PhaseName"] == "ASC")
+    if (length(ind)>2){   
+      depth<-data$Pressure_dbar[ind]
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta MPE",xlab="delta [db]",ylab="depth [db]")
+    }
+  }
+  
+  #Plot Temp
+  Sig<-data$Temperature
+  
+  xlim=range(Sig,na.rm = TRUE, finite = TRUE)
+  if (xlim[2]<=0){xlim[2]<-1}  
+  if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
+  plot(NULL,NULL,xlim=xlim,ylim=range(-data[!(data$PhaseName=="PAR"),"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="MPE Temperature",ylab="depth",log="x")
+  for (i in unique(data[,"PhaseName"])){
+    if (i != "PAR"){
+      lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    }
+  }
+  
+  #Plot Radio
+  Sig<-data$Physical
+  
+  xlim=range(Sig,na.rm = TRUE, finite = TRUE)
+  if (xlim[2]<=0){xlim[2]<-1}  
+  if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
+  plot(NULL,NULL,xlim=xlim,ylim=range(-data[!(data$PhaseName=="PAR"),"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="MPE Physical",ylab="depth",log="x")
+  for (i in unique(data[,"PhaseName"])){
+    if (i != "PAR"){
+        lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    }
+  }
+
+  
+}
+
+
+#**************************************************
 #Plot External - Trig (Pump)
 # data<-dataprofile$data$ext_trig
 Plotext_trig<-function(data,technical=TRUE){
@@ -693,6 +747,12 @@ if (!is.null(dataprofile)){
   if ("ext_trig" %in% names(dataprofile$data)){  
     data<-dataprofile$data$ext_trig
     Plotext_trig(data,technical=technical)
+  }   
+  
+  #mpe
+  if ("mpe" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$mpe
+    PlotMPE(data,technical=technical)
   }   
   
   if (!add){

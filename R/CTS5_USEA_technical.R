@@ -789,6 +789,13 @@ cts5_create_kml<-function(pattern=".*technical.*.txt",filenamelist=NULL,output="
     cat("Open:",filename,"\n")
     NCycle<-NCycle+1
     data<-scan(filename,what=character(0),sep="\n")
+    
+    #0: remove padding
+    if (length(grep("\32",data))>0){
+      data<-data[-grep("\32",data)]
+    }
+    
+    
     indGPS<-grep("\\[GPS\\]",data)
     if (length(indGPS)>0){
       indGPS<-indGPS+1

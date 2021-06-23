@@ -133,15 +133,17 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
   dist_nm<-NA
   tempsvect<-NA
   course<-NA
-  for (i in 2:length(data[,1])){
-    dist_nm<-c(dist_nm,dist.2pts(data[i-1,3],data[i-1,2],data[i,3],data[i,2]))
-    tempsvect<-c(tempsvect,difftime(date[i],date[i-1],units="hours"))
-    course<-c(course,cap.2pts(data[i-1,3],data[i-1,2],data[i,3],data[i,2]))
+  
+  if (length(data[,1])>1){
+    for (i in 2:length(data[,1])){
+      dist_nm<-c(dist_nm,dist.2pts(data[i-1,3],data[i-1,2],data[i,3],data[i,2]))
+      tempsvect<-c(tempsvect,difftime(date[i],date[i-1],units="hours"))
+      course<-c(course,cap.2pts(data[i-1,3],data[i-1,2],data[i,3],data[i,2]))
+    }
+    speed_kts<-dist_nm/tempsvect #en noeuds
+    
+    data<-cbind(data,dist_nm,speed_kts,course)
   }
-  speed_kts<-dist_nm/tempsvect #en noeuds
-  
-  data<-cbind(data,dist_nm,speed_kts,course)
-  
 
   #Creation du fichier KML
   if (file.exists(KMLfile)){file.remove(KMLfile)}

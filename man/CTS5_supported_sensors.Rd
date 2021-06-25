@@ -5,7 +5,7 @@
 \alias{CTS5_supported_sensors}
 \title{list of available sensors}
 \format{
-An object of class \code{character} of length 13.
+An object of class \code{character} of length 14.
 }
 \usage{
 CTS5_supported_sensors

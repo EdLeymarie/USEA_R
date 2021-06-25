@@ -252,13 +252,15 @@ else {
 #' read USEA .csv data file
 #'
 #' @description
-#' read NKE .csv ASCII files obtained from \code{\link{cts5_decode}} .
+#' read NKE .csv ASCII files obtained from \code{\link{cts5_decode}}.
 #'
 #' @param floatname hexa name of the float
 #' @param CycleNumber numeric : number of the cycle to decode
 #' @param PatternNumber numeric : number of the Pattern to decode
 #' @param sensor name of the sensor to read from the list CTS5_supported_sensors
-#' @param dec decimal character in ASCII
+#' @param dec decimal character in ASCII for scan function
+#' @param sep character which delimits fields for scan function
+#' @param filename filename for manual mode
 #' 
 #' @return data.frame containing the data
 #' 
@@ -276,12 +278,13 @@ else {
 #' 
 #' @export
 #'
-cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe41",dec="."){
+cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe41",dec=".",sep=",",filename=""){
   
   # nom du fichier
-  pattern<-paste("^",floatname,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),"_",sensor,".*.csv",sep="")
-  filename<-list.files(pattern=pattern)[1]
-  
+  if (filename==""){
+    pattern<-paste("^",floatname,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),"_",sensor,".*.csv",sep="")
+    filename<-list.files(pattern=pattern)[1]
+  }
   DepthName<-"Pressure_dbar"
   
   #****************************
@@ -410,7 +413,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   if (file.exists(filename)){
     cat("open:",filename,"\n")
-    Data<-read.table(filename,header=FALSE,sep=",",dec=dec,stringsAsFactors = FALSE,fill = TRUE,col.names = 1:MaxCol)
+    Data<-read.table(filename,header=FALSE,sep=sep,dec=dec,stringsAsFactors = FALSE,fill = TRUE,col.names = 1:MaxCol)
     #Data<-Data[-length(Data[,1]),]
     
     Dataclean<-NULL

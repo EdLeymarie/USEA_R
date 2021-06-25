@@ -9,7 +9,9 @@ cts5_readcsv(
   CycleNumber,
   PatternNumber = 1,
   sensor = "sbe41",
-  dec = "."
+  dec = ".",
+  sep = ",",
+  filename = ""
 )
 }
 \arguments{
@@ -21,13 +23,17 @@ cts5_readcsv(
 
 \item{sensor}{name of the sensor to read from the list CTS5_supported_sensors}
 
-\item{dec}{decimal character in ASCII}
+\item{dec}{decimal character in ASCII for scan function}
+
+\item{sep}{character which delimits fields for scan function}
+
+\item{filename}{filename for manual mode}
 }
 \value{
 data.frame containing the data
 }
 \description{
-read NKE .csv ASCII files obtained from \code{\link{cts5_decode}} .
+read NKE .csv ASCII files obtained from \code{\link{cts5_decode}}.
 }
 \details{
 this function add an identification for the sensorType from \code{\link{cts5_SensorTypeId}} 

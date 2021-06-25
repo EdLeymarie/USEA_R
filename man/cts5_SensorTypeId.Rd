@@ -32,6 +32,7 @@ SensorType
 114 : opus_lgt
 115 : opus_blk
 116 : ext_trig
+117 : mpe
 }
 \examples{
 cts5_SensorTypeId("")

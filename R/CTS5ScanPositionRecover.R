@@ -1,5 +1,3 @@
-require("sp")
-require("rgdal")
 
 
 #*************
@@ -146,15 +144,39 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
   }
 
   #Creation du fichier KML
-  if (file.exists(KMLfile)){file.remove(KMLfile)}
-  
-  datapoint<-data
-  colnames(datapoint)[1]<-"name"
-  coordinates(datapoint)<-c("Lon.deg.","Lat.deg.")
-  proj4string(datapoint) <- CRS("+proj=longlat +datum=WGS84")
-  
-  cat("write:",KMLfile,"\n")
-  writeOGR(datapoint,KMLfile, layer="CTS5",driver="KML")
+  if (KMLfile != ""){
+    if (file.exists(KMLfile)){file.remove(KMLfile)}
+    # kml in manual
+    
+    #header
+    kmlf<-c('<kml xmlns="http://www.opengis.net/kml/2.2">',
+            '<Document id="root_doc">',
+            '<Schema name="APMT" id="APMT">',
+            '<SimpleField name="filename" type="string"></SimpleField>',
+            '<SimpleField name="infos" type="string"></SimpleField>',
+            '</Schema>',
+            '<Folder><name>APMT</name>')
+    
+    #Point
+    for (i in 1:nrow(data)){
+      kmlf<-c(kmlf,
+              '<Placemark>',
+              paste('<name>',data$time[i],'</name>',sep=""),
+        
+              paste('<Point><coordinates>',
+                    data$'Lon.deg.'[i],',',data$'Lat.deg.'[i],
+                    '</coordinates></Point>',sep=""),
+              '</Placemark>')
+    }
+    
+    #kml End
+    kmlf<-c(kmlf,'</Folder>','</Document></kml>')
+    
+    
+    #write
+    write(kmlf,file=KMLfile)
+    
+  }
   
   return(data)
   

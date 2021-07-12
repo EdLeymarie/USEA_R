@@ -1035,19 +1035,21 @@ cts5_PlotTechnical<-function(tech,output="Plot_technical.pdf",floatname="",mfrow
   if ("ALARM" %in% toplot ){
     alarm<-cbind(tech$Cycle_Number,tech$Pattern_Number,tech[,grep("ALARM",colnames(tech))])
     #delete (N)
-    alarmU<-NULL
-    for (c in 3:ncol(alarm)){
-      alarm[,c]<-unlist(lapply(alarm[,c],FUN=function(x){strsplit(x,split="\\(")[[1]][1]}))
-      alarmU<-c(alarmU,alarm[,c])
+    if (ncol(alarm)>2){
+      alarmU<-NULL
+      for (c in 3:ncol(alarm)){
+        alarm[,c]<-unlist(lapply(alarm[,c],FUN=function(x){strsplit(x,split="\\(")[[1]][1]}))
+        alarmU<-c(alarmU,alarm[,c])
+      }
+      
+      alarmU<-unique(alarmU)
+      alarmU<-alarmU[!is.na(alarmU)]
+      plot(NULL,NULL,xlab="Profile",ylab="ALARM",xlim=c(1,dim(tech)[1]),ylim=c(0,ncol(alarm)-2),main="Alarms")
+      for (c in 3:ncol(alarm)){
+        points(1:dim(tech)[1],rep(c-2,dim(tech)[1]),pch=16,col=match(alarm[,c],alarmU))
+      }
+      legend("bottomleft",alarmU,col=1:length(alarmU),pch=16,cex=0.5,bty="n")
     }
-    
-    alarmU<-unique(alarmU)
-    alarmU<-alarmU[!is.na(alarmU)]
-    plot(NULL,NULL,xlab="Profile",ylab="ALARM",xlim=c(1,dim(tech)[1]),ylim=c(0,ncol(alarm)-2),main="Alarms")
-    for (c in 3:ncol(alarm)){
-      points(1:dim(tech)[1],rep(c-2,dim(tech)[1]),pch=16,col=match(alarm[,c],alarmU))
-    }
-    legend("bottomleft",alarmU,col=1:length(alarmU),pch=16,cex=0.5,bty="n")
   } 
   
   dev.off()

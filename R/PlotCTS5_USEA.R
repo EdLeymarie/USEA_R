@@ -566,10 +566,11 @@ PlotMPE<-function(data,technical=TRUE){
   
   #Plot Radio
   Sig<-data$Physical
+  Sig[Sig<0]<-NA
   
   xlim=range(Sig,na.rm = TRUE, finite = TRUE)
   if (xlim[2]<=0){xlim[2]<-1}  
-  if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
+  if (xlim[1]<=0){xlim[1]<-0.1}   
   plot(NULL,NULL,xlim=xlim,ylim=range(-data[!(data$PhaseName=="PAR"),"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="MPE Physical",ylab="depth",log="x")
   for (i in unique(data[,"PhaseName"])){
     if (i != "PAR"){

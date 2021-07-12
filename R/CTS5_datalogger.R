@@ -18,7 +18,7 @@
 #define aAPMT_TELNET_LOGGER_SUNA90    15
 #define aAPMT_TELNET_LOGGER_RAMSES    16    
 #define aAPMT_TELNET_LOGGER_OPUS      17
-
+#define aAPMT_TELNET_LOGGER_MPE       18
 
 filename<-"3aa9_datalogger.csv"
 
@@ -53,8 +53,8 @@ cts5_readDatalogger<-function(filename){
 
 datalogger<-scan(file = filename,skip = 1,what = character())
 
-VectId<-as.character(c(0:2,7,16))
-VectName<-c("sbe41","do","ocr","eco","ramses")
+VectId<-as.character(c(0:2,7,16,18))
+VectName<-c("sbe41","do","ocr","eco","ramses","mpe")
 
 
 ## Decodage
@@ -121,6 +121,11 @@ if (!is.null(logger$data$ocr)){
 ## RAMSES
 if (!is.null(logger$data$ramses)){
   colnames(logger$data$ramses)[-(1:4)]<-c("ramses_int_time","ramses_dark_count",paste("ramses_raw_count",1:245,sep = ""))
+}
+
+## MPE
+if (!is.null(logger$data$mpe)){
+  colnames(logger$data$mpe)[-(1:4)]<-c("Voltage","Temperature")
 }
 
 return(logger)

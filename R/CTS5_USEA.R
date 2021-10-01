@@ -184,7 +184,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @description vector of names of available sensors
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
-                          "uvp6_lpm","uvp6_blk","ramses","opus_lgt","opus_blk","ext_trig","mpe")
+                          "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig","mpe")
 #' 
 
 #**************************************************
@@ -229,7 +229,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern=""){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,113,114,115,116,117)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -355,10 +355,28 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   ##-9 uvp6_blk
   if (sensor == "uvp6_blk"){
 
-    data.colnames<-c("uvp-blk_Internal_temp","uvp-blk_Count1","uvp-blk_Count2","uvp-blk_Count3","uvp-blk_Count4","uvp-blk_Count5")
+    ## NImages a ete ajoute pour la version UVP6 avec RE
+    data.colnames<-c("Nimages","uvp-blk_Internal_temp","uvp-blk_Count1","uvp-blk_Count2","uvp-blk_Count3","uvp-blk_Count4","uvp-blk_Count5")
     
     
     # SensorType=110
+    
+  }
+  
+  ##-8b uvp6_txo
+  if (sensor == "uvp6_txo"){
+    
+    V1<-paste("ObjectSize",1:40,sep = "")
+    V2<-paste("ObjectGL",1:40,sep = "")
+    temp<-rep("",80)
+    temp[seq(1,80,by=2)]<-V1
+    temp[seq(2,80,by=2)]<-V2
+    
+    data.colnames<-c("Nimages",temp)
+    
+    
+    
+    # SensorType=111
     
   }
   
@@ -475,25 +493,42 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     
     colnames(Dataclean)[3:7]<-c("NumberCycle","NumberPattern","PhaseName","Files","SensorType")
     
-    if (sensor %in% c("uvp6_lpm")){
-      Dataclean<-cbind(Dataclean[,2],Dataclean[,9],Dataclean[,3:8],Dataclean[,1],Dataclean[,-(1:9)])
-      colnames(Dataclean)[c(1:2,9)]<-c("Date",DepthName,"NSamples")
-    }
-    
-    ## Elimination des colonnes inutiles
-    if (length(grep("SD",Dataclean$processing))==0){
-      Dataclean<-Dataclean[,-grep("SD\\(",colnames(Dataclean))]
-    }
-    
-    if (length(grep("MD",Dataclean$processing))==0){
-      Dataclean<-Dataclean[,-grep("MEAN\\(",colnames(Dataclean))]
-    }
-    
     # Elimination des colonnes NA pour suna et ramses
-    if (sensor %in% c("eco","suna","ramses","opus_lgt")){
+    if (sensor %in% c("eco","suna","ramses","opus_lgt","uvp6_lpm","uvp6_blk","uvp6_txo")){
       indNA<-apply(Dataclean,2,function(c){all(is.na(c))})
       Dataclean<-Dataclean[,!indNA]
     }
+    
+    
+    ## Organisation nom de variables
+    if (sensor %in% c("uvp6_lpm","uvp6_txo")){
+      #Test the old file where the first column is not the pressure but the number of image
+      if (all(Dataclean$Pressure_dbar == round(Dataclean$Pressure_dbar))){
+        Dataclean<-cbind(Dataclean[,2],Dataclean[,9],Dataclean[,3:8],Dataclean[,1],Dataclean[,-(1:9)])
+        colnames(Dataclean)[c(1:2,9)]<-c("Date",DepthName,"NSamples")
+      }
+    }
+    
+    ## uvp6_blk old version without RE
+    if ((sensor == "uvp6_blk") & (ncol(Dataclean) == 14)){
+      colnames(Dataclean)[9:14]<-data.colnames[-1]
+    }
+    
+    # ## uvp6_blk new version with RE
+    # if ((sensor == "uvp6_blk") & (ncol(Dataclean) == 15)){
+    #   Dataclean<-cbind(Dataclean[,2],Dataclean[,1],Dataclean[,3:8],Dataclean[,-(1:8)])
+    #   colnames(Dataclean)[c(1:2,9)]<-c("Date",DepthName,"Nimages")
+    # }
+    
+    ## Elimination des colonnes inutiles
+    if ((length(grep("SD",Dataclean$processing))==0) & (length(grep("SD\\(",colnames(Dataclean)))>0)){
+      Dataclean<-Dataclean[,-grep("SD\\(",colnames(Dataclean))]
+    }
+
+    if ((length(grep("MD",Dataclean$processing))==0) & (length(grep("MEAN\\(",colnames(Dataclean)))>0)){
+      Dataclean<-Dataclean[,-grep("MEAN\\(",colnames(Dataclean))]
+    }
+    
     
     # Elimination processing
     if (sensor %in% c("ext_trig")){
@@ -855,7 +890,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   if ("mpe" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_MPE) & ("Voltage" %in% colnames(dataprofile$data$mpe))){
       
-      dataprofile$data$mpe[,"Physical"]<-as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])*dataprofile$data$mpe$Voltage
+      dataprofile$data$mpe[,"Physical"]<-dataprofile$data$mpe$Voltage/as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])
 
     }
   }

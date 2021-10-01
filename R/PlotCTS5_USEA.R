@@ -401,7 +401,7 @@ PlotUVP_lpm<-function(data,technical=TRUE){
 }
 
 #**************************************************
-#Plot OCTOPUS
+#Plot UVP_blk
 PlotUVP_blk<-function(data,technical=TRUE){
   
   #Plot Chronologie
@@ -426,7 +426,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
   }
   
   #### Class
-    temp<-data[,6:10]
+    temp<-data[,c("uvp-blk_Count1","uvp-blk_Count2","uvp-blk_Count3","uvp-blk_Count4","uvp-blk_Count5")]
     if (sum(temp>0) > 2){
       temp.min<-min(temp[temp>0])
       temp.max<-max(temp)
@@ -445,6 +445,61 @@ PlotUVP_blk<-function(data,technical=TRUE){
   
 }
 
+#**************************************************
+#Plot UVP_txo
+PlotUVP_txo<-function(data,technical=TRUE){
+  
+  #Plot Chronologie
+  if (technical){
+    plot(as.POSIXct(data[,"Date"],origin = "1970-01-01"),-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("UVP6 Taxo",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    
+    #Plot Ecart
+    ind<-which(data[,"PhaseName"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$Pressure_dbar[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta UVP Taxo",xlab="delta [db]",ylab="depth [db]")
+    }
+  }
+  
+  data<-data[data$PhaseName=="ASC",]
+  
+  #### Class Size
+  indSize<-grep("Size",colnames(data))
+  ExistClass<-apply(data[,indSize],2,sum) > 0
+  
+  Nclass<-sum(ExistClass)
+  if (Nclass>0){
+    cols<-rainbow(Nclass)
+    matplot(data[,indSize][ExistClass],-data$Pressure_dbar,type="l",lty=1,xlab="ObjectSize",ylab = "Depth",col=cols)
+    legend("bottomright",legend=colnames(data)[indSize][ExistClass],lty=1,bty="y",col=cols)
+  }
+  else {
+    cat("No Size Class in UVP6 Taxo\n")
+  }
+  
+  #### Class Size
+  indGL<-grep("GL",colnames(data))
+  ExistClass<-apply(data[,indGL],2,sum) > 0
+  
+  Nclass<-sum(ExistClass)
+  if (Nclass>0){
+    cols<-rainbow(Nclass)
+    matplot(data[,indGL][ExistClass],-data$Pressure_dbar,type="l",lty=1,xlab="ObjectGL",ylab = "Depth",col=cols)
+    legend("bottomright",legend=colnames(data)[indGL][ExistClass],lty=1,bty="y",col=cols)
+  }
+  else {
+    cat("No GL Class in UVP6 Taxo\n")
+  }
+}
 
 #**************************************************
 #Plot Ramses
@@ -549,20 +604,36 @@ PlotMPE<-function(data,technical=TRUE){
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta MPE",xlab="delta [db]",ylab="depth [db]")
     }
-  }
-  
-  #Plot Temp
-  Sig<-data$Temperature
-  
-  xlim=range(Sig,na.rm = TRUE, finite = TRUE)
-  if (xlim[2]<=0){xlim[2]<-1}  
-  if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
-  plot(NULL,NULL,xlim=xlim,ylim=range(-data[!(data$PhaseName=="PAR"),"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="MPE Temperature",ylab="depth",log="x")
-  for (i in unique(data[,"PhaseName"])){
-    if (i != "PAR"){
-      lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    
+    #Plot Temp
+    Sig<-data$Temperature
+    
+    xlim=range(Sig,na.rm = TRUE, finite = TRUE)
+    if (xlim[2]<=0){xlim[2]<-1}  
+    if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
+    plot(NULL,NULL,xlim=xlim,ylim=range(-data[!(data$PhaseName=="PAR"),"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="MPE Temperature",ylab="depth")
+    for (i in unique(data[,"PhaseName"])){
+      if (i != "PAR"){
+        lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+      }
     }
+    
+    #Plot Voltage
+    Sig<-data$Voltage
+    
+    xlim=range(Sig,na.rm = TRUE, finite = TRUE)
+    if (xlim[2]<=0){xlim[2]<-1}  
+    if (xlim[1]<=0){xlim[1]<-xlim[2]/50000}   
+    plot(NULL,NULL,xlim=xlim,ylim=range(-data[!(data$PhaseName=="PAR"),"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="MPE Voltage",ylab="depth")
+    for (i in unique(data[,"PhaseName"])){
+      if (i != "PAR"){
+        lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+      }
+    }
+    
   }
+  
+
   
   #Plot Radio
   Sig<-data$Physical
@@ -731,6 +802,12 @@ if (!is.null(dataprofile)){
     data<-dataprofile$data$uvp6_lpm
     PlotUVP_lpm(data,technical=technical)
   }    
+  
+  #PlotUVP_txo
+  if ("uvp6_txo" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$uvp6_txo
+    PlotUVP_txo(data,technical=technical)
+  }   
     
   #PlotUVP_blk
   if ("uvp6_blk" %in% names(dataprofile$data)){  

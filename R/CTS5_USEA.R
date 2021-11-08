@@ -285,6 +285,16 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     pattern<-paste("^",floatname,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),"_",sensor,".*.csv",sep="")
     filename<-list.files(pattern=pattern)[1]
   }
+  else {
+    s<-strsplit(f,split="_")[[1]]
+    floatname<-s[1]
+    CycleNumber<-as.numeric(s[2])
+    PatternNumber<-as.numeric(s[3])
+    sensor<-strsplit(s[4],split="\\.")[[1]][1]
+  }
+  
+  
+  
   DepthName<-"Pressure_dbar"
   
   #****************************
@@ -890,7 +900,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   if ("mpe" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_MPE) & ("Voltage" %in% colnames(dataprofile$data$mpe))){
       
-      dataprofile$data$mpe[,"Physical"]<-dataprofile$data$mpe$Voltage/as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])
+      dataprofile$data$mpe[,"Physical"]<-1E4*dataprofile$data$mpe$Voltage/as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])
 
     }
   }

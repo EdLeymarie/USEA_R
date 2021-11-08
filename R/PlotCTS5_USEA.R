@@ -12,9 +12,43 @@ RunMedian<-function(x){
   return(result)
 }
 
+## Find Depth Zone from initfile
+FindZoneDepth<-function(inifile,sensorName){
+  result<-NULL
+  if (sensorName %in% names(inifile)){
+    result<-unlist(inifile[[sensorName]][47:50])
+  }
+  
+  return(result)
+}
+
+## plotDepthZones
+plotDepthZones<-function(ZoneDepth,x=c(0,1E5),col="lightgrey",lty=2){
+if (!is.null(ZoneDepth)){
+  for (i in 1:length(ZoneDepth)){
+    lines(x,c(-ZoneDepth[i],-ZoneDepth[i]),col=col,lty=lty)
+  }
+}
+}
+
 #**************************************************
-plotCTD<-function(data,ylim=NULL){  
+plotCTD<-function(data,ylim=NULL,technical=TRUE,ZoneDepth=NULL){  
 if (!is.null(data)){
+  
+  #Plot technical
+  if (technical){
+    
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("CTD",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
+  }
 
 #density
 data<-cbind(data,swRho(data[,"Salinity_PSU"],data[,"Temperature_degC"],data[,"Pressure_dbar"]))
@@ -29,11 +63,12 @@ dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
   for (ph in phaseToPlot){        
     ind<-data[,"PhaseName"]==ph
     plot(data$swSigmaT[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="potential density anomaly",ylab="Depth",ylim=ylim)
+    plotDepthZones(ZoneDepth)
     par(new=TRUE)
-    plot(data[ind,"Salinity_PSU"],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
+    plot(data[ind,"Salinity_PSU"],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="",ylim=ylim)
     axis(3,col=4,col.axis=4)
     par(new=TRUE)
-    plot(data[ind,"Temperature_degC"],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=2,xlab="",ylab="")
+    plot(data[ind,"Temperature_degC"],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=2,xlab="",ylab="",ylim=ylim)
     axis(3,col=2,col.axis=2,line=2)
     par(new=FALSE)
     legend("bottomleft",legend=paste("CTD:",ph))
@@ -67,7 +102,7 @@ dimnames(data)[[2]][length(dimnames(data)[[2]])]<-"swSigmaT"
 #**************************************************
 #Plot Eco Standard 
 
-PlotEcoStd<-function(data,technical=TRUE){
+PlotEcoStd<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot technical
   if (technical){
@@ -81,6 +116,8 @@ PlotEcoStd<-function(data,technical=TRUE){
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
     
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
+    
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
@@ -88,7 +125,10 @@ PlotEcoStd<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta ECO",xlab="delta [db]",ylab="depth [db]")
-    }
+    
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
+      }
     
   }
   
@@ -97,29 +137,37 @@ PlotEcoStd<-function(data,technical=TRUE){
   if (sum(!is.na(Chla))>2){ 
     plot(NULL,NULL,xlim=range(Chla,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="Chla [ug/l]",ylab="depth")
     for (i in unique(data[,"PhaseName"])){
-      lines(Chla[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
+      lines(Chla[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    }
+    plotDepthZones(ZoneDepth)
   }
+  
   #Plot BB
   bb<-data[,"beta-theta_1/msr"]
   if (sum(!is.na(bb))>2){
     plot(NULL,NULL,xlim=range(bb,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="bb [1/m.sr]",ylab="depth")
     for (i in unique (data[,"PhaseName"])){
-      lines(bb[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
+      lines(bb[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    }
+    plotDepthZones(ZoneDepth)
   }
+  
   #Plot CDOM
   if ("colored-dissolved-organic-matter_ppb" %in% colnames(data)){
     cdom<-data[,"colored-dissolved-organic-matter_ppb"]
     if (sum(!is.na(cdom))>2){
       plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="CDOM [ppb]",ylab="depth")
       for (i in unique (data[,"PhaseName"])){
-        lines(cdom[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))}
+        lines(cdom[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+      }
+      plotDepthZones(ZoneDepth)
     }
   }
 }
 
 #**************************************************
 #Plot OCR4 
-PlotOCR4<-function(data,meta,technical=TRUE){
+PlotOCR4<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot technical
   if (technical){
@@ -131,6 +179,7 @@ PlotOCR4<-function(data,meta,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -138,6 +187,8 @@ PlotOCR4<-function(data,meta,technical=TRUE){
       depth<-data$Pressure_dbar[ind]
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta OCR",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
       }
   }
   
@@ -157,6 +208,8 @@ PlotOCR4<-function(data,meta,technical=TRUE){
         lines(temp[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
       }
     }
+    plotDepthZones(ZoneDepth,x = xlim)
+    
   }
   
 }
@@ -169,7 +222,7 @@ PlotOCR4<-function(data,meta,technical=TRUE){
 
 ###
 
-PlotOptode<-function(data,technical=TRUE){
+PlotOptode<-function(data,technical=TRUE,ZoneDepth=NULL){
 
   
   #Plot technical
@@ -182,6 +235,8 @@ PlotOptode<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
+    
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -190,17 +245,19 @@ PlotOptode<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta DO",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
   }    
 
   
   #PlotDO
   if (dim(data)[1]>5){
-  
     plot(NULL,NULL,xlim=range(data[,"doxy_uncalibrated"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="doxy_uncalibrated",ylab="depth")
     for (i in unique (data[,"PhaseName"])){
       lines(data[data[,"PhaseName"]==i,"doxy_uncalibrated"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
+    plotDepthZones(ZoneDepth)
   }
   
 }
@@ -211,7 +268,7 @@ PlotOptode<-function(data,technical=TRUE){
 
 ###
 
-PlotCROVER<-function(data,technical=TRUE){
+PlotCROVER<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   
   #Plot technical
@@ -224,6 +281,7 @@ PlotCROVER<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -232,6 +290,8 @@ PlotCROVER<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta CROVER",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
   }    
   
@@ -243,6 +303,8 @@ PlotCROVER<-function(data,technical=TRUE){
     for (i in unique (data[,"PhaseName"])){
       lines(data[data[,"PhaseName"]==i,"c-uncalibrated_1/m"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
+    plotDepthZones(ZoneDepth)
+    
   }
   
 }
@@ -253,7 +315,7 @@ PlotCROVER<-function(data,technical=TRUE){
 
 ###
 
-PlotSUNA<-function(data,technical=TRUE){
+PlotSUNA<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   
   #Plot technical
@@ -266,6 +328,7 @@ PlotSUNA<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -274,6 +337,8 @@ PlotSUNA<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta SUNA",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
   }    
   
@@ -285,6 +350,7 @@ PlotSUNA<-function(data,technical=TRUE){
     for (i in unique (data[,"PhaseName"])){
       lines(data[data[,"PhaseName"]==i,"nitrate-concentration_uMol/l"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
+    plotDepthZones(ZoneDepth)
     
     
     ##Spectre
@@ -314,7 +380,7 @@ PlotSUNA<-function(data,technical=TRUE){
 #**************************************************
 #Plot PlotSbepH
 
-PlotSbepH<-function(data,technical=TRUE){
+PlotSbepH<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   
   #Plot technical
@@ -327,6 +393,7 @@ PlotSbepH<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -335,6 +402,8 @@ PlotSbepH<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta pH",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
   }    
   
@@ -346,13 +415,15 @@ PlotSbepH<-function(data,technical=TRUE){
     for (i in unique (data[,"PhaseName"])){
       lines(data[data[,"PhaseName"]==i,"pH_Uncal"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
+    plotDepthZones(ZoneDepth)
+    
   }
   
 }
 
 #**************************************************
 #Plot OCTOPUS
-PlotUVP_lpm<-function(data,technical=TRUE){
+PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot Chronologie
   if (technical){
@@ -363,7 +434,8 @@ PlotUVP_lpm<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
-  
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
+    
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
     if (length(ind)>2){  
@@ -371,6 +443,8 @@ PlotUVP_lpm<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta UVP",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
   }
   
@@ -392,7 +466,7 @@ PlotUVP_lpm<-function(data,technical=TRUE){
             lines(temp[data[,"PhaseName"]==i,j],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])),lty=j)}
         }
       }
-      
+      plotDepthZones(ZoneDepth,x = c(temp.min,temp.max))
       legend("bottomright",col=1,lty=1:6,legend=colnames(temp))
     }
   }
@@ -402,7 +476,7 @@ PlotUVP_lpm<-function(data,technical=TRUE){
 
 #**************************************************
 #Plot UVP_blk
-PlotUVP_blk<-function(data,technical=TRUE){
+PlotUVP_blk<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot Chronologie
   if (technical){
@@ -413,7 +487,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
-  
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
   
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -422,6 +496,8 @@ PlotUVP_blk<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta UVP black",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
   }
   
@@ -439,7 +515,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
             lines(temp[data[,"PhaseName"]==i,j],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])),lty=j)}
         }
       }
-      
+      plotDepthZones(ZoneDepth,x = c(temp.min,temp.max))
       legend("bottomright",col=1,lty=1:6,legend=colnames(temp))
     }
   
@@ -447,7 +523,7 @@ PlotUVP_blk<-function(data,technical=TRUE){
 
 #**************************************************
 #Plot UVP_txo
-PlotUVP_txo<-function(data,technical=TRUE){
+PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot Chronologie
   if (technical){
@@ -458,7 +534,7 @@ PlotUVP_txo<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
-    
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -467,44 +543,85 @@ PlotUVP_txo<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta UVP Taxo",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
   }
   
-  data<-data[data$PhaseName=="ASC",]
+  ## ASCENT
+  ## limitation Ascent
+  dataASC<-data[data$PhaseName=="ASC",]
   
   #### Class Size
-  indSize<-grep("Size",colnames(data))
-  ExistClass<-apply(data[,indSize],2,sum) > 0
+  indSize<-grep("Size",colnames(dataASC))
+  ExistClass<-apply(dataASC[,indSize],2,sum) > 0
   
   Nclass<-sum(ExistClass)
   if (Nclass>0){
     cols<-rainbow(Nclass)
-    matplot(data[,indSize][ExistClass],-data$Pressure_dbar,type="l",lty=1,xlab="ObjectSize",ylab = "Depth",col=cols)
-    legend("bottomright",legend=colnames(data)[indSize][ExistClass],lty=1,bty="y",col=cols)
+    matplot(dataASC[,indSize][ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectSize",ylab = "Depth",col=cols)
+    plotDepthZones(ZoneDepth)
+    legend("bottomright",legend=colnames(dataASC)[indSize][ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No Size Class in UVP6 Taxo\n")
   }
   
   #### Class Size
-  indGL<-grep("GL",colnames(data))
-  ExistClass<-apply(data[,indGL],2,sum) > 0
+  indGL<-grep("GL",colnames(dataASC))
+  ExistClass<-apply(dataASC[,indGL],2,sum) > 0
   
   Nclass<-sum(ExistClass)
   if (Nclass>0){
     cols<-rainbow(Nclass)
-    matplot(data[,indGL][ExistClass],-data$Pressure_dbar,type="l",lty=1,xlab="ObjectGL",ylab = "Depth",col=cols)
-    legend("bottomright",legend=colnames(data)[indGL][ExistClass],lty=1,bty="y",col=cols)
+    matplot(dataASC[,indGL][ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectGL",ylab = "Depth",col=cols)
+    plotDepthZones(ZoneDepth)
+    legend("bottomright",legend=colnames(dataASC)[indGL][ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No GL Class in UVP6 Taxo\n")
   }
+  
+  ## PARKING
+  ## limitation Ascent
+  dataPAR<-data[data$PhaseName=="PAR",]
+  
+  if (nrow(dataPAR) > 1){
+    #### Class Size
+    indSize<-grep("Size",colnames(dataPAR))
+    ExistClass<-apply(dataPAR[,indSize],2,sum) > 0
+    
+    Nclass<-sum(ExistClass)
+    if (Nclass>0){
+      cols<-rainbow(Nclass)
+      matplot(as.numeric(dataPAR$Date),dataPAR[,indSize][ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectSize",col=cols)
+      legend("bottomright",legend=colnames(dataPAR)[indSize][ExistClass],lty=1,bty="y",col=cols)
+    }
+    else {
+      cat("No Size Class in UVP6 Taxo at Parking \n")
+    }
+    
+    #### Class Size
+    indGL<-grep("GL",colnames(dataPAR))
+    ExistClass<-apply(dataPAR[,indGL],2,sum) > 0
+    
+    Nclass<-sum(ExistClass)
+    if (Nclass>0){
+      cols<-rainbow(Nclass)
+      matplot(as.numeric(dataPAR$Date),dataPAR[,indGL][ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectGL",col=cols)
+      legend("bottomright",legend=colnames(dataPAR)[indGL][ExistClass],lty=1,bty="y",col=cols)
+    }
+    else {
+      cat("No GL Class in UVP6 Taxo at Parking\n")
+    }
+  }
+  
 }
 
 #**************************************************
 #Plot Ramses
 # data<-dataprofile$data$ramses[dataprofile$data$ramses$PhaseName=="ASC",]
-PlotRamses<-function(data,technical=TRUE){
+PlotRamses<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot technical
   if (technical){
@@ -516,6 +633,7 @@ PlotRamses<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -524,6 +642,8 @@ PlotRamses<-function(data,technical=TRUE){
       
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta Ramses",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
     
     ## IntTime et Tilt
@@ -532,7 +652,7 @@ PlotRamses<-function(data,technical=TRUE){
     par(new=TRUE)
     plot(apply(cbind(data$ramses_tilt1[ind],data$ramses_tilt2[ind]),1,mean),-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
     axis(3,col=4,col.axis=4)
-    
+    plotDepthZones(ZoneDepth)
   }    
   
   ## Data
@@ -574,6 +694,9 @@ PlotRamses<-function(data,technical=TRUE){
       temp<-cbind(temp,apply(datatemp[,abs(waves-wavelist[i])<5],1,mean))
     }
     matplot(temp,-data$Pressure_dbar,lty=1,type="l",log="x",col=colpal,xlab="Ramses Irradiance physical",ylab="Depth")
+    temp<-as.vector(temp)
+    plotDepthZones(ZoneDepth,x = c(min(temp[temp>0]),max(temp)))
+    
     ind<-seq(from=1,to=length(wavelist),by=5)
     if (max(ind) < length(wavelist)){ind<-c(ind,length(wavelist))}
     legend("bottomright",legend=wavelist[ind],col=colpal[ind],lty=1)
@@ -584,7 +707,7 @@ PlotRamses<-function(data,technical=TRUE){
 
 #**************************************************
 #Plot mpe 
-PlotMPE<-function(data,technical=TRUE){
+PlotMPE<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot technical
   if (technical){
@@ -596,6 +719,7 @@ PlotMPE<-function(data,technical=TRUE){
     ind<-which(data[,"PhaseName"]=="ASC")
     rangeascent<-range(data[ind,"Pressure_dbar"])
     legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     #Plot Ecart
     ind<-which(data[,"PhaseName"] == "ASC")
@@ -603,6 +727,8 @@ PlotMPE<-function(data,technical=TRUE){
       depth<-data$Pressure_dbar[ind]
       delta<-depth[-length(depth)]-depth[-1]
       plot(delta,-depth[-1],log="x",main="delta MPE",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
     }
     
     #Plot Temp
@@ -617,6 +743,7 @@ PlotMPE<-function(data,technical=TRUE){
         lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
       }
     }
+    plotDepthZones(ZoneDepth,x = xlim)
     
     #Plot Voltage
     Sig<-data$Voltage
@@ -630,6 +757,7 @@ PlotMPE<-function(data,technical=TRUE){
         lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
       }
     }
+    plotDepthZones(ZoneDepth,x = xlim)
     
   }
   
@@ -648,7 +776,7 @@ PlotMPE<-function(data,technical=TRUE){
         lines(Sig[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
   }
-
+  plotDepthZones(ZoneDepth,x = xlim)
   
 }
 
@@ -656,13 +784,14 @@ PlotMPE<-function(data,technical=TRUE){
 #**************************************************
 #Plot External - Trig (Pump)
 # data<-dataprofile$data$ext_trig
-Plotext_trig<-function(data,technical=TRUE){
+Plotext_trig<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot technical
   if (technical){
     #Plot Chronologie
     plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
     title(main="External Trig")
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
     
     legend("topright",legend=unique(data[,"PhaseName"]),pch = 16,col=1:length(unique(data[,"PhaseName"])),bty="n")
     
@@ -670,6 +799,67 @@ Plotext_trig<-function(data,technical=TRUE){
 
   
 }
+
+#**************************************************
+#Plot RAD sensors together
+# data<-dataprofile$data$ext_trig
+PlotCompRad<-function(dataprofile){
+  
+  if (("ocr" %in% names(dataprofile$data)) & ("mpe" %in% names(dataprofile$data))){
+    
+  #Plot MPE
+  data<-dataprofile$data$mpe
+  data<-data[data[,"PhaseName"] == "ASC",]
+    
+  if (nrow(data) > 2){
+    SigMPE<-data$Physical
+    DepthMPE<-data$Pressure_dbar
+    SigMPE<-SigMPE-min(SigMPE)
+    
+    MeanMPE<-median(SigMPE[DepthMPE<5])
+  
+    #Plot OCR
+    data<-dataprofile$data$ocr
+    data<-data[data[,"PhaseName"] == "ASC",]
+    
+    if (nrow(data) > 2){
+      Sig<-data$`Photosynthetic-Active-Radiation`
+      Sig<-Sig-min(Sig)
+      
+      MeanOCR<-median(Sig[data$Pressure_dbar<5])
+      
+      CoefNorm<-MeanOCR/MeanMPE
+      SigMPE<-CoefNorm*SigMPE
+      
+      ## Plot
+      xlim=range(SigMPE[SigMPE>0],na.rm = TRUE, finite = TRUE)
+      # if (xlim[2]<=0){xlim[2]<-1}  
+      # if (xlim[1]<=0){xlim[1]<-0.1}   
+      plot(SigMPE,-DepthMPE,xlim=xlim,ylim=range(-DepthMPE,na.rm = TRUE, finite = TRUE),
+           xlab="PAR Physical",ylab="depth",log="x",type="l")
+      
+      lines(Sig,-data$Pressure_dbar,col=2,type="l")
+      
+      #Dark sur 20 dernier m
+      DarkMPE<-median(SigMPE[DepthMPE>(max(DepthMPE-20))])
+      lines(rep(DarkMPE,2),-c(max(DepthMPE),150),lty=2)
+      
+      DarkOCR<-median(Sig[data$Pressure_dbar>(max(data$Pressure_dbar-20))])
+      lines(rep(DarkOCR,2),-c(max(DepthMPE),150),lty=2,col=2)
+      
+      legend("topleft",legend=c("MPE adjusted to OCR","OCR",
+                                paste("MeanOCR/MeanMPE (5m)=",formatC(CoefNorm,digit=3)),
+                                paste("DarkMPE=",formatC(DarkMPE,digit=3)),
+                                paste("DarkOCR=",formatC(DarkOCR,digit=3))),
+             lty=c(1,1,0,2,2),col=c(1,2,1,1,2),bty="n",cex=0.75)
+    }
+  }
+    
+  }
+  
+  
+}
+
 
 #**************************************************
 
@@ -734,7 +924,8 @@ if (!is.null(dataprofile)){
   #ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,PhaseName] %in% c("DES","ASC"))
   if ("sbe41" %in% names(dataprofile$data)){
     data<-dataprofile$data$sbe41
-    plotCTD(data)
+    plotCTD(data,technical=technical,
+            ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_01"))
   
     mydate<-max(as.POSIXct(dataprofile$data$sbe41[,"Date"],origin = "1970-01-01",tz="UTC"))
     mtext(paste("float:",login,", cycle:",CycleNumber,", pattern:",PatternNumber,", date:",mydate),side=3,line=-1,outer=T,cex=0.6,adj=0.95)
@@ -754,7 +945,8 @@ if (!is.null(dataprofile)){
   if ("eco" %in% names(dataprofile$data)){
     if ("chlorophyll-a_ug/l" %in% colnames(dataprofile$data$eco)){
       data<-dataprofile$data$eco
-      PlotEcoStd(data,technical=technical)
+      PlotEcoStd(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_04"))
     }
   }
   
@@ -762,7 +954,8 @@ if (!is.null(dataprofile)){
   if ("ocr" %in% names(dataprofile$data)){  
     if ("Downwelling-irradiance-380nm" %in% colnames(dataprofile$data$ocr)){
       data<-dataprofile$data$ocr
-      PlotOCR4(data,meta,technical=technical)
+      PlotOCR4(data,technical=technical,
+               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_03"))
     }
   }
     
@@ -770,7 +963,8 @@ if (!is.null(dataprofile)){
   if ("crover" %in% names(dataprofile$data)){  
     if ("c-uncalibrated_1/m" %in% colnames(dataprofile$data$crover)){
       data<-dataprofile$data$crover
-      PlotCROVER(data,technical=technical)
+      PlotCROVER(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_06"))
     }
   }
   
@@ -778,14 +972,16 @@ if (!is.null(dataprofile)){
   if ("do" %in% names(dataprofile$data)){  
     if ("doxy_uncalibrated" %in% colnames(dataprofile$data$do)){
       data<-dataprofile$data$do
-      PlotOptode(data,technical=technical)
+      PlotOptode(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_02"))
     }
   }  
   
   #PlotSuna
   if ("suna" %in% names(dataprofile$data)){  
     data<-dataprofile$data$suna
-    PlotSUNA(data,technical=technical)
+    PlotSUNA(data,technical=technical,
+             ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_07"))
   }
 
   
@@ -793,45 +989,56 @@ if (!is.null(dataprofile)){
   if ("sbeph" %in% names(dataprofile$data)){  
     if ("pH_Uncal" %in% colnames(dataprofile$data$sbeph)){
       data<-dataprofile$data$sbeph
-      PlotSbepH(data,technical=technical)
+      PlotSbepH(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_05"))
     }
   }    
   
   #PlotUVP_lpm
   if ("uvp6_lpm" %in% names(dataprofile$data)){  
     data<-dataprofile$data$uvp6_lpm
-    PlotUVP_lpm(data,technical=technical)
+    PlotUVP_lpm(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08"))
   }    
   
   #PlotUVP_txo
   if ("uvp6_txo" %in% names(dataprofile$data)){  
     data<-dataprofile$data$uvp6_txo
-    PlotUVP_txo(data,technical=technical)
+    PlotUVP_txo(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08"))
   }   
     
   #PlotUVP_blk
   if ("uvp6_blk" %in% names(dataprofile$data)){  
     data<-dataprofile$data$uvp6_blk
-    PlotUVP_blk(data,technical=technical)
+    PlotUVP_blk(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08"))
   }        
   
   #PlotRamses
   if ("ramses" %in% names(dataprofile$data)){  
       data<-dataprofile$data$ramses
-      PlotRamses(data,technical=technical)
+      PlotRamses(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14"))
   }   
   
   #ext_trig
   if ("ext_trig" %in% names(dataprofile$data)){  
     data<-dataprofile$data$ext_trig
-    Plotext_trig(data,technical=technical)
+    Plotext_trig(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_13"))
   }   
   
   #mpe
   if ("mpe" %in% names(dataprofile$data)){  
     data<-dataprofile$data$mpe
-    PlotMPE(data,technical=technical)
+    PlotMPE(data,technical=technical,
+            ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_17"))
   }   
+  
+  #Plot RAD sensors together
+  PlotCompRad(dataprofile)
+  
   
   if (!add){
     cat("Close pdf","\n")

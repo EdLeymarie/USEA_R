@@ -853,7 +853,7 @@ if (show.title)
 if (show.EV){
   ind<-(NavData$EVRecord[,"CycleNumber"] %in% cycle) & (NavData$EVRecord[,"PatternNumber"] %in% pattern)
   
-  points(NavData$EVRecord$date[ind],-NavData$EVRecord$depth[ind],pch=20,col="blue")
+  points(NavData$EVRecord$date[ind],-NavData$EVRecord$depth[ind],pch=20,col="cyan")
 }
 
 #pump

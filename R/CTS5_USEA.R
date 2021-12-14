@@ -39,6 +39,40 @@ else {
 # Decod USEA
 
 #**************************************************
+#' scan profiles available in a directory
+#'
+
+
+cts5_ScanProfilesID<-function(pattern=".*sbe41.hex"){
+  
+  filenames<-list.files(pattern=pattern)
+  
+  
+  #Détermination des numéros de profil
+  filenames_split<-strsplit(filenames,split="_")
+  temp<-NULL
+  for (i in 1:length(filenames_split)){
+    temp<-rbind(temp,c(filenames_split[[i]][1],filenames_split[[i]][2],filenames_split[[i]][3]))
+  }
+  
+  # Suppression des 0
+  temp<-data.frame(temp,stringsAsFactors = FALSE)
+  temp[,2]<-as.numeric(temp[,2])
+  temp[,3]<-as.numeric(temp[,3])
+  temp<-temp[temp[,3] != 0,]
+  colnames(temp)<-c("floatname","cycle","profile")
+  
+  #Elimination des doublons
+  temp<-unique(temp)
+  
+  return(temp)
+}
+
+#**************************************************
+
+# Decod USEA
+
+#**************************************************
 #' Use NKE routine to decode .hex data files
 #'
 #' @description
@@ -373,7 +407,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     
   }
   
-  ##-8b uvp6_txo
+  ##-8b uvp6_txo 3 Valeurs par champs : Nbr d'objets, taille moyenne et Gris moyen : 3*40
   if (sensor == "uvp6_txo"){
     
     V1<-paste("ObjectSize",1:40,sep = "")
@@ -1094,8 +1128,9 @@ if (!is.null(dataprofile)){
 #' @param floatname hexa name of the float. If "", the floatname will automatically found.
 #' @param CycleNumber numeric : number of the cycle to look for
 #' @param PatternNumber numeric : number of the Pattern to look for
+#' @param OnlyFilename If True, only the filename of the corresponding inifile is returned
 #' 
-#' @return list containing the information
+#' @return list containing the information or, if OnlyFilename==True, the filename.
 #' 
 #' @details #' if the inifilename is not provided, the inifile which describe the profile CycleNumber,PatternNumber
 #' will be open
@@ -1108,7 +1143,7 @@ if (!is.null(dataprofile)){
 #' 
 #' @export
 #'
-cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1){
+cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1,OnlyFilename=F){
   
   
   ## Selection of the file
@@ -1163,44 +1198,49 @@ cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1){
   ## read and Parse
   if (inifilename !=""){
     if (file.exists(inifilename)){
-      cat("open:",inifilename,"\n")
-      data<-scan(inifilename,sep="\n",what=character(0))
-      
-      ## 1: split [balise]
-      ind<-grep("^\\[",data)
-      ind<-c(ind,length(data)+1)
-      
-      inifile<-list()
-      
-      for (i in 1:(length(ind)-1)){
-        balisename<-substr(data[ind[i]],2,nchar(data[ind[i]])-1)
-        inifile[[balisename]]<-data[(ind[i]+1):(ind[i+1]-1)]
+      if (OnlyFilename){
+        return(inifilename)
       }
-      
-      ## 2: Analyse
-      for (i in 1:length(inifile)){
+      else {
+        cat("open:",inifilename,"\n")
+        data<-scan(inifilename,sep="\n",what=character(0))
         
-        inifile[[i]]<-as.list(inifile[[i]])
-        for (j in 1:length(inifile[[i]])){
-          s<-inifile[[i]][[j]][1]
-          
-          s1<-strsplit(s,split = "=")[[1]][1]
-          s2<-strsplit(s,split = "=")[[1]][2]
-          
-          #detection type numeric
-          val<-suppressWarnings(as.numeric(s2))
-          
-          names(inifile[[i]])[j]<-s1
-          if (is.na(val)){
-            inifile[[i]][[j]]<-s2
-          } else {
-            inifile[[i]][[j]]<-as.numeric(s2)
-          }
-          
+        ## 1: split [balise]
+        ind<-grep("^\\[",data)
+        ind<-c(ind,length(data)+1)
+        
+        inifile<-list()
+        
+        for (i in 1:(length(ind)-1)){
+          balisename<-substr(data[ind[i]],2,nchar(data[ind[i]])-1)
+          inifile[[balisename]]<-data[(ind[i]+1):(ind[i+1]-1)]
         }
+        
+        ## 2: Analyse
+        for (i in 1:length(inifile)){
+          
+          inifile[[i]]<-as.list(inifile[[i]])
+          for (j in 1:length(inifile[[i]])){
+            s<-inifile[[i]][[j]][1]
+            
+            s1<-strsplit(s,split = "=")[[1]][1]
+            s2<-strsplit(s,split = "=")[[1]][2]
+            
+            #detection type numeric
+            val<-suppressWarnings(as.numeric(s2))
+            
+            names(inifile[[i]])[j]<-s1
+            if (is.na(val)){
+              inifile[[i]][[j]]<-s2
+            } else {
+              inifile[[i]][[j]]<-as.numeric(s2)
+            }
+            
+          }
+        }
+        
+        return(inifile)
       }
-      
-      return(inifile)
     }
     else {
       warning("No Inifile:",inifilename,"\n")

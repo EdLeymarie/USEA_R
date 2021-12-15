@@ -8,6 +8,7 @@ cts5_system_Plot(
   NavData,
   cycle = NULL,
   pattern = 1:10,
+  xlim = NULL,
   ylim = NULL,
   timeWin = c(0, 1),
   relatif = FALSE,
@@ -18,7 +19,8 @@ cts5_system_Plot(
   show.title = F,
   show.cycle = T,
   show.user = T,
-  legendPos = ""
+  legendPos = "",
+  add = F
 )
 }
 \arguments{
@@ -28,17 +30,16 @@ cts5_system_Plot(
 
 \item{pattern}{pattern to plot}
 
+\item{xlim}{for plot function}
+
 \item{ylim}{plot ylim}
 
-\item{timeWin}{relative time window.}
+\item{timeWin}{relative time window (if xlim=NULL)}
+
+\item{relatif}{If True, time in min is relative to the first date}
 }
 \value{
 list containing the parsed system information
-}
-\description{
-plot trajectory of the float from \code{\link{cts5_system_parse}}
-}
-\examples{
 
 NavData<-cts5_system_parse("ffff_system_01755_decrypt.log")
 NavData<-cts5_system_parse("_system_decrypt.log",userdefine="Grounding detected")
@@ -47,5 +48,10 @@ cts5_system_Plot(NavData)
 cts5_system_Plot(NavData,cycle=5:10)
 cts5_system_Plot(NavData,cycle=5,pattern=1)
 
-
+## To compare profiles
+cts5_system_Plot(Navdata,cycle = 46,relatif = T,xlim=c(0,1500),show.cycle = F)
+cts5_system_Plot(Navdata,cycle = 49,relatif = T,show.cycle = F,add=T)
+}
+\description{
+plot trajectory of the float from \code{\link{cts5_system_parse}}
 }

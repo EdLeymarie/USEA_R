@@ -145,6 +145,7 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
       technical$GPS<-list(time=time)
       technical$GPS[["lat (deg)"]]<-ConvDeg(strsplit(strsplit(s,split="=")[[1]][3],split=" ")[[1]][1])
       technical$GPS[["lon (deg)"]]<-ConvDeg(strsplit(strsplit(s,split="=")[[1]][4],split=" ")[[1]][1])
+      technical$GPS[["Clock_drift"]]<-as.numeric(strsplit(strsplit(s,split="=")[[1]][5],split=" ")[[1]][1])
     }
     
     ## PROFILE

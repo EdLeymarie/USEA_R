@@ -4,7 +4,13 @@
 \alias{cts5_readIni}
 \title{read CTS5 _apmt.ini file}
 \usage{
-cts5_readIni(inifilename = "", floatname = "", CycleNumber, PatternNumber = 1)
+cts5_readIni(
+  inifilename = "",
+  floatname = "",
+  CycleNumber,
+  PatternNumber = 1,
+  OnlyFilename = F
+)
 }
 \arguments{
 \item{inifilename}{filename of the ini file}
@@ -14,9 +20,11 @@ cts5_readIni(inifilename = "", floatname = "", CycleNumber, PatternNumber = 1)
 \item{CycleNumber}{numeric : number of the cycle to look for}
 
 \item{PatternNumber}{numeric : number of the Pattern to look for}
+
+\item{OnlyFilename}{If True, only the filename of the corresponding inifile is returned}
 }
 \value{
-list containing the information
+list containing the information or, if OnlyFilename==True, the filename.
 }
 \description{
 read CTS5 _apmt.ini file and store the information into a list

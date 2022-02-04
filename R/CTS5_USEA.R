@@ -410,11 +410,13 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   ##-8b uvp6_txo 3 Valeurs par champs : Nbr d'objets, taille moyenne et Gris moyen : 3*40
   if (sensor == "uvp6_txo"){
     
-    V1<-paste("ObjectSize",1:40,sep = "")
-    V2<-paste("ObjectGL",1:40,sep = "")
-    temp<-rep("",80)
-    temp[seq(1,80,by=2)]<-V1
-    temp[seq(2,80,by=2)]<-V2
+    V1<-paste("ObjectNbr",1:40,sep = "")
+    V2<-paste("ObjectSize",1:40,sep = "")
+    V3<-paste("ObjectGL",1:40,sep = "")
+    temp<-rep("",120)
+    temp[seq(1,length.out=40,by=3)]<-V1
+    temp[seq(2,length.out=40,by=3)]<-V2
+    temp[seq(3,length.out=40,by=3)]<-V3
     
     data.colnames<-c("Nimages",temp)
     

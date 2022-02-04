@@ -454,16 +454,24 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   for (i in 1:length(title_list)){
     temp<-data[,class_list[i,]]
-    if (sum(temp>0) > 2){
-      temp.min<-min(temp[temp>0])
-      temp.max<-max(temp)
+    
+    ## correction Nimages or NSamples
+    if ("Nimages" %in% colnames(data)){
+      temp<-temp/data$Nimages}
+    if ("NSamples" %in% colnames(data)){
+      temp<-temp/data$NSamples}
+    
+    if (sum(temp>0,na.rm=T) > 2){
+      temp.min<-min(temp[temp>0],na.rm=T)
+      temp.max<-max(temp,na.rm=T)
       
       plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
       title(main=title_list[i])
       for (j in 1:6){
-        if (sum(temp[,j]>0)>4){
-          for (i in unique(data[,"PhaseName"])){
-            lines(temp[data[,"PhaseName"]==i,j],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])),lty=j)}
+        if (sum(temp[,j]>0,na.rm = T)>4){
+          for (pn in unique(data[,"PhaseName"])){
+            lines(temp[data[,"PhaseName"]==pn,j],-data[data[,"PhaseName"]==pn,"Pressure_dbar"],col=match(pn,unique(data[,"PhaseName"])),lty=j)
+            }
         }
       }
       plotDepthZones(ZoneDepth,x = c(temp.min,temp.max))
@@ -503,14 +511,14 @@ PlotUVP_blk<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #### Class
     temp<-data[,c("uvp-blk_Count1","uvp-blk_Count2","uvp-blk_Count3","uvp-blk_Count4","uvp-blk_Count5")]
-    if (sum(temp>0) > 2){
-      temp.min<-min(temp[temp>0])
-      temp.max<-max(temp)
+    if (sum(temp>0,na.rm=T) > 2){
+      temp.min<-min(temp[temp>0],na.rm=T)
+      temp.max<-max(temp,na.rm=T)
       
       plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
       title(main="UVP black count")
       for (j in 1:5){
-        if (sum(temp[,j]>0)>4){
+        if (sum(temp[,j]>0,na.rm=T)>4){
           for (i in unique (data[,"PhaseName"])){
             lines(temp[data[,"PhaseName"]==i,j],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])),lty=j)}
         }
@@ -552,14 +560,31 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   ## limitation Ascent
   dataASC<-data[data$PhaseName=="ASC",]
   
-  #### Class Size
-  indSize<-grep("Size",colnames(dataASC))
-  ExistClass<-apply(dataASC[,indSize],2,sum) > 0
+  #### Object Nbr
+  indNbr<-grep("ObjectNbr",colnames(dataASC))
+  ExistClass<-apply(dataASC[,indNbr],2,sum,na.rm=T) > 0
   
   Nclass<-sum(ExistClass)
   if (Nclass>0){
     cols<-rainbow(Nclass)
-    matplot(dataASC[,indSize][ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectSize",ylab = "Depth",col=cols)
+    matplot(dataASC[,indNbr][,ExistClass]/dataASC$Nimages,-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectNbr",ylab = "Depth",
+            main="Ascent Object Number",col=cols)
+    plotDepthZones(ZoneDepth)
+    legend("bottomright",legend=colnames(dataASC)[indNbr][ExistClass],lty=1,bty="y",col=cols)
+  }
+  else {
+    cat("No ObjectNbr Class in UVP6 Taxo\n")
+  }
+  
+  #### Class Size
+  indSize<-grep("ObjectSize",colnames(dataASC))
+  ExistClass<-apply(dataASC[,indSize],2,sum,na.rm=T) > 0
+  
+  Nclass<-sum(ExistClass)
+  if (Nclass>0){
+    cols<-rainbow(Nclass)
+    matplot(dataASC[,indSize][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectSize",ylab = "Depth",
+            main="Ascent Object Size",col=cols)
     plotDepthZones(ZoneDepth)
     legend("bottomright",legend=colnames(dataASC)[indSize][ExistClass],lty=1,bty="y",col=cols)
   }
@@ -567,14 +592,15 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     cat("No Size Class in UVP6 Taxo\n")
   }
   
-  #### Class Size
-  indGL<-grep("GL",colnames(dataASC))
-  ExistClass<-apply(dataASC[,indGL],2,sum) > 0
+  #### ObjectGL
+  indGL<-grep("ObjectGL",colnames(dataASC))
+  ExistClass<-apply(dataASC[,indGL],2,sum,na.rm=T) > 0
   
   Nclass<-sum(ExistClass)
   if (Nclass>0){
     cols<-rainbow(Nclass)
-    matplot(dataASC[,indGL][ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectGL",ylab = "Depth",col=cols)
+    matplot(dataASC[,indGL][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectGL",ylab = "Depth",
+            main="Ascent Object Grey Level",col=cols)
     plotDepthZones(ZoneDepth)
     legend("bottomright",legend=colnames(dataASC)[indGL][ExistClass],lty=1,bty="y",col=cols)
   }
@@ -582,19 +608,52 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     cat("No GL Class in UVP6 Taxo\n")
   }
   
+  ## Sum Ascent
+  SumNbr<-apply(dataASC[,indNbr],2,sum,na.rm=T)
+  SizeAv<-apply(dataASC[,indSize],2,mean,na.rm=T)
+  GLAv<-apply(dataASC[,indGL],2,mean,na.rm=T)
+  
+  xrange<-range(which(SumNbr>0))
+  
+  yrange<-c(SumNbr,SizeAv,GLAv)
+  yrange<-range(yrange[yrange>0])
+  
+  plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
+  lines(1:40,SizeAv,col=2)
+  lines(1:40,GLAv,col=3)
+  legend("bottomright",legend=c("Object Number sum","Object Size Av","Object GL Av"),lty=1,col=1:3,bty="n",cex=0.75)
+  
   ## PARKING
-  ## limitation Ascent
+  ## limitation Parking
   dataPAR<-data[data$PhaseName=="PAR",]
   
   if (nrow(dataPAR) > 1){
-    #### Class Size
-    indSize<-grep("Size",colnames(dataPAR))
-    ExistClass<-apply(dataPAR[,indSize],2,sum) > 0
+    
+    #### ObjectNbr
+    indNbr<-grep("ObjectNbr",colnames(dataPAR))
+    ExistClass<-apply(dataPAR[,indNbr],2,sum,na.rm=T) > 0
     
     Nclass<-sum(ExistClass)
     if (Nclass>0){
       cols<-rainbow(Nclass)
-      matplot(as.numeric(dataPAR$Date),dataPAR[,indSize][ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectSize",col=cols)
+      matplot(as.numeric(dataPAR$Date)/dataPAR$Nimages,dataPAR[,indNbr][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectNbr",
+              main="Parking Object Number", col=cols)
+      legend("bottomright",legend=colnames(dataPAR)[indNbr][ExistClass],lty=1,bty="y",col=cols)
+    }
+    else {
+      cat("No ObjectNbr Class in UVP6 Taxo at Parking \n")
+    }
+    
+    
+    #### Class Size
+    indSize<-grep("ObjectSize",colnames(dataPAR))
+    ExistClass<-apply(dataPAR[,indSize],2,sum,na.rm=T) > 0
+    
+    Nclass<-sum(ExistClass)
+    if (Nclass>0){
+      cols<-rainbow(Nclass)
+      matplot(as.numeric(dataPAR$Date),dataPAR[,indSize][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectSize",
+              main="Parking Object Size",col=cols)
       legend("bottomright",legend=colnames(dataPAR)[indSize][ExistClass],lty=1,bty="y",col=cols)
     }
     else {
@@ -602,13 +661,14 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     }
     
     #### Class Size
-    indGL<-grep("GL",colnames(dataPAR))
-    ExistClass<-apply(dataPAR[,indGL],2,sum) > 0
+    indGL<-grep("ObjectGL",colnames(dataPAR))
+    ExistClass<-apply(dataPAR[,indGL],2,sum,na.rm=T) > 0
     
     Nclass<-sum(ExistClass)
     if (Nclass>0){
       cols<-rainbow(Nclass)
-      matplot(as.numeric(dataPAR$Date),dataPAR[,indGL][ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectGL",col=cols)
+      matplot(as.numeric(dataPAR$Date),dataPAR[,indGL][ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectGL",
+              main="Parking Object Grey Level",col=cols)
       legend("bottomright",legend=colnames(dataPAR)[indGL][ExistClass],lty=1,bty="y",col=cols)
     }
     else {

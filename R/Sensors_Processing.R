@@ -315,9 +315,11 @@ return(E/S)
 
 #**************************************************
 
-Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt"){
+Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater=T){
   
-calib_file<-list.files(pattern = calib_file)[1]
+if (!file.exists(calib_file)){  
+  calib_file<-list.files(pattern = calib_file)[1]
+}
   
 if (file.exists(calib_file)){
   cat("Open RAMSES cal file: ",calib_file,"\n")
@@ -328,7 +330,12 @@ if (file.exists(calib_file)){
   wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})
   B0<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B0[c(sq[i],sq[i]+PixelBinning-1)])})
   B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
-  S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+  if (InWater){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+  } else {
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply in Air calibration \n")
+  }
   
   indDark<-ramses_cal$Wave == -1
   B0_Dark=mean(ramses_cal$B0[indDark],na.rm = T)

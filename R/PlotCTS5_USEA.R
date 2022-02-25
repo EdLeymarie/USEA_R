@@ -479,6 +479,32 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
     }
   }
   
+  #### Mean Grey
+  title_list<-c("UVP6 MGrey_Class1-6","UVP6 MGrey_Class7-12","UVP6 MGrey_Class13-18")
+  class_list<-rbind(25:30,31:36,37:42)
+  
+  for (i in 1:length(title_list)){
+    temp<-data[,class_list[i,]]
+    
+    
+    if (sum(temp>0,na.rm=T) > 2){
+      temp.min<-min(temp[temp>0],na.rm=T)
+      temp.max<-max(temp,na.rm=T)
+      
+      plot(NULL,NULL,xlim=c(temp.min,temp.max),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="count",ylab="depth",log="x")
+      title(main=title_list[i])
+      for (j in 1:6){
+        if (sum(temp[,j]>0,na.rm = T)>4){
+          for (pn in unique(data[,"PhaseName"])){
+            lines(temp[data[,"PhaseName"]==pn,j],-data[data[,"PhaseName"]==pn,"Pressure_dbar"],col=match(pn,unique(data[,"PhaseName"])),lty=j)
+          }
+        }
+      }
+      plotDepthZones(ZoneDepth,x = c(temp.min,temp.max))
+      legend("bottomright",col=1,lty=1:6,legend=colnames(temp))
+    }
+  }
+  
   
 }
 

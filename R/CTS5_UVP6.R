@@ -30,7 +30,7 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
     ## Ajout GPS
     Lat<-NA
     Lon<-NA
-    if (!is.null(dataprofile$technical)){
+    if (!is.null(dataprofile$technical$GPS)){
       Lat<-as.numeric(dataprofile$technical$GPS$`lat (deg)`)
       Lon<-as.numeric(dataprofile$technical$GPS$`lon (deg)`)
     }
@@ -55,17 +55,19 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
     if ((nrow(dataprofile$data$uvp6_lpm)>0) & (nrow(dataprofile$data$uvp6_blk)>0)){
       
       ## Formatage des colonnes lpm
-      dataUVP<-cbind(dataprofile$data$uvp6_lpm[,1:2],Lat,Lon,dataprofile$data$uvp6_lpm[,-(1:2)])
+      dataUVP<-cbind(dataprofile$data$uvp6_lpm[,c("Date","Pressure_dbar")],Lat,Lon,dataprofile$data$uvp6_lpm[,-(1:2)])
       dataUVP[,1]<-format(dataUVP[,1],format="%Y%m%dT%H%M%S")
       colnames(dataUVP)[1:2]<-c("DATE_TIME","PRES_decibar")
       colnames(dataUVP)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
       
       
-      indcol<-c(1:5,grep("NSamples",colnames(dataUVP)),grep("UVP6_Temp",colnames(dataUVP))
-                ,grep("NP_",colnames(dataUVP))
-                ,grep("MG_",colnames(dataUVP)))
+      # indcol<-c(1:5,grep("NSamples",colnames(dataUVP)),grep("UVP6_Temp",colnames(dataUVP))
+      #           ,grep("NP_",colnames(dataUVP))
+      #           ,grep("MG_",colnames(dataUVP)))
+      # 
+      # dataUVP<-dataUVP[,indcol]
       
-      dataUVP<-dataUVP[,indcol]
+      dataUVP<-dataUVP[,-grep("processing",colnames(dataUVP))]
       
       #Formatage Colonnes
       
@@ -76,15 +78,17 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
       
       
       ## Formatage des colonnes blk
-      dataUVPblk<-cbind(dataprofile$data$uvp6_blk[,1:2],Lat,Lon,dataprofile$data$uvp6_blk[,-(1:2)])
+      dataUVPblk<-cbind(dataprofile$data$uvp6_blk[,c("Date","Pressure_dbar")],Lat,Lon,dataprofile$data$uvp6_blk[,-(1:2)])
       dataUVPblk[,1]<-format(dataUVPblk[,1],format="%Y%m%dT%H%M%S")
       colnames(dataUVPblk)[1:2]<-c("DATE_TIME","PRES_decibar")
       colnames(dataUVPblk)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
       
-      indcol<-c(1:5,grep("NSamples",colnames(dataUVPblk)),grep("uvp-blk_Internal_temp",colnames(dataUVPblk))
-                ,grep("uvp-blk_Count",colnames(dataUVPblk)))
+      # indcol<-c(1:5,grep("NSamples",colnames(dataUVPblk)),grep("uvp-blk_Internal_temp",colnames(dataUVPblk))
+      #           ,grep("uvp-blk_Count",colnames(dataUVPblk)))
+      # 
+      # dataUVPblk<-dataUVPblk[,indcol]
       
-      dataUVPblk<-dataUVPblk[,indcol]
+      dataUVPblk<-dataUVPblk[,-grep("processing",colnames(dataUVPblk))]
       
       #Formatage Colonnes
       

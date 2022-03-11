@@ -639,15 +639,19 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   SizeAv<-apply(dataASC[,indSize],2,mean,na.rm=T)
   GLAv<-apply(dataASC[,indGL],2,mean,na.rm=T)
   
-  xrange<-range(which(SumNbr>0))
+  if (sum(SumNbr)>0){
   
-  yrange<-c(SumNbr,SizeAv,GLAv)
-  yrange<-range(yrange[yrange>0])
-  
-  plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
-  lines(1:40,SizeAv,col=2)
-  lines(1:40,GLAv,col=3)
-  legend("bottomright",legend=c("Object Number sum","Object Size Av","Object GL Av"),lty=1,col=1:3,bty="n",cex=0.75)
+    xrange<-range(which(SumNbr>0))
+    
+    yrange<-c(SumNbr,SizeAv,GLAv)
+    yrange<-range(yrange[yrange>0])
+    
+    plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
+    lines(1:40,SizeAv,col=2)
+    lines(1:40,GLAv,col=3)
+    legend("bottomright",legend=c("Object Number sum","Object Size Av","Object GL Av"),lty=1,col=1:3,bty="n",cex=0.75)
+    
+  }
   
   ## PARKING
   ## limitation Parking
@@ -1107,6 +1111,12 @@ if (!is.null(dataprofile)){
       PlotRamses(data,technical=technical,
                  ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14"))
   }   
+  
+  if ("ramses2" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$ramses2
+    PlotRamses(data,technical=technical,
+               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14"))
+  } 
   
   #ext_trig
   if ("ext_trig" %in% names(dataprofile$data)){  

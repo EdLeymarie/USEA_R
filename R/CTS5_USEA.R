@@ -36,6 +36,24 @@ else {
 
 #**************************************************
 
+# sensors from Meta
+
+#**************************************************
+#' find sensor list from Meta files
+#'
+#' @description
+#' find sensor list from Meta files
+#' 
+#' @examples 
+#' 
+#' findfloatname(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*")
+#' 
+#' 
+#' 
+
+
+#**************************************************
+
 # Decod USEA
 
 #**************************************************
@@ -145,11 +163,9 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
       SensorFilename<-paste(floatname,"_",formatC(cycle,width=3,flag="0"),"_",formatC(Pattern,width=2,flag="0"),"_",sensor,".hex",sep="")
       
       #Concat  
-      pattern=paste(floatname,"_",formatC(cycle,width=3,flag="0"),"_",formatC(Pattern,width=2,flag="0"),"_",sensor,".*.hex",sep="")
+      pattern=paste(floatname,"_",formatC(cycle,width=3,flag="0"),"_",formatC(Pattern,width=2,flag="0"),"_",sensor,"#[[:digit:]]{2}.hex",sep="")
       filenames<-list.files(pattern=pattern)
-      if ((length(filenames)>1) & !file.exists(SensorFilename)){
-        #cat(pattern,", multiple files. Need cat \n")
-        filenames<-filenames[grep("#",filenames)]
+      if ((length(filenames)>1)){
         
         datacat<-NULL
         for (filename in filenames){
@@ -170,12 +186,13 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
         
           dataDir<-getwd()
           
-          filename<-paste(dataDir,"/",SensorFilename, " 0",sep="")
+          filename<-paste(dataDir,"/",SensorFilename,sep="")
           
           ## decompression
           setwd(ProgDir)
-          cat(paste(ProgName,filename,sep=" "),"\n")
-          system(paste(ProgName,filename,sep=" "))
+          cmd<-paste(ProgName," \"",filename,"\" 0",sep="") # permet de passer des chemins avec des blancs
+          cat(cmd,"\n")
+          system(cmd)
           
           setwd(dataDir)
         }
@@ -218,7 +235,8 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @description vector of names of available sensors
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
-                          "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig","mpe")
+                          "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig",
+                          "mpe","ramses2")
 #' 
 
 #**************************************************
@@ -228,6 +246,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' provide sensor Id used un csv file \code{\link{cts5_readcsv}} .
 #'
 #' @param pattern name of the sensor to look for. if "", provide the full list.
+#' @param exact if True, look for pattern==CTS5_supported_sensors. If false, look for grep(pattern,CTS5_supported_sensors,ignore.case = T)
 #' 
 #' @return a vector containing the id of the sensors
 #' 
@@ -250,6 +269,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' 115 : opus_blk
 #' 116 : ext_trig
 #' 117 : mpe
+#' 118 : ramses2
 #' 
 #' @examples 
 #' cts5_SensorTypeId("")
@@ -260,10 +280,10 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' 
 #' @export
 #'
-cts5_SensorTypeId<-function(pattern=""){
+cts5_SensorTypeId<-function(pattern="",exact=F){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -271,7 +291,13 @@ if (pattern == ""){
   return(SensorTypeId)
 }
 else {
-  ind<-grep(pattern,CTS5_supported_sensors,ignore.case = T)
+  if (exact){
+    ind<-pattern==CTS5_supported_sensors
+  }
+  else {
+    ind<-grep(pattern,CTS5_supported_sensors,ignore.case = T)
+  }
+  
   return(SensorTypeId[ind])
 }
   
@@ -427,11 +453,12 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   }
   
   ##-10 ramses
-  if (sensor == "ramses"){
+  if (sensor %in% c("ramses","ramses2")){
     data.colnames<-c("ramses_int_time","ramses_depth1","ramses_depth2","ramses_tilt1","ramses_tilt2","ramses_dark_count",
                      "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
     # SensorType=113
   }
+  
   
   ##-11 Opus_lgt
   if (sensor == "opus_lgt"){
@@ -463,7 +490,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   #* END Sensors description
   #* **************************
 
-  SensorType = cts5_SensorTypeId(sensor)
+  SensorType = cts5_SensorTypeId(sensor,exact=T)
   
   Sensor_NChannel<-length(data.colnames)
   
@@ -540,7 +567,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     colnames(Dataclean)[3:7]<-c("NumberCycle","NumberPattern","PhaseName","Files","SensorType")
     
     # Elimination des colonnes NA pour suna et ramses
-    if (sensor %in% c("eco","suna","ramses","opus_lgt","uvp6_lpm","uvp6_blk","uvp6_txo")){
+    if (sensor %in% c("eco","suna","ramses","ramses2","opus_lgt","uvp6_lpm","uvp6_blk","uvp6_txo")){
       indNA<-apply(Dataclean,2,function(c){all(is.na(c))})
       Dataclean<-Dataclean[,!indNA]
     }
@@ -924,10 +951,54 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     
     if (length(grep("ramses_sig",colnames(dataprofile$data$ramses)))==0){
     
-      dataCal<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
-                              PixelBinning=PixelBinning,calib_file="SAM.*AllCal.txt")
+      calib_file="SAM.*AllCal.txt"
       
-      dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
+      if (!is.null(metadata$SENSOR_RAMSES$SENSOR)){
+        calib_file=paste("SAM.*",metadata$SENSOR_RAMSES$SENSOR,".*AllCal.txt",sep="")
+        
+        
+        
+      }
+      
+      dataCal<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
+                              PixelBinning=PixelBinning,calib_file=calib_file)
+      
+      if (!is.null(dataCal)){
+        dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
+      }
+    }
+    
+  }
+  
+  ### Ramses
+  if ("ramses2" %in% names(dataprofile$data)) {
+    
+    if ("inifile" %in% names(dataprofile)){
+      PixelStart=dataprofile$inifile$SENSOR_21$P54
+      PixelStop=dataprofile$inifile$SENSOR_21$P55
+      PixelBinning=dataprofile$inifile$SENSOR_21$P56
+    }
+    else {
+      # default configuration valid for datalogger mode
+      PixelStart=1
+      PixelStop=length(grep("ramses_raw_count",colnames(dataprofile$data$ramses2)))
+      PixelBinning=1
+      
+      warning("RAMSES2 calibration: No inifile found. Apply default setting")
+    }
+    
+    if (length(grep("ramses_sig",colnames(dataprofile$data$ramses2)))==0){
+      
+      calib_file="SAM.*AllCal.txt"
+      
+      if (!is.null(metadata$SENSOR_RAMSES2$SENSOR)){
+        calib_file=paste("SAM.*",metadata$SENSOR_RAMSES2$SENSOR,".*AllCal.txt",sep="")
+      }
+      
+      dataCal<-Process_Ramses(dataprofile$data$ramses2,PixelStart=PixelStart,PixelStop=PixelStop,
+                              PixelBinning=PixelBinning,calib_file=calib_file)
+      
+      dataprofile$data$ramses2<-cbind(dataprofile$data$ramses2,dataCal)
     }
     
   }

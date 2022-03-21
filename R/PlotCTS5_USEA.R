@@ -459,7 +459,9 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
     if ("Nimages" %in% colnames(data)){
       temp<-temp/data$Nimages}
     if ("NSamples" %in% colnames(data)){
-      temp<-temp/data$NSamples}
+      NSamples<-data$NSamples
+      NSamples[NSamples==0]<-1 #correction for NSamples=0
+      temp<-temp/NSamples}
     
     if (sum(temp>0,na.rm=T) > 2){
       temp.min<-min(temp[temp>0],na.rm=T)

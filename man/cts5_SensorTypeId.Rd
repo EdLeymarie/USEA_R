@@ -4,10 +4,12 @@
 \alias{cts5_SensorTypeId}
 \title{provide sensor Id used un csv file}
 \usage{
-cts5_SensorTypeId(pattern = "")
+cts5_SensorTypeId(pattern = "", exact = F)
 }
 \arguments{
 \item{pattern}{name of the sensor to look for. if "", provide the full list.}
+
+\item{exact}{if True, look for pattern==CTS5_supported_sensors. If false, look for grep(pattern,CTS5_supported_sensors,ignore.case = T)}
 }
 \value{
 a vector containing the id of the sensors
@@ -26,13 +28,17 @@ SensorType
  22 : PHSEABIRD
 109 : UVP6 lpm
 110 : UVP6 blk
-111 : UVP6 TAXO1 (future use)
-112 : UVP6 TAXO2 (future use)
+111 : UVP6 txo
+112 : UVP6 TAXO2 (not used)
 113 : Ramses
 114 : opus_lgt
 115 : opus_blk
 116 : ext_trig
 117 : mpe
+118 : ramses2
+119 : HydroC
+120 : imu
+121 : wave
 }
 \examples{
 cts5_SensorTypeId("")

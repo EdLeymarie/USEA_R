@@ -54,10 +54,25 @@ else {
 
 #**************************************************
 
-# Decod USEA
+# cts5_ScanProfilesID
 
 #**************************************************
-#' scan profiles available in a directory
+#' list the data available
+#'
+#' @description
+#' cts5_ScanProfilesID scan the directory to list cyle and pattern available
+#'
+#' @param pattern pattern used to list data 
+#' 
+#' @return a list of floatname, cycle and pattern
+#' 
+#' 
+#' @examples 
+#' cts5_ScanProfilesID(pattern=".*01_technical.txt")
+#' 
+#' cts5_ScanProfilesID()
+#' 
+#' @export
 #'
 
 
@@ -236,7 +251,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
                           "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig",
-                          "mpe","ramses2")
+                          "mpe","ramses2","imu")
 #' 
 
 #**************************************************
@@ -262,14 +277,17 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #'  22 : PHSEABIRD
 #' 109 : UVP6 lpm
 #' 110 : UVP6 blk
-#' 111 : UVP6 TAXO1 (future use)
-#' 112 : UVP6 TAXO2 (future use)
+#' 111 : UVP6 txo
+#' 112 : UVP6 TAXO2 (not used)
 #' 113 : Ramses
 #' 114 : opus_lgt
 #' 115 : opus_blk
 #' 116 : ext_trig
 #' 117 : mpe
 #' 118 : ramses2
+#' 119 : HydroC
+#' 120 : imu
+#' 121 : wave
 #' 
 #' @examples 
 #' cts5_SensorTypeId("")
@@ -283,7 +301,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern="",exact=F){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -484,6 +502,14 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   if (sensor == "mpe"){
     data.colnames<-c("Voltage","Temperature")
     # SensorType=117
+  }
+  
+  ##-15 HydroC
+  
+  ##-16 imu
+  if (sensor == "imu"){
+    data.colnames<-c("tilt","heading")
+    # SensorType=120
   }
   
   #****************************
@@ -795,15 +821,21 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     if (!is.null(metadata$SENSOR_ECO)){
       
       SENSOR_ECO<-metadata$SENSOR_ECO
+      
+      ## In case we have 0 in the calibration
+      if (!all(unlist(SENSOR_ECO) != 0)){
+        SENSOR_ECO<-NULL
+      }
     }
-    else {
+    
+    ## Calibration par defaut
+    if (is.null(SENSOR_ECO)) {
       cat("!! Warning : No ECO calibration found \n")
       
       if (ProcessUncalibrated){
         cat("!! Default calibration is used \n")
         SENSOR_ECO<-list(CHANNEL_01=c(0.0073,47.0000),CHANNEL_02=c(1.753e-06,4.700e+01),CHANNEL_03=c(0.0907,50.0000))
       }
-      
       
     }
       

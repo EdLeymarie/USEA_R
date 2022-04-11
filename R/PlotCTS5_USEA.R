@@ -646,7 +646,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     xrange<-range(which(SumNbr>0))
     
     yrange<-c(SumNbr,SizeAv,GLAv)
-    yrange<-range(yrange[yrange>0])
+    yrange<-range(yrange[yrange>0],finite = T)
     
     plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
     lines(1:40,SizeAv,col=2)
@@ -775,7 +775,7 @@ PlotRamses<-function(data,technical=TRUE,ZoneDepth=NULL){
 
   
     ## profil
-    wavelist<-seq(300,800,by=10)
+    wavelist<-seq(320,800,by=10)
     wavelist<-wavelist[(wavelist>min(waves)) & (wavelist<max(waves))]
     colpal<-rev(rainbow(length(wavelist),end=0.8))
     
@@ -783,7 +783,7 @@ PlotRamses<-function(data,technical=TRUE,ZoneDepth=NULL){
     datatemp<-data[,indsig]
     temp<-NULL
     for (i in 1:length(wavelist)){
-      temp<-cbind(temp,apply(datatemp[,abs(waves-wavelist[i])<5],1,mean))
+      temp<-cbind(temp,apply(datatemp[,abs(waves-wavelist[i])<10],1,mean))
     }
     matplot(temp,-data$Pressure_dbar,lty=1,type="l",log="x",col=colpal,xlab="Ramses Irradiance physical",ylab="Depth")
     temp<-as.vector(temp)

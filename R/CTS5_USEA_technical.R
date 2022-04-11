@@ -511,7 +511,7 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
     
     if ("SENSOR_ECO" %in% names(L$SENSORS)){
       if (length(names(L$SENSORS$SENSOR_ECO)) > 0){
-        for (i in 2:length(names(L$SENSORS$SENSOR_ECO))){
+        for (i in grep("CHANNEL",names(L$SENSORS$SENSOR_ECO))){
           L$SENSORS$SENSOR_ECO[[i]]<-as.numeric(L$SENSORS$SENSOR_ECO[[i]])
         }
       }

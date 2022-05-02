@@ -455,13 +455,15 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
   for (i in 1:length(title_list)){
     temp<-data[,class_list[i,]]
     
-    ## correction Nimages or NSamples
-    if ("Nimages" %in% colnames(data)){
-      temp<-temp/data$Nimages}
-    if ("NSamples" %in% colnames(data)){
-      NSamples<-data$NSamples
-      NSamples[NSamples==0]<-1 #correction for NSamples=0
-      temp<-temp/NSamples}
+    # ## correction Nimages or NSamples
+    # if ("Nimages" %in% colnames(data)){
+    #   # new taxo format
+    #   temp<-temp/data$Nimages}
+    # if ("NSamples" %in% colnames(data)){
+    #   #old format without taxo
+    #   NSamples<-data$NSamples
+    #   NSamples[NSamples==0]<-1 #correction for NSamples=0
+    #   temp<-temp/NSamples}
     
     if (sum(temp>0,na.rm=T) > 2){
       temp.min<-min(temp[temp>0],na.rm=T)

@@ -889,6 +889,20 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       data.colnames<-c(paste("NP_Size_",uvp6_Size_class,sep=""),paste("MG_Size_",uvp6_Size_class,sep=""))
       
       colnames(dataprofile$data$uvp6_lpm)[7:42]<-data.colnames
+      
+      indNP<-grep("NP_Size_",colnames(dataprofile$data$uvp6_lpm))
+      
+      ## correction Nimages or NSamples
+      if ("Nimages" %in% colnames(dataprofile$data$uvp6_lpm)){
+        # new taxo format
+        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/dataprofile$data$uvp6_lpm$Nimages}
+      
+      if ("NSamples" %in% colnames(dataprofile$data$uvp6_lpm)){
+        #old format without taxo
+        NSamples<-dataprofile$data$uvp6_lpm$NSamples
+        NSamples[NSamples==0]<-1 #correction for NSamples=0
+        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/NSamples}
+      
     }
   }
   
@@ -1002,7 +1016,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     
   }
   
-  ### Ramses
+  ### Ramses2
   if ("ramses2" %in% names(dataprofile$data)) {
     
     if ("inifile" %in% names(dataprofile)){

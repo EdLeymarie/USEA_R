@@ -53,8 +53,8 @@ cts5_readDatalogger<-function(filename){
 
 datalogger<-scan(file = filename,skip = 1,what = character())
 
-VectId<-as.character(c(0:2,7,13,16,18,20))
-VectName<-c("sbe41","do","ocr","eco","crover","ramses","mpe","ramses2")
+VectId<-as.character(c(0:2,7,12,13,16,18,20))
+VectName<-c("sbe41","do","ocr","eco","sbeph","crover","ramses","mpe","ramses2")
 
 
 ## Decodage

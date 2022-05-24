@@ -249,6 +249,11 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
             technical$DATA$Download$script=1
           }
           
+          if (sum(grep("configuration file",s2))>0){
+            s3<-strsplit(s2,split=" ")[[1]]
+            technical$DATA$Download$configuration=1
+          }
+          
           
         }
         
@@ -507,6 +512,13 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
       if (length(L$SENSORS$SENSOR_DO)>1){      
         L$SENSORS$SENSOR_DO$PHASE_COEFF<-as.numeric(L$SENSORS$SENSOR_DO$PHASE_COEFF)
         L$SENSORS$SENSOR_DO$SVU_FOIL_COEFF<-as.numeric(L$SENSORS$SENSOR_DO$SVU_FOIL_COEFF)}
+    }
+    
+    #conversion en numeric
+    if ("SENSOR_SBEPH" %in% names(L$SENSORS)){
+      if (length(L$SENSORS$SENSOR_SBEPH)>1){      
+        L$SENSORS$SENSOR_SBEPH$K<-as.numeric(L$SENSORS$SENSOR_SBEPH$K)
+        L$SENSORS$SENSOR_SBEPH$F_POLY_COEFF<-as.numeric(L$SENSORS$SENSOR_SBEPH$F_POLY_COEFF)}
     }
     
     if ("SENSOR_ECO" %in% names(L$SENSORS)){

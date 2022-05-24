@@ -885,7 +885,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   ### uvp6_lpm
   if ("uvp6_lpm" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_UVP6)){
-      uvp6_Size_class<-strsplit(metadata$SENSOR_UVP6$HW_CONF,split=",")[[1]][26:43]
+      ## les tailles sont les 18 derniers parametres
+      uvp6_Size_class<-strsplit(metadata$SENSOR_UVP6$HW_CONF,split=",")[[1]]
+      uvp6_Size_class<-rev(rev(uvp6_Size_class)[1:18])
+      
       data.colnames<-c(paste("NP_Size_",uvp6_Size_class,sep=""),paste("MG_Size_",uvp6_Size_class,sep=""))
       
       colnames(dataprofile$data$uvp6_lpm)[7:42]<-data.colnames
@@ -934,7 +937,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         phasecoef0<-0
       }
       
-      }
+    }
         
       if (!is.null(coefs)){
       #dataprofile$data$do[,"doxy_uncalibrated"]<-Process_DO_Bittig(C1phase=dataprofile$data$do[,"c1phase_deg"],C2phase=dataprofile$data$do[,"c2phase_deg"],temp=dataprofile$data$do[,"tempdoxy_degC"],Pres=dataprofile$data$do[,"Pressure_dbar"],
@@ -950,30 +953,57 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
   ### sbepH
   if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
-    if (("pH_mV" %in% colnames(dataprofile$data$sbeph)) & ProcessUncalibrated){
+    if ("pH_mV" %in% colnames(dataprofile$data$sbeph)) {
       
-      pH_Uncal<-rep(NA,nrow(dataprofile$data$sbeph))
-      
-      ##DESCENT
-      ind<-dataprofile$data$sbeph$PhaseName=="DES"
-      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
-        ## Il y a des donnees en descent
-        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="DES")
+      if (length(metadata$SENSOR_SBEPH) > 1){
+        sbepH_k<-metadata$SENSOR_SBEPH$K
+        sbepH_f<-metadata$SENSOR_SBEPH$F_POLY_COEFF[2:7]
       }
-      ##PArk
-      ind<-dataprofile$data$sbeph$PhaseName=="PAR"
-      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
-        ## Il y a des donnees en Parking
-        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="PAR")
-      }
-      ##ASCENT
-      ind<-dataprofile$data$sbeph$PhaseName=="ASC"
-      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
-        ## Il y a des donnees en Asc
-        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="ASC")
+      else {
+        cat("!! Warning : No sbepH calibration found \n")
+        sbepH_k<-NULL
+        sbepH_f<-NULL
+        
+        if (ProcessUncalibrated){
+          cat("!! Default calibration is used \n")
+          sbepH_k <- c(-1.392151,-1.0798E-03)
+          sbepH_f <- c(2.5064E-05,-4.4107E-08,4.7311E-11,-2.8822E-14,9.2132E-18,-1.1965E-21) 
+          phasecoef0<-0
+        }
+        
       }
       
-      dataprofile$data$sbeph[,"pH_Uncal"]<-pH_Uncal
+      if ((!is.null(sbepH_k)) & (!is.null(sbepH_f)) ){
+        
+        pH_Uncal<-rep(NA,nrow(dataprofile$data$sbeph))
+        
+        ##DESCENT
+        ind<-dataprofile$data$sbeph$PhaseName=="DES"
+        if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
+          ## Il y a des donnees en descent
+          pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="DES",
+                                        k0=sbepH_k[1],k2=sbepH_k[2],
+                                        coefsp=sbepH_f)
+        }
+        ##PArk
+        ind<-dataprofile$data$sbeph$PhaseName=="PAR"
+        if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
+          ## Il y a des donnees en Parking
+          pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="PAR",
+                                        k0=sbepH_k[1],k2=sbepH_k[2],
+                                        coefsp=sbepH_f)
+        }
+        ##ASCENT
+        ind<-dataprofile$data$sbeph$PhaseName=="ASC"
+        if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
+          ## Il y a des donnees en Asc
+          pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="ASC",
+                                        k0=sbepH_k[1],k2=sbepH_k[2],
+                                        coefsp=sbepH_f)
+        }
+        
+        dataprofile$data$sbeph[,"pH_Uncal"]<-pH_Uncal
+      }
       
     }
   }

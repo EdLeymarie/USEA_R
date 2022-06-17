@@ -57,7 +57,17 @@ split_One_value<-function(string,value.as.numeric=T){
   return(Value)
 }
 
-
+# Converti une section en data.frame numeric en conservant les 
+# noms du fichier XML
+# Utilise pour IMU
+XML_ConvertSection<-function(section){
+  Idnames<-names(section)
+  section<-as.numeric(section)
+  section<-data.frame(t(section))
+  names(section)<-Idnames
+  
+  return(section)
+}
 
 #**************************************************
 #' read and parse CTS5 technical file.
@@ -545,9 +555,17 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
       }
     }
     
+    if ("SENSOR_IMU" %in% names(L$SENSORS)){
+      if (length(L$SENSORS$SENSOR_IMU)>1){      
+        L$SENSORS$SENSOR_IMU$COMPASS<-XML_ConvertSection(L$SENSORS$SENSOR_IMU$COMPASS)
+        L$SENSORS$SENSOR_IMU$MAGNETOMETER<-XML_ConvertSection(L$SENSORS$SENSOR_IMU$MAGNETOMETER)
+        L$SENSORS$SENSOR_IMU$ACCELEROMETER<-XML_ConvertSection(L$SENSORS$SENSOR_IMU$ACCELEROMETER)
+      }
+    }
 
   }
-  else {
+  
+    else {
       cat("No xml file for ",pattern,"\n")
       L<-NULL
   }

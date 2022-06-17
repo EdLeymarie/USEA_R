@@ -264,7 +264,7 @@ PlotOptode<-function(data,technical=TRUE,ZoneDepth=NULL){
 
 #**************************************************
 #Plot CRover
-
+# data<-dataprofile$data$crover
 
 ###
 
@@ -299,11 +299,22 @@ PlotCROVER<-function(data,technical=TRUE,ZoneDepth=NULL){
   #Plot c
   if (dim(data)[1]>5){
     
-    plot(NULL,NULL,xlim=range(data[,"c-uncalibrated_1/m"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="c-uncalibrated_1/m",ylab="depth")
-    for (i in unique (data[,"PhaseName"])){
-      lines(data[data[,"PhaseName"]==i,"c-uncalibrated_1/m"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    # All time
+    depth_breaks <- pretty(data$Pressure_dbar, n = 50)
+    cs <- list(cols = tim.colors(length(depth_breaks)-1),breaks = depth_breaks,name = "depth",unit = "(db)",labels = seq(1,length(depth_breaks), 5))
+    cols = tim.colors(length(depth_breaks)-1)[cut(data$Pressure_dbar,breaks = depth_breaks)]
+    
+    plot(x=data$Date,y=data$`c-uncalibrated_1/m`,type="b",pch=20,col=cols,xlab="Date",ylab="c-uncalibrated_1/m")
+    cs.draw(cs,horiz=T,side = 1)
+    
+    
+    # Profile
+    ind<-data$PhaseName=="ASC"
+    if (sum(ind)>1){
+      plot(data$`c-uncalibrated_1/m`[ind],-data$Pressure_dbar[ind],type="l",
+           xlab="c-uncalibrated_1/m",ylab="depth",col=2)
+      plotDepthZones(ZoneDepth)
     }
-    plotDepthZones(ZoneDepth)
     
   }
   
@@ -561,6 +572,14 @@ PlotUVP_blk<-function(data,technical=TRUE,ZoneDepth=NULL){
 
 #**************************************************
 #Plot UVP_txo
+
+## Taxo Name
+# Model_reference = Mglob_20220421
+taxo_name<-c("Acantharia","Actinopterygii","Appendicularia","Aulacanthidae",
+             "Calanoida","Chaetognatha","Collodaria","Creseis","Foraminifera",
+             "Rhizaria","Salpida","artefact","crystal","detritus","fiber<detritus",
+             "other<living","puff","small-bell<Hydrozoa","solitaryglobule","tuff")
+
 PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot Chronologie
@@ -598,9 +617,11 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   if (Nclass>0){
     cols<-rainbow(Nclass)
     matplot(dataASC[,indNbr][,ExistClass]/dataASC$Nimages,-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectNbr",ylab = "Depth",
-            main="Ascent Object Number",col=cols)
-    plotDepthZones(ZoneDepth)
-    legend("bottomright",legend=colnames(dataASC)[indNbr][ExistClass],lty=1,bty="y",col=cols)
+            main="Ascent Object Number",log="x",col=cols)
+    xlim<-dataASC[,indNbr][,ExistClass]/dataASC$Nimages
+    xlim<-range(xlim[xlim>0])
+    plotDepthZones(ZoneDepth,x=xlim)
+    legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No ObjectNbr Class in UVP6 Taxo\n")
@@ -616,7 +637,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     matplot(dataASC[,indSize][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectSize",ylab = "Depth",
             main="Ascent Object Size",col=cols)
     plotDepthZones(ZoneDepth)
-    legend("bottomright",legend=colnames(dataASC)[indSize][ExistClass],lty=1,bty="y",col=cols)
+    legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No Size Class in UVP6 Taxo\n")
@@ -632,7 +653,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     matplot(dataASC[,indGL][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectGL",ylab = "Depth",
             main="Ascent Object Grey Level",col=cols)
     plotDepthZones(ZoneDepth)
-    legend("bottomright",legend=colnames(dataASC)[indGL][ExistClass],lty=1,bty="y",col=cols)
+    legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No GL Class in UVP6 Taxo\n")
@@ -644,17 +665,23 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   GLAv<-apply(dataASC[,indGL],2,mean,na.rm=T)
   
   if (sum(SumNbr)>0){
+    
+    indPie<-SumNbr>0
+    
+    barplot(SumNbr[indPie],log="y",names.arg = taxo_name[indPie],col = rainbow(length(taxo_name)),
+            ylab = "ASC integrated abundance (AU)",
+            las=2,cex.names = 0.65)
   
-    xrange<-range(which(SumNbr>0))
-    
-    yrange<-c(SumNbr,SizeAv,GLAv)
-    yrange<-range(yrange[yrange>0],finite = T)
-    
-    plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
-    lines(1:40,SizeAv,col=2)
-    lines(1:40,GLAv,col=3)
-    legend("bottomright",legend=c("Object Number sum","Object Size Av","Object GL Av"),lty=1,col=1:3,bty="n",cex=0.75)
-    
+    # xrange<-range(which(SumNbr>0))
+    # 
+    # yrange<-c(SumNbr,SizeAv,GLAv)
+    # yrange<-range(yrange[yrange>0],finite = T)
+    # 
+    # plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
+    # lines(1:40,SizeAv,col=2)
+    # lines(1:40,GLAv,col=3)
+    # legend("bottomright",legend=c("Object Number sum","Object Size Av","Object GL Av"),lty=1,col=1:3,bty="n",cex=0.75)
+    # 
   }
   
   ## PARKING
@@ -672,7 +699,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
       cols<-rainbow(Nclass)
       matplot(as.numeric(dataPAR$Date)/dataPAR$Nimages,dataPAR[,indNbr][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectNbr",
               main="Parking Object Number", col=cols)
-      legend("bottomright",legend=colnames(dataPAR)[indNbr][ExistClass],lty=1,bty="y",col=cols)
+      legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
     }
     else {
       cat("No ObjectNbr Class in UVP6 Taxo at Parking \n")
@@ -688,7 +715,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
       cols<-rainbow(Nclass)
       matplot(as.numeric(dataPAR$Date),dataPAR[,indSize][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectSize",
               main="Parking Object Size",col=cols)
-      legend("bottomright",legend=colnames(dataPAR)[indSize][ExistClass],lty=1,bty="y",col=cols)
+      legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
     }
     else {
       cat("No Size Class in UVP6 Taxo at Parking \n")
@@ -703,7 +730,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
       cols<-rainbow(Nclass)
       matplot(as.numeric(dataPAR$Date),dataPAR[,indGL][ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectGL",
               main="Parking Object Grey Level",col=cols)
-      legend("bottomright",legend=colnames(dataPAR)[indGL][ExistClass],lty=1,bty="y",col=cols)
+      legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
     }
     else {
       cat("No GL Class in UVP6 Taxo at Parking\n")
@@ -891,6 +918,52 @@ Plotext_trig<-function(data,technical=TRUE,ZoneDepth=NULL){
     
   }
 
+  
+}
+
+#**************************************************
+#Plot IMU
+# data<-dataprofile$data$imu
+PlotIMU<-function(data,technical=TRUE,ZoneDepth=NULL){
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main="IMU")
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
+    
+    legend("topright",legend=unique(data[,"PhaseName"]),pch = 16,col=1:length(unique(data[,"PhaseName"])),bty="n")
+    
+  }
+  
+  #Plot data
+  ## IntTime et Tilt
+  ind<-which(data[,"PhaseName"] == "ASC")
+  plot(data$tilt[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="Tilt",ylab="Depth",main="Tilt and Heading")
+  par(new=TRUE)
+  plot(data$heading[ind],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
+  axis(3,col=4,col.axis=4)
+  plotDepthZones(ZoneDepth)
+  
+}
+
+#**************************************************
+#Plot wave
+# data<-dataprofile$data$wave
+PlotWave<-function(data){
+  plot(data$Date,data$Heading,type="l",xlab="date",ylab="Heading",
+       main="Heading at surface")
+  
+  plot(data$Date,data$Tilt,type="l",xlab="date",ylab="Tilt",
+       main="Tilt at surface")
+  legend("topright",legend=paste("mean=",formatC(mean(data$Tilt),digit=3)),
+         bty="n")
+  
+  plot(data$Date,data$Acceleration,type="l",xlab="date",ylab="Acceleration",
+       main="Acceleration at surface")
+  legend("topright",legend=paste("mean=",formatC(mean(data$Acceleration),digit=3)),
+         bty="n")
   
 }
 
@@ -1121,6 +1194,20 @@ if (!is.null(dataprofile)){
     PlotRamses(data,technical=technical,
                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14"))
   } 
+  
+  #IMU
+  if ("imu" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$imu
+    PlotIMU(data,technical=technical,
+               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_21"))
+  } 
+  
+  #Wave 
+  if ("wave" %in% names(dataprofile$data)){  
+    data<-dataprofile$data$wave
+    PlotWave(data)
+  } 
+  
   
   #ext_trig
   if ("ext_trig" %in% names(dataprofile$data)){  

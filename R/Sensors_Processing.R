@@ -278,7 +278,7 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
 
 #**************************************************
 #*
-# Compute Ramses
+# Compute Ramses ######
 #* Input : X = c(ramses_int_time,ramses_dark_count, I) 
 #* 
 #* Output : Physical units uW/cm2/nm
@@ -318,7 +318,20 @@ return(E/S)
 Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater=T){
   
 if (!file.exists(calib_file)){  
+  
+  #test 1 : avec pattern
+  calib_file_pattern<-calib_file
   calib_file<-list.files(pattern = calib_file)[1]
+  
+  if (!file.exists(calib_file)){
+    cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
+    
+    #test 2 : generic
+    calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
+    
+    cat("!! Default Ramses calibration is used \n")
+  }
+  
 }
   
 if (file.exists(calib_file)){
@@ -350,7 +363,7 @@ if (file.exists(calib_file)){
   colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
 }
 else {
-  warning("Ramses, no calibration file for:",calib_file,"\n")
+  warning("Ramses, no calibration file found:",calib_file,"\n")
   dataCal<-NULL
 }
   
@@ -358,3 +371,81 @@ return(dataCal)
   
 }
 
+#**************************************************
+#*
+# Compute IMU ######
+#*
+#**************************************************
+# data<-dataprofile$data$wave
+# imu_cal<-Meta$SENSORS$SENSOR_IMU
+
+IMU_processHeading<-function(RawMag,imu_cal){
+  
+  compass_cal<-imu_cal$COMPASS
+  mag_cal<-imu_cal$MAGNETOMETER
+  
+  # Compensation simple et Orientation
+  PhyMagx=RawMag[1]+mag_cal$mx0
+  PhyMagy=RawMag[3]+mag_cal$mz0
+  PhyMagz=RawMag[2]+mag_cal$my0
+  
+  
+  # Compensation compas
+  PhyMagx=PhyMagx+compass_cal$hi1
+  PhyMagy=PhyMagy+compass_cal$hi2
+  
+  PhyMagx=PhyMagx*compass_cal$si11 + PhyMagy*compass_cal$si12
+  PhyMagy=PhyMagx*compass_cal$si21 + PhyMagy*compass_cal$si22
+  
+  # Calcul de l'angle
+  fHead = atan2(PhyMagy,PhyMagx)
+  
+  # On retourne le résultat
+  return( fHead *180.0 / pi )
+  
+}
+
+IMU_processAcc<-function(RawAcc,acc_cal){
+  
+  #Calibration et orientation
+  PhyAccx=4*acc_cal$axg*(RawAcc[1]+acc_cal$ax0)/65536
+  PhyAccy=4*acc_cal$azg*(RawAcc[3]+acc_cal$az0)/65536
+  PhyAccz=4*acc_cal$ayg*(RawAcc[2]+acc_cal$ay0)/65536
+  
+  
+  
+  # Calcul du Tilt
+  fTilt = atan2(sqrt(PhyAccx*PhyAccx + PhyAccy*PhyAccy),PhyAccz)
+  fTilt = fTilt*180.0 / pi
+  
+  # Calcul du module de l'acceleration
+  fAccTot = sqrt(PhyAccx*PhyAccx + PhyAccy*PhyAccy + PhyAccz*PhyAccz)
+  
+  
+  # On retourne le résultat
+  return( c(fTilt,fAccTot) )
+  
+}
+
+Process_wave<-function(data,imu_cal){
+  Heading<-NULL
+  Tilt<-NULL
+  Acceleration<-NULL
+  
+  indAcc<-grep("RawA",colnames(data))
+  indMag<-grep("RawM",colnames(data))
+  
+  for (i in 1:nrow(data)){
+    fheading<-IMU_processHeading(as.numeric(data[i,indMag]),imu_cal)
+    
+    tempacc<-IMU_processAcc(as.numeric(data[i,indAcc]),imu_cal$ACCELEROMETER)
+    
+    Heading<-c(Heading,fheading)
+    Tilt<-c(Tilt,tempacc[1])
+    Acceleration<-c(Acceleration,tempacc[2])
+  }
+  
+  data<-cbind(data,Heading,Tilt,Acceleration)
+  
+  return(data)
+}

@@ -518,7 +518,17 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     if (file.exists(filename)){
       cat("open:",filename,"\n")
       data<-scan(filename,skip = 1,sep=",",what = character(0))
-      datedeb<-strptime(data[1],format = "%Y-%m-%d %H:%M:%S",tz="UTC")
+      
+      # Conversion temps
+      if (length(grep("linux",filename))>0){
+        #Format Linux
+        datedeb<-as.POSIXct(as.numeric(data[1]),origin = "1970-01-01",tz="UTC")
+      }
+      else {
+        #Format Windows
+        datedeb<-strptime(data[1],format = "%Y-%m-%d %H:%M:%S",tz="UTC")
+      }
+      
       iTemperature<-data[2]
       
       dataMat<-as.numeric(data[-(1:2)])
@@ -526,7 +536,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
       dataMat<-data.frame(dataMat)
       colnames(dataMat)<-c("RawAx","RawAy","RawAz","RawMx","RawMy","RawMz")
       
-      freq=1 #Hz
+      freq=4 #Hz
       Date<-datedeb+((1:nrow(dataMat))-1)/freq
       
       PhaseName<-rep("SUR",nrow(dataMat))
@@ -1127,7 +1137,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   if ("wave" %in% names(dataprofile$data)){
     
     data<-dataprofile$data$wave
-    dataprofile$data$wave<-Process_wave(data,metadata$SENSOR_IMU)
+    try(dataprofile$data$wave<-Process_wave(data,metadata$SENSOR_IMU))
   }
   
   return(dataprofile)

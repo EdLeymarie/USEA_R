@@ -1509,8 +1509,8 @@ if (!is.null(dataprofile$technical)){
     iniFile<-cts5_readIni(inifilename=NewIni)
   }
   
-  ## Add 30 min at surface
-  CurrentTime<-CurrentTime+1800
+  ## Add 60 min at surface
+  CurrentTime<-CurrentTime+3600
   
   if (!is.null(iniFile)){
   
@@ -1543,6 +1543,12 @@ if (!is.null(dataprofile$technical)){
     NextSurface<-NA
     SynchroMode=""
     
+    # CS du 20/06/2022
+    # - 0,075 * Ascent_time => cette valeur permet de prendre de la marge sur le temps de navigation
+    # - 10 min de sub-surface
+    # - 5 min d'émergence
+
+    
     # Test MultiParking
     MultiP_Flag<- length(strsplit(as.character(ini_NextPatt$P1),split = ";")[[1]]) > 1
     
@@ -1551,14 +1557,14 @@ if (!is.null(dataprofile$technical)){
       
       # Case 1 : Profile define by depth
       if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="false")){
-        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1.075/iniFile$TECHNICAL$P3)+15*60
         NextSurface<-CurrentTime+PatternDuration
         SynchroMode="Depth"
       }
       
       # Case 2 : Profile define by depth and synchro
       if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="true")){
-        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1.075/iniFile$TECHNICAL$P3)+15*60
         NextSurface<-CurrentTime+PatternDuration
         HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
         
@@ -1613,10 +1619,10 @@ if (!is.null(dataprofile$technical)){
       MultiP_time<- as.numeric(strsplit(as.character(ini_NextPatt$P8),split = ";")[[1]])
       
       ## Pattern Duration without parkings
-      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1.075/iniFile$TECHNICAL$P3)+15*60
       
       ## plus parkings
-      PatternDuration<- PatternDuration + sum(MultiP_time)
+      PatternDuration<- PatternDuration + sum(MultiP_time) 
       
       # Case 5 : MultiP No synchro
       if (tolower(ini_NextPatt$P7)=="false"){

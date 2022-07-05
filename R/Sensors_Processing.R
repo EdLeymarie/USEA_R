@@ -389,7 +389,6 @@ IMU_processHeading<-function(RawMag,imu_cal){
   PhyMagy=RawMag[3]+mag_cal$mz0
   PhyMagz=RawMag[2]+mag_cal$my0
   
-  
   # Compensation compas
   PhyMagx=PhyMagx+compass_cal$hi1
   PhyMagy=PhyMagy+compass_cal$hi2
@@ -412,8 +411,6 @@ IMU_processAcc<-function(RawAcc,acc_cal){
   PhyAccy=4*acc_cal$azg*(RawAcc[3]+acc_cal$az0)/65536
   PhyAccz=4*acc_cal$ayg*(RawAcc[2]+acc_cal$ay0)/65536
   
-  
-  
   # Calcul du Tilt
   fTilt = atan2(sqrt(PhyAccx*PhyAccx + PhyAccy*PhyAccy),PhyAccz)
   fTilt = fTilt*180.0 / pi
@@ -427,10 +424,10 @@ IMU_processAcc<-function(RawAcc,acc_cal){
   
 }
 
-Process_wave<-function(data,imu_cal){
-  Heading<-NULL
-  Tilt<-NULL
-  Acceleration<-NULL
+Process_RawIMU<-function(data,imu_cal){
+  heading<-NULL
+  tilt<-NULL
+  acceleration<-NULL
   
   indAcc<-grep("RawA",colnames(data))
   indMag<-grep("RawM",colnames(data))
@@ -440,12 +437,12 @@ Process_wave<-function(data,imu_cal){
     
     tempacc<-IMU_processAcc(as.numeric(data[i,indAcc]),imu_cal$ACCELEROMETER)
     
-    Heading<-c(Heading,fheading)
-    Tilt<-c(Tilt,tempacc[1])
-    Acceleration<-c(Acceleration,tempacc[2])
+    heading<-c(heading,fheading)
+    tilt<-c(tilt,tempacc[1])
+    acceleration<-c(acceleration,tempacc[2])
   }
   
-  data<-cbind(data,Heading,Tilt,Acceleration)
+  data<-cbind(data,heading,tilt,acceleration)
   
   return(data)
 }

@@ -562,6 +562,45 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
         L$SENSORS$SENSOR_IMU$ACCELEROMETER<-XML_ConvertSection(L$SENSORS$SENSOR_IMU$ACCELEROMETER)
       }
     }
+    
+    if ("SENSOR_UVP6" %in% names(L$SENSORS)){
+      UVP6_HW_CONF<-L$SENSORS$SENSOR_UVP6$HW_CONF
+      UVP6_HW_CONF<-strsplit(UVP6_HW_CONF,split = ",")[[1]]
+      
+      #Old UVP6 without RE
+      if (length(UVP6_HW_CONF)==43){
+        L$SENSORS$SENSOR_UVP6$type<-"lpm"
+        
+        names(UVP6_HW_CONF)<-c("Camera_ref","Acquisition_mode","Default_acquisition_configuration","Delay_after_power_up_on_time_mode",
+                          "Light_ref","Correction_table_activation","Time_between_lighting_power_up_and_trigger",
+                          "Time_between_lighting_trigger_and_acquisition","Pressure_sensor_ref","Pressure_offset",
+                          "Storage_capacity","Minimum_remaining_memory_for_thumbnail_saving","Baud_Rate",
+                          "IP_adress","Black_level","Shutter","Gain","Threshold","Aa","Exp","Pixel_Size",
+                          "Image_volume","Calibration_date","Last_parameters_modification","Operator_email",
+                          paste("Lower_limit_size_class_",1:18,sep=""))
+        L$SENSORS$SENSOR_UVP6$HW_CONF<-UVP6_HW_CONF
+      }
+      
+      #New UVP6 with RE
+      if (length(UVP6_HW_CONF)==41){
+        L$SENSORS$SENSOR_UVP6$type<-"lpm-taxo"
+        
+        names(UVP6_HW_CONF)<-c("Camera_ref","Acquisition_mode","Default_acquisition_configuration","Delay_after_power_up_on_time_mode",
+                               "Light_ref","Correction_table_activation",
+                               "Time_between_lighting_trigger_and_acquisition","Pressure_sensor_ref","Pressure_offset",
+                               "Storage_capacity","Minimum_remaining_memory_for_thumbnail_saving","Baud_Rate",
+                               "Black_level","Shutter","Gain","Threshold","Aa","Exp","Pixel_Size",
+                               "Image_volume","Calibration_date","Last_parameters_modification","Operator_email",
+                               paste("Lower_limit_size_class_",1:18,sep=""))
+        L$SENSORS$SENSOR_UVP6$HW_CONF<-UVP6_HW_CONF
+      }
+      
+      if (!(length(UVP6_HW_CONF) %in% c(41,43))){
+      warning("SENSOR_UVP6 unknown HW_CONF \n")
+        
+      L$SENSORS$SENSOR_UVP6$type<-"unknown"
+      }
+    }
 
   }
   

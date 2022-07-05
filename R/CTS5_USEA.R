@@ -371,9 +371,14 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     sensor<-strsplit(s[4],split="\\.")[[1]][1]
   }
   
-  
-  
   DepthName<-"Pressure_dbar"
+  
+  
+  #### Pre screnning
+  file_ncol<-0
+  if (sensor %in% c("imu") & file.exists(filename)){
+    file_ncol<-ncol(read.table(filename,header=FALSE,sep=sep,dec=dec,stringsAsFactors = FALSE,fill = TRUE))
+  }
   
   #****************************
   #* BEGIN Sensors description
@@ -454,9 +459,9 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   ##-8b uvp6_txo 3 Valeurs par champs : Nbr d'objets, taille moyenne et Gris moyen : 3*40
   if (sensor == "uvp6_txo"){
     
-    V1<-paste("ObjectNbr",1:40,sep = "")
-    V2<-paste("ObjectSize",1:40,sep = "")
-    V3<-paste("ObjectGL",1:40,sep = "")
+    V1<-paste("RawNbr",1:40,sep = "")
+    V2<-paste("RawSize",1:40,sep = "")
+    V3<-paste("RawGL",1:40,sep = "")
     temp<-rep("",120)
     temp[seq(1,length.out=40,by=3)]<-V1
     temp[seq(2,length.out=40,by=3)]<-V2
@@ -508,7 +513,15 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   ##-16 imu
   if (sensor == "imu"){
-    data.colnames<-c("tilt","heading")
+    if (file_ncol==12){
+      #IMU Raw
+      data.colnames<-c("Temperature","RawAx","RawAy","RawAz",
+                       "RawGx","RawGy","RawGz","RawMx","RawMy","RawMz")
+    } else {
+      #IMU Tilt-Heading
+      data.colnames<-c("tilt","heading")
+    }
+    
     # SensorType=120
   }
   
@@ -930,22 +943,67 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       uvp6_Size_class<-strsplit(metadata$SENSOR_UVP6$HW_CONF,split=",")[[1]]
       uvp6_Size_class<-rev(rev(uvp6_Size_class)[1:18])
       
+      uvp6_vol<-as.numeric(metadata$SENSOR_UVP6$HW_CONF["Image_volume"])
+      if (is.na(uvp6_vol)){
+        uvp6_vol<-0.7
+        cat("Warning : default UVP6 volume \n")
+      }
+      
       data.colnames<-c(paste("NP_Size_",uvp6_Size_class,sep=""),paste("MG_Size_",uvp6_Size_class,sep=""))
       
-      colnames(dataprofile$data$uvp6_lpm)[7:42]<-data.colnames
+      ##Duplique lpm data
+      processed_lpm<-dataprofile$data$uvp6_lpm[,grep("_Class",colnames(dataprofile$data$uvp6_lpm))]
+      
+      # Process
+      colnames(processed_lpm)<-data.colnames
+      dataprofile$data$uvp6_lpm<-cbind(dataprofile$data$uvp6_lpm,processed_lpm)
       
       indNP<-grep("NP_Size_",colnames(dataprofile$data$uvp6_lpm))
       
       ## correction Nimages or NSamples
       if ("Nimages" %in% colnames(dataprofile$data$uvp6_lpm)){
         # new taxo format
-        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/dataprofile$data$uvp6_lpm$Nimages}
+        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/dataprofile$data$uvp6_lpm$Nimages
+        }
       
       if ("NSamples" %in% colnames(dataprofile$data$uvp6_lpm)){
         #old format without taxo
         NSamples<-dataprofile$data$uvp6_lpm$NSamples
         NSamples[NSamples==0]<-1 #correction for NSamples=0
-        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/NSamples}
+        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/NSamples
+      }
+      
+      ## Volume
+      dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/uvp6_vol
+      
+    }
+  }
+  
+  ### uvp6_txo
+  if ("uvp6_txo" %in% names(dataprofile$data)) {
+    if (!is.null(metadata$SENSOR_UVP6)){
+      
+      uvp6_vol<-as.numeric(metadata$SENSOR_UVP6$HW_CONF["Image_volume"])
+      if (is.na(uvp6_vol)){
+        uvp6_vol<-0.7
+        cat("Warning : default UVP6 volume \n")
+      }
+      
+      ##Duplique txo data
+      processed_txo<-dataprofile$data$uvp6_txo[,grep("Raw",colnames(dataprofile$data$uvp6_txo))]
+      colnames(processed_txo)<-gsub("Raw","Object",colnames(processed_txo))
+      
+      # Process
+      indONumb<-grep("ObjectNbr",colnames(processed_txo))
+      
+      ## correction Nimages
+      if ("Nimages" %in% colnames(dataprofile$data$uvp6_txo)){
+        Nimages<-dataprofile$data$uvp6_txo$Nimages
+        processed_txo[,indONumb]<-processed_txo[,indONumb]/Nimages
+        processed_txo[,indONumb]<-processed_txo[,indONumb]/uvp6_vol
+      }
+      
+      dataprofile$data$uvp6_txo<-cbind(dataprofile$data$uvp6_txo,processed_txo)
       
     }
   }
@@ -1135,9 +1193,17 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
   ### wave
   if ("wave" %in% names(dataprofile$data)){
-    
     data<-dataprofile$data$wave
-    try(dataprofile$data$wave<-Process_wave(data,metadata$SENSOR_IMU))
+    try(dataprofile$data$wave<-Process_RawIMU(data,metadata$SENSOR_IMU))
+  }
+  
+  ### IMU
+  if ("imu" %in% names(dataprofile$data)){
+    data<-dataprofile$data$imu
+    if (ncol(data)==14){
+      cat("Process Raw IMU \n")
+      try(dataprofile$data$imu<-Process_RawIMU(data,metadata$SENSOR_IMU))
+    }
   }
   
   return(dataprofile)

@@ -433,7 +433,8 @@ PlotSbepH<-function(data,technical=TRUE,ZoneDepth=NULL){
 }
 
 #**************************************************
-#Plot OCTOPUS
+#Plot lpm
+# data<-dataprofile$data$uvp6_lpm
 PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot Chronologie
@@ -459,14 +460,16 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
     }
   }
   
-  #### Class
+  #### Class Size
   title_list<-c("UVP6 NPart_Class1-6","UVP6 NPart_Class7-12","UVP6 NPart_Class13-18")
-  class_list<-rbind(7:12,13:18,19:24)
+  IndSize<-grep("NP_Size",colnames(data))
+  class_list<-rbind(IndSize[1:6],IndSize[7:12],IndSize[13:18])
   
   for (i in 1:length(title_list)){
     temp<-data[,class_list[i,]]
     
     # ## correction Nimages or NSamples
+    # Now in Processdata
     # if ("Nimages" %in% colnames(data)){
     #   # new taxo format
     #   temp<-temp/data$Nimages}
@@ -496,7 +499,8 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #### Mean Grey
   title_list<-c("UVP6 MGrey_Class1-6","UVP6 MGrey_Class7-12","UVP6 MGrey_Class13-18")
-  class_list<-rbind(25:30,31:36,37:42)
+  IndSize<-grep("MG_Size",colnames(data))
+  class_list<-rbind(IndSize[1:6],IndSize[7:12],IndSize[13:18])
   
   for (i in 1:length(title_list)){
     temp<-data[,class_list[i,]]
@@ -616,9 +620,9 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   Nclass<-sum(ExistClass)
   if (Nclass>0){
     cols<-rainbow(Nclass)
-    matplot(dataASC[,indNbr][,ExistClass]/dataASC$Nimages,-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectNbr",ylab = "Depth",
+    matplot(dataASC[,indNbr][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectNbr",ylab = "Depth",
             main="Ascent Object Number",log="x",col=cols)
-    xlim<-dataASC[,indNbr][,ExistClass]/dataASC$Nimages
+    xlim<-dataASC[,indNbr][,ExistClass]
     xlim<-range(xlim[xlim>0])
     plotDepthZones(ZoneDepth,x=xlim)
     legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
@@ -697,7 +701,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     Nclass<-sum(ExistClass)
     if (Nclass>0){
       cols<-rainbow(Nclass)
-      matplot(as.numeric(dataPAR$Date)/dataPAR$Nimages,dataPAR[,indNbr][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectNbr",
+      matplot(as.numeric(dataPAR$Date),dataPAR[,indNbr][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectNbr",
               main="Parking Object Number", col=cols)
       legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
     }
@@ -940,11 +944,32 @@ PlotIMU<-function(data,technical=TRUE,ZoneDepth=NULL){
   #Plot data
   ## IntTime et Tilt
   ind<-which(data[,"PhaseName"] == "ASC")
-  plot(data$tilt[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="Tilt",ylab="Depth",main="Tilt and Heading")
-  par(new=TRUE)
-  plot(data$heading[ind],-data[ind,"Pressure_dbar"],type="l",axes=FALSE,col=4,xlab="",ylab="")
-  axis(3,col=4,col.axis=4)
-  plotDepthZones(ZoneDepth)
+  if (("tilt" %in% colnames(data)) & ("heading" %in% colnames(data))){
+    plot(data$tilt[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="Tilt",ylab="Depth",main="Tilt")
+    plotDepthZones(ZoneDepth)
+    
+    # #convertion en coordonnees ndc
+    # InsertPos<-c(grconvertX(c(0.5,0.95), from = "npc", to = "ndc"),
+    #              grconvertY(c(0.15,0.8), from = "npc", to = "ndc"))
+    # 
+    # #creation de l'insert
+    # oldpar <- par()
+    # par(fig = InsertPos, new = TRUE)
+    # par(mar = c(0.1, 0.1, 0.1, 0.1),mgp=c(3,0.1,0))
+    
+    plot(data$tilt[ind],-data[ind,"Pressure_dbar"],type="l",col=1,ylim=c(-20,0),
+         main="Tilt-Zoom")#cex=0.5,cex.axis=0.5,tcl=-0.1)
+
+    # par(fig = oldpar$fig)
+    # par(mar = oldpar$mar)
+    # par(mgp = oldpar$mgp)
+    # par(mfrow = oldpar$mfrow,new=F)
+    
+    plot(data$heading[ind],-data[ind,"Pressure_dbar"],type="l",col="blue",xlab="Tilt",ylab="Depth",main="Tilt")
+    plotDepthZones(ZoneDepth)
+    
+    
+  }
   
 }
 
@@ -952,17 +977,17 @@ PlotIMU<-function(data,technical=TRUE,ZoneDepth=NULL){
 #Plot wave
 # data<-dataprofile$data$wave
 PlotWave<-function(data){
-  plot(data$Date,data$Heading,type="l",xlab="date",ylab="Heading",
+  plot(data$Date,data$heading,type="l",xlab="date",ylab="Heading",
        main="Heading at surface")
   
-  plot(data$Date,data$Tilt,type="l",xlab="date",ylab="Tilt",
+  plot(data$Date,data$tilt,type="l",xlab="date",ylab="Tilt",
        main="Tilt at surface")
-  legend("topright",legend=paste("mean=",formatC(mean(data$Tilt),digit=3)),
+  legend("topright",legend=paste("mean=",formatC(mean(data$tilt),digit=3)),
          bty="n")
   
-  plot(data$Date,data$Acceleration,type="l",xlab="date",ylab="Acceleration",
+  plot(data$Date,data$acceleration,type="l",xlab="date",ylab="Acceleration",
        main="Acceleration at surface")
-  legend("topright",legend=paste("mean=",formatC(mean(data$Acceleration),digit=3)),
+  legend("topright",legend=paste("mean=",formatC(mean(data$acceleration),digit=3)),
          bty="n")
   
 }
@@ -1083,6 +1108,7 @@ if (!is.null(dataprofile)){
       cat("create:",filename,"\n",sep="")
       pdf(file=filename,paper = paper, width = 0, height = 0)
       par(mfrow=mfrow)
+
   }
   
   
@@ -1199,7 +1225,7 @@ if (!is.null(dataprofile)){
   if ("imu" %in% names(dataprofile$data)){  
     data<-dataprofile$data$imu
     PlotIMU(data,technical=technical,
-               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_21"))
+               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_20"))
   } 
   
   #Wave 

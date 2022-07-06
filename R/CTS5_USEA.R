@@ -940,8 +940,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   if ("uvp6_lpm" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_UVP6)){
       ## les tailles sont les 18 derniers parametres
-      uvp6_Size_class<-strsplit(metadata$SENSOR_UVP6$HW_CONF,split=",")[[1]]
-      uvp6_Size_class<-rev(rev(uvp6_Size_class)[1:18])
+      uvp6_Size_class<-metadata$SENSOR_UVP6$HW_CONF[grep("Lower_limit_size",names(metadata$SENSOR_UVP6$HW_CONF))]
+
       
       uvp6_vol<-as.numeric(metadata$SENSOR_UVP6$HW_CONF["Image_volume"])
       if (is.na(uvp6_vol)){

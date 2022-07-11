@@ -83,7 +83,7 @@ return(result)
 #' 
 #' @return a data frame which contains the positions in various format and the speed and course of the float.
 #' 
-#' @examples The positions must be entered in a text file by copying the [GPS] line of the technical/default file as follow :
+#' @details  The positions must be entered in a text file by copying the [GPS] line of the technical/default file as follow :
 #' UTC=19-11-25 08:02:00 Lat=4315.57717N Long=00658.52514E Clock drift=+0.032 s
 #' UTC=19-11-25 08:16:35 Lat=4315.27231N Long=00657.97657E Clock drift=+0.000 s
 #' 
@@ -194,7 +194,7 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
 #' 
 #' @return identical as \code{\link{ScanPosition2Recover}}
 #' 
-#' @examples ScanDefault2Recover()
+#' @examples Recover_ScanDefault()
 #' 
 #' 
 #' 

@@ -18,11 +18,8 @@ a data frame which contains the positions in various format and the speed and co
 This function read the position of the float during a recovering. Positions are entered by hand in a text file or 
 read from default files by \code{\link{Recover_ScanDefault}}.
 }
-\examples{
+\details{
 The positions must be entered in a text file by copying the [GPS] line of the technical/default file as follow :
 UTC=19-11-25 08:02:00 Lat=4315.57717N Long=00658.52514E Clock drift=+0.032 s
 UTC=19-11-25 08:16:35 Lat=4315.27231N Long=00657.97657E Clock drift=+0.000 s
-
-
-
 }

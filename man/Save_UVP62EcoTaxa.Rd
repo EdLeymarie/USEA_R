@@ -18,7 +18,7 @@ save UVP6 data to EcoPart csv format
 }
 \examples{
 
-Save_UVP62EcoTaxa(login,dataprofile,Meta$SENSORS$SENSOR_UVP6$HW_CONF,subdir="./uvp6/")
+Save_UVP62EcoTaxa(login,dataprofile,UVP6_HW_CONF=Meta$SENSORS$SENSOR_UVP6$HW_CONF,subdir="./uvp6/")
 
 
 

@@ -867,7 +867,7 @@ return(dataMerged)
 #'
 cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
-  ### ECO
+  ### ECO ####
   if ("eco" %in% names(dataprofile$data)) {
     
     SENSOR_ECO<-NULL
@@ -918,7 +918,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
   }
   
-  ### OCR
+  ### OCR ####
   if ("ocr" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_OCR) & ("Downwelling-irradiance-380nm_CN" %in% colnames(dataprofile$data$ocr))){
       dataprofile$data$ocr[,"Downwelling-irradiance-380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
@@ -936,7 +936,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       }
   }
   
-  ### uvp6_lpm
+  ### uvp6_lpm ####
   if ("uvp6_lpm" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_UVP6)){
       ## les tailles sont les 18 derniers parametres
@@ -979,7 +979,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
   }
   
-  ### uvp6_txo
+  ### uvp6_txo ####
   if ("uvp6_txo" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_UVP6)){
       
@@ -1008,7 +1008,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
   }
   
-  ### crover
+  ### crover ####
   if (("crover" %in% names(dataprofile$data)) & ProcessUncalibrated) {
     if ("Corr-Sig-Raw_CN" %in% colnames(dataprofile$data$crover)){
       CSCdark=0
@@ -1018,7 +1018,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
   }
   
-  ### DO
+  ### DO ####
   if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
     if ("c1phase_deg" %in% colnames(dataprofile$data$do)){
       
@@ -1050,7 +1050,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
   }
   
-  ### sbepH
+  ### sbepH ####
   if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
     if ("pH_mV" %in% colnames(dataprofile$data$sbeph)) {
       
@@ -1107,7 +1107,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
   }
   
-  ### Ramses
+  ### Ramses ####
   if ("ramses" %in% names(dataprofile$data)) {
     
     if ("inifile" %in% names(dataprofile)){
@@ -1145,7 +1145,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     
   }
   
-  ### Ramses2
+  ### Ramses2 ####
   if ("ramses2" %in% names(dataprofile$data)) {
     
     if ("inifile" %in% names(dataprofile)){
@@ -1182,7 +1182,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     
   }
   
-  ### MPE
+  ### MPE ####
   if ("mpe" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_MPE) & ("Voltage" %in% colnames(dataprofile$data$mpe))){
       
@@ -1191,16 +1191,16 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
   }
   
-  ### wave
-  if ("wave" %in% names(dataprofile$data)){
+  ### wave ####
+  if ("wave" %in% names(dataprofile$data) & !is.null(metadata$SENSOR_IMU)){
     data<-dataprofile$data$wave
     try(dataprofile$data$wave<-Process_RawIMU(data,metadata$SENSOR_IMU))
   }
   
-  ### IMU
+  ### IMU ####
   if ("imu" %in% names(dataprofile$data)){
     data<-dataprofile$data$imu
-    if (ncol(data)==14){
+    if ((ncol(data)==14) & !is.null(metadata$SENSOR_IMU)){
       cat("Process Raw IMU \n")
       try(dataprofile$data$imu<-Process_RawIMU(data,metadata$SENSOR_IMU))
     }

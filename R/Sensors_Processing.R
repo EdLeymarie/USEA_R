@@ -429,20 +429,27 @@ Process_RawIMU<-function(data,imu_cal){
   tilt<-NULL
   acceleration<-NULL
   
-  indAcc<-grep("RawA",colnames(data))
-  indMag<-grep("RawM",colnames(data))
+  if (("ACCELEROMETER" %in% names(imu_cal)) & ("COMPASS" %in% names(imu_cal)) & ("MAGNETOMETER" %in% names(imu_cal))){
   
-  for (i in 1:nrow(data)){
-    fheading<-IMU_processHeading(as.numeric(data[i,indMag]),imu_cal)
+    indAcc<-grep("RawA",colnames(data))
+    indMag<-grep("RawM",colnames(data))
     
-    tempacc<-IMU_processAcc(as.numeric(data[i,indAcc]),imu_cal$ACCELEROMETER)
+    for (i in 1:nrow(data)){
+      fheading<-IMU_processHeading(as.numeric(data[i,indMag]),imu_cal)
+      
+      tempacc<-IMU_processAcc(as.numeric(data[i,indAcc]),imu_cal$ACCELEROMETER)
+      
+      heading<-c(heading,fheading)
+      tilt<-c(tilt,tempacc[1])
+      acceleration<-c(acceleration,tempacc[2])
+    }
     
-    heading<-c(heading,fheading)
-    tilt<-c(tilt,tempacc[1])
-    acceleration<-c(acceleration,tempacc[2])
+    data<-cbind(data,heading,tilt,acceleration)
   }
-  
-  data<-cbind(data,heading,tilt,acceleration)
-  
+  else {
+    warning("NO IMU calibration \n")
+    data<-NULL
+  }
+    
   return(data)
 }

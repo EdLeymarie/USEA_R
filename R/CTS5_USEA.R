@@ -36,6 +36,41 @@ else {
 
 #**************************************************
 
+# Concat files
+
+#**************************************************
+#' concat files in ones
+#'
+#' @description
+#' take the last file with the pattern "ffff_ccc_pp.*" a return the hexafloatname
+#' 
+#' @examples 
+#' 
+#' findfloatname(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*")
+#' 
+#' 
+#' 
+
+concatfiles<-function(pattern=NULL,fileout=NULL){
+  
+  filenames<-list.files(pattern=pattern)
+  
+  if ((length(filenames)>1)){
+    
+    datacat<-NULL
+    for (filename in filenames){
+      datacat<-c(datacat,readBin(filename,what="raw",n=25*1024))
+    }
+    
+    cat("cat ",pattern," > ",fileout,"\n")
+    
+    writeBin(datacat,fileout)
+    
+  }
+}
+
+#**************************************************
+
 # sensors from Meta
 
 #**************************************************
@@ -179,19 +214,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
       
       #Concat  
       pattern=paste(floatname,"_",formatC(cycle,width=3,flag="0"),"_",formatC(Pattern,width=2,flag="0"),"_",sensor,"#[[:digit:]]{2}.hex",sep="")
-      filenames<-list.files(pattern=pattern)
-      if ((length(filenames)>1)){
-        
-        datacat<-NULL
-        for (filename in filenames){
-          datacat<-c(datacat,readBin(filename,what="raw",n=25*1024))
-        }
-        
-        cat("cat ",pattern," > ",SensorFilename,"\n")
-        
-        writeBin(datacat,SensorFilename)
-        
-      }
+      concatfiles(pattern = pattern, fileout = SensorFilename)
       
       #decodage
       if (file.exists(SensorFilename)){
@@ -868,7 +891,7 @@ return(dataMerged)
 cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
   ### ECO ####
-  if ("eco" %in% names(dataprofile$data)) {
+  try(if ("eco" %in% names(dataprofile$data)) {
     
     SENSOR_ECO<-NULL
     
@@ -916,10 +939,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_ppb)"]<-SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_CN)"]
       }
     }
-  }
+  })
   
   ### OCR ####
-  if ("ocr" %in% names(dataprofile$data)) {
+  try(if ("ocr" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_OCR) & ("Downwelling-irradiance-380nm_CN" %in% colnames(dataprofile$data$ocr))){
       dataprofile$data$ocr[,"Downwelling-irradiance-380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
         (dataprofile$data$ocr[,"Downwelling-irradiance-380nm_CN"]-metadata$SENSOR_OCR$CHANNEL_01[1])
@@ -934,10 +957,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         (dataprofile$data$ocr[,"Photosynthetic-Active-Radiation_CN"]-metadata$SENSOR_OCR$CHANNEL_04[1])
       
       }
-  }
+  })
   
   ### uvp6_lpm ####
-  if ("uvp6_lpm" %in% names(dataprofile$data)) {
+  try(if ("uvp6_lpm" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_UVP6)){
       ## les tailles sont les 18 derniers parametres
       uvp6_Size_class<-metadata$SENSOR_UVP6$HW_CONF[grep("Lower_limit_size",names(metadata$SENSOR_UVP6$HW_CONF))]
@@ -977,10 +1000,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/uvp6_vol
       
     }
-  }
+  })
   
   ### uvp6_txo ####
-  if ("uvp6_txo" %in% names(dataprofile$data)) {
+  try(if ("uvp6_txo" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_UVP6)){
       
       uvp6_vol<-as.numeric(metadata$SENSOR_UVP6$HW_CONF["Image_volume"])
@@ -1006,20 +1029,20 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       dataprofile$data$uvp6_txo<-cbind(dataprofile$data$uvp6_txo,processed_txo)
       
     }
-  }
+  })
   
   ### crover ####
-  if (("crover" %in% names(dataprofile$data)) & ProcessUncalibrated) {
+  try(if (("crover" %in% names(dataprofile$data)) & ProcessUncalibrated) {
     if ("Corr-Sig-Raw_CN" %in% colnames(dataprofile$data$crover)){
       CSCdark=0
       CSCcal=12766
       x=0.25
       dataprofile$data$crover[,"c-uncalibrated_1/m"] <- -log((dataprofile$data$crover[,"Corr-Sig-Raw_CN"]-CSCdark)/(CSCcal-CSCdark))/x
     }
-  }
+  })
   
   ### DO ####
-  if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
+  try(if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
     if ("c1phase_deg" %in% colnames(dataprofile$data$do)){
       
     if (is.list(metadata$SENSOR_DO)){
@@ -1048,10 +1071,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
                                                                    COEF = coefs, PHASECOEF0 = phasecoef0)
       }
     }
-  }
+  })
   
   ### sbepH ####
-  if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
+  try(if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
     if ("pH_mV" %in% colnames(dataprofile$data$sbeph)) {
       
       if (length(metadata$SENSOR_SBEPH) > 1){
@@ -1105,10 +1128,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       }
       
     }
-  }
+  })
   
   ### Ramses ####
-  if ("ramses" %in% names(dataprofile$data)) {
+  try(if ("ramses" %in% names(dataprofile$data)) {
     
     if ("inifile" %in% names(dataprofile)){
       PixelStart=dataprofile$inifile$SENSOR_14$P54
@@ -1143,10 +1166,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       }
     }
     
-  }
+  })
   
   ### Ramses2 ####
-  if ("ramses2" %in% names(dataprofile$data)) {
+  try(if ("ramses2" %in% names(dataprofile$data)) {
     
     if ("inifile" %in% names(dataprofile)){
       PixelStart=dataprofile$inifile$SENSOR_21$P54
@@ -1180,31 +1203,31 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       
     }
     
-  }
+  })
   
   ### MPE ####
-  if ("mpe" %in% names(dataprofile$data)) {
+  try(if ("mpe" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_MPE) & ("Voltage" %in% colnames(dataprofile$data$mpe))){
-      
-      dataprofile$data$mpe[,"Physical"]<-1E4*dataprofile$data$mpe$Voltage/as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])
-
+      if (!is.null(metadata$SENSOR_MPE$PHOTODETECTOR)){
+        dataprofile$data$mpe[,"Physical"]<-1E4*dataprofile$data$mpe$Voltage/as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])
+      }
     }
-  }
+  })
   
   ### wave ####
-  if ("wave" %in% names(dataprofile$data) & !is.null(metadata$SENSOR_IMU)){
+  try(if ("wave" %in% names(dataprofile$data) & !is.null(metadata$SENSOR_IMU)){
     data<-dataprofile$data$wave
     try(dataprofile$data$wave<-Process_RawIMU(data,metadata$SENSOR_IMU))
-  }
+  })
   
   ### IMU ####
-  if ("imu" %in% names(dataprofile$data)){
+  try(if ("imu" %in% names(dataprofile$data)){
     data<-dataprofile$data$imu
     if ((ncol(data)==14) & !is.null(metadata$SENSOR_IMU)){
       cat("Process Raw IMU \n")
       try(dataprofile$data$imu<-Process_RawIMU(data,metadata$SENSOR_IMU))
     }
-  }
+  })
   
   return(dataprofile)
   
@@ -1409,6 +1432,20 @@ if (!is.null(dataprofile)){
 #' @export
 #'
 cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1,OnlyFilename=F){
+  
+  
+  ### concatenation automatique des ini
+  listiniconcat<-list.files(pattern=paste("^",floatname,".*_apmt#01.ini",sep=""))
+  if (length(listiniconcat)>=1){
+    for (i in 1:length(listiniconcat)){
+      fileout<-paste(strsplit(listiniconcat[i],split="#")[[1]][1],".ini",sep="")
+      
+      if (!file.exists(fileout)){
+        pattern=paste(strsplit(listiniconcat[i],split="#")[[1]][1],"#[[:digit:]]{2}.ini",sep="")
+        concatfiles(pattern=pattern,fileout=fileout)
+      }
+    }
+  }
   
   
   ## Selection of the file

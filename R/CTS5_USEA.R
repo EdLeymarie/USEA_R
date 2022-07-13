@@ -15,8 +15,7 @@ require(chron)
 #' 
 #' findfloatname(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*")
 #' 
-#' 
-#' 
+
 findfloatname<-function(pattern="^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*",
                         CycleNumber=NULL,PatternNumber=1){
   

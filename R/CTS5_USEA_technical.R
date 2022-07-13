@@ -3,6 +3,7 @@ require(XML)
 require("sp")
 require("rgdal")
 
+
 # Conversion de degree min(decimal) vers degree (decimal)
 ConvDeg<-function(str){
   if (length(str)==1){
@@ -505,14 +506,46 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
     filename<-rev(list.files(pattern=pattern))[1]
   }
   
+  ## test concatenation
+  if (is.na(filename)){
+    pattern<-paste("^",floatname,"_",CycleNumber_tmp,"_",PatternNumber_tmp,"_metadata#[[:digit:]]{2}.xml",sep="")
+    lf<-list.files(pattern=pattern)
+    if (length(lf)>0){
+      #dernier fichier
+      filename<-rev(list.files(pattern=pattern))[1]
+      
+      #Concat file
+      pattern<-paste(strsplit(filename,split = "#")[[1]][1],"#[[:digit:]]{2}.xml",sep="")
+      fileout<-paste(strsplit(filename,split = "#")[[1]][1],".xml",sep="")
+      concatfiles(pattern = pattern, fileout = fileout)
+    }
+    
+    # Nouvelle recherche
+    pattern<-paste("^",floatname,"_",CycleNumber_tmp,"_",PatternNumber_tmp,"_metadata.xml",sep="")  
+    filename<-rev(list.files(pattern=pattern))[1]
+  }
+  
+  ## open
   if (file.exists(filename)){
     cat("Open:",filename,"\n")
     
     xml<-scan(filename,what = character(0))
+  
     
     ##elimination padding
     ind<-grep("</FLOAT>",xml)
     xml<-xml[1:ind[1]]
+    
+    ##test non ascii
+    for (i in 1:length(xml)){
+       if (sum(charToRaw(xml[i]) == "ff")>0){
+         cat("non Ascii character line:",i,"\n")
+         cat(xml[i],"\n")
+         
+         ## bug SN ECO
+         xml[i]<-"SN=' ' />"
+       }
+    }
     
     xml<-xmlParse(xml)
     L<-xmlToList(xml)

@@ -18,14 +18,14 @@ Recover_ScanDefault(
 \item{KMLfile}{name of the KML file generated}
 }
 \value{
-identical as \code{\link{ScanPosition2Recover}}
+identical as \code{\link{Recover_ScanPosition}}
 }
 \description{
-This function read technical/default files and write the Potions file to be called by \code{\link{ScanPosition2Recover}}
+This function read technical/default files and write the Postions file to be called by \code{\link{Recover_ScanPosition}}
 }
 \examples{
 Recover_ScanDefault()
-
-
+Recover_ScanDefault(pattern=".*technical.*.txt")
+Recover_ScanDefault(pattern=".*(technical|default).*.txt")
 
 }

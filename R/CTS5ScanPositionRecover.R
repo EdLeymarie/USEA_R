@@ -186,17 +186,17 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
 #' read technical/default files to recover the float.
 #'
 #' @description
-#' This function read technical/default files and write the Potions file to be called by \code{\link{ScanPosition2Recover}}
+#' This function read technical/default files and write the Postions file to be called by \code{\link{Recover_ScanPosition}}
 #'
 #' @param pattern pattern of the technical/default files
 #' @param Outputfilename filename of the Positions file
 #' @param KMLfile name of the KML file generated
 #' 
-#' @return identical as \code{\link{ScanPosition2Recover}}
+#' @return identical as \code{\link{Recover_ScanPosition}}
 #' 
 #' @examples Recover_ScanDefault()
-#' 
-#' 
+#' Recover_ScanDefault(pattern=".*technical.*.txt")
+#' Recover_ScanDefault(pattern=".*(technical|default).*.txt")
 #' 
 #' @export
 #'
@@ -205,22 +205,28 @@ Recover_ScanDefault<-function(pattern=".*_default_.*.txt",Outputfilename="Positi
  
 filenames<-list.files(pattern = pattern)   
 
-Positions<-NULL
-
-for (filename in filenames){
-  cat('Open:',filename,"\n")
-  t<-scan(filename,what=character(0),sep="\n")
-  ind<-grep("Lat=",t)
-  if (length(ind)>0){
-    Positions<-c(Positions,t[ind])
+  if (length(filenames)>0){
+  
+  Positions<-NULL
+  
+  for (filename in filenames){
+    cat('Open:',filename,"\n")
+    t<-scan(filename,what=character(0),sep="\n")
+    ind<-grep("Lat=",t)
+    if (length(ind)>0){
+      Positions<-c(Positions,t[ind])
+    }
+    
   }
   
+  cat("write:",Outputfilename,"\n")
+  write(Positions,file = Outputfilename)
+  
+  Recover_ScanPosition(filename=Outputfilename,KMLfile=KMLfile)
+  }
+else {
+  warning("no file to process")
 }
-
-cat("write:",Outputfilename,"\n")
-write(Positions,file = Outputfilename)
-
-Recover_ScanPosition(filename=Outputfilename,KMLfile=KMLfile)
 
 }
 
@@ -229,7 +235,7 @@ Recover_ScanPosition(filename=Outputfilename,KMLfile=KMLfile)
 #' Predict position based on previous Positions
 #'
 #' @description
-#' extrapolates the futur position of the float in nextMin minutes based on previous positions read 
+#' extrapolates the future position of the float in nextMin minutes based on previous positions read 
 #' by \code{\link{Recover_ScanPosition}} or \code{\link{Recover_ScanDefault}}
 #'
 #' @param nextMin Number of minutes from now to project the position
@@ -239,7 +245,7 @@ Recover_ScanPosition(filename=Outputfilename,KMLfile=KMLfile)
 #' @return projected position
 #' 
 #' @examples data<-Recover_ScanDefault()
-#' Recover_PredictPosition(nextMin=1,data=data) estimate the position in 1 min from now
+#' Recover_PredictPosition(nextMin=1,data=data) # estimate the position in 1 min from now
 #' 
 #' 
 #' 
@@ -276,28 +282,5 @@ return(result)
 
 #***************************************************************************
 
-## Utilisation
-
-## ajouter les lignes UTC=18-04-17 12:20:15 Lat=4304.90557N Long=00728.80634E dans un fichier Positions.txt
-
-## Choisir le bon repertoire
-
-#setwd("D:/Data/Provor_APMT/lovapm006_ProVal/lovapm006f")
-#setwd("D:/Data/Provor_APMT/lovapm005a")
-
-## Utilisation simple
-#ScanPosition(filename="Positions.txt")
-
-# ou dans le repertoire avec les fichier default
-#ScanDefault2Recover()
-
-
-## Prediction de position
-# A utiliser en cas de positions tres vieille ou derive tres rapide. Verifier l'horloge de l'ordi et verifier la coherence de la prediction
-# data<-ScanPosition(filename="Positions.txt")
-# Predict(nextMin=1,data=data)
-
-# data<-ScanDefault2Recover()
-# Predict(nextMin=1,data=data)
 
 

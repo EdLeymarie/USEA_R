@@ -17,12 +17,12 @@ Recover_PredictPosition(nextMin = 0, data = data, ind = 1)
 projected position
 }
 \description{
-extrapolates the futur position of the float in nextMin minutes based on previous positions read 
+extrapolates the future position of the float in nextMin minutes based on previous positions read 
 by \code{\link{Recover_ScanPosition}} or \code{\link{Recover_ScanDefault}}
 }
 \examples{
 data<-Recover_ScanDefault()
-Recover_PredictPosition(nextMin=1,data=data) estimate the position in 1 min from now
+Recover_PredictPosition(nextMin=1,data=data) # estimate the position in 1 min from now
 
 
 

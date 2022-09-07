@@ -10,7 +10,7 @@ cts5_energy_decode(
   CycleNumber,
   PatternNumber = 1,
   metadata = NULL,
-  subdir = "./eny",
+  subdir = "./ENY",
   Nke_ProgPath = "",
   default_vol = 800,
   default_TS = 5,
@@ -56,9 +56,9 @@ with embeded ini file must be saved
 \examples{
 
 Meta<-cts5_readMetaSensor()
-cts5_energy_decode(CycleNumber=c,PatternNumber = p,subdir="./eny",metadata = Meta)
+cts5_energy_decode(CycleNumber=c,PatternNumber = p,subdir="./ENY",metadata = Meta)
 
-cts5_energy_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,subdir="./eny",metadata = Meta,
+cts5_energy_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,subdir="./ENY",metadata = Meta,
 Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 
 

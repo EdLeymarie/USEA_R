@@ -6,7 +6,7 @@
 \usage{
 cts5_energy_process(
   floatname = "",
-  subdir = "./eny",
+  subdir = "./ENY",
   AutoLoad = T,
   FromLastReset = F,
   CycleNumber = NULL,

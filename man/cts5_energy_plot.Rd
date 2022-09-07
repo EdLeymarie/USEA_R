@@ -7,7 +7,7 @@
 cts5_energy_plot(
   login,
   floatname,
-  subdir = "./eny",
+  subdir = "./ENY",
   metadata = NULL,
   batteryInitialCapacity = 0.9,
   fitLength = 10

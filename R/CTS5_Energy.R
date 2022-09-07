@@ -33,9 +33,9 @@
 #' @examples 
 #' 
 #' Meta<-cts5_readMetaSensor()
-#' cts5_energy_decode(CycleNumber=c,PatternNumber = p,subdir="./eny",metadata = Meta)
+#' cts5_energy_decode(CycleNumber=c,PatternNumber = p,subdir="./ENY",metadata = Meta)
 #' 
-#' cts5_energy_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,subdir="./eny",metadata = Meta,
+#' cts5_energy_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,subdir="./ENY",metadata = Meta,
 #' Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 #' 
 #'
@@ -44,7 +44,7 @@ cts5_energy_decode<-function(floatname="",
                              CycleNumber,
                              PatternNumber=1,
                              metadata=NULL,
-                             subdir="./eny",
+                             subdir="./ENY",
                              Nke_ProgPath="",
                              default_vol=800,
                              default_TS=5,
@@ -258,7 +258,7 @@ cts5_energy_read<-function(filename){
 #' @export
 #'
 cts5_energy_process<-function(floatname="",
-                              subdir="./eny",
+                              subdir="./ENY",
                               AutoLoad=T,
                               FromLastReset=F,
                               CycleNumber=NULL,
@@ -402,7 +402,7 @@ else {
 #' @export
 #'
 
-cts5_energy_plot<-function(login,floatname,subdir="./eny",metadata=NULL,batteryInitialCapacity=0.90,fitLength=10){
+cts5_energy_plot<-function(login,floatname,subdir="./ENY",metadata=NULL,batteryInitialCapacity=0.90,fitLength=10){
 
 # Automatic hexa floatname
 if (floatname==""){
@@ -502,10 +502,13 @@ labels<-matrix(unlist(strsplit(labels,split="\\.")),ncol = 2,byrow = T)[,1]
 
 SumByDevice<-100*SumByDevice/sum(SumByDevice)
 
-labels<-paste(labels, "(",round(SumByDevice),"%)",sep="")
+labels<-paste(labels, " ",round(SumByDevice),"%",sep="")
 
-pie(apply(enyData[,indConsumption],2,sum,na.rm=T),col=rainbow(length(indConsumption)),
-    labels = labels)
+pie(apply(enyData[,indConsumption],2,sum,na.rm=T),col=rainbow(length(indConsumption)),radius=0.75,
+    labels = labels,cex=0.6)
+
+#plot(NULL,NULL)
+legend("topleft",legend=labels,ncol=7,bty="n",cex=0.6,text.col="blue")
 
 dev.off()
 

@@ -9,35 +9,56 @@ cts5_energy_decode(
   techfilename = "",
   CycleNumber,
   PatternNumber = 1,
+  metadata = NULL,
   subdir = "./eny",
-  Nke_ProgPath = ""
+  Nke_ProgPath = "",
+  default_vol = 800,
+  default_TS = 5,
+  default_SDCard = 0,
+  default_bat_self_discharge = 1.5
 )
 }
 \arguments{
 \item{floatname}{hexa name of the float. If "", the floatname will automatically found.}
 
-\item{CycleNumber}{numeric : number of the cycle to decode}
+\item{techfilename}{use to specified directly the name of the technical file}
 
-\item{PatternNumber}{numeric : number of the Pattern to decode}
+\item{CycleNumber}{numeric : number of the cycle to decode, if techfilename=""}
+
+\item{PatternNumber}{numeric : number of the Pattern to decode, if techfilename=""}
+
+\item{metadata}{from \code{\link{cts5_readMetaSensor}} to get SDCard status}
 
 \item{subdir}{subdir where to put .csv ASCII files}
 
 \item{Nke_ProgPath}{path to the nke decoder (APMTEnergy.exe or ...). This path is stored to Sys.getenv("USEAR_Nke_ProgPath").
 For Linux, if the Decoder path is in the .bashrc, you can leave this parameters empty.}
+
+\item{default_vol}{default emergence volume in cc. To be used if the inifile file is not found}
+
+\item{default_TS}{default temperature at surface. To be used if sbe41 data are not found}
+
+\item{default_SDCard}{default SDCard status (0 = not present). To be used if information is not found in metadata.}
+
+\item{default_bat_self_discharge}{batterie self discharge in A / year}
 }
 \value{
-No return. This function create ASCII files in the subdir directory
+This function create ASCII files in the subdir directory and return a list : TechFilename, IniFilename, filename,
+CycleNumber,PatternNumber, VolEmergence, TSurf, SDCard)
 }
 \description{
 call NKE routine to estimate energy from technical file
 }
 \details{
-this function must be call in the directory where are technicals and ini files
+this function must be call in the directory where are technicals and ini files. RData files from \code{\link{cts5_readProfile}} 
+with embeded ini file must be saved
 }
 \examples{
-cts5_energy_decode(CycleNumber=c,PatternNumber = p,subdir="./eny")
 
-cts5_energy_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,subdir="./eny",
+Meta<-cts5_readMetaSensor()
+cts5_energy_decode(CycleNumber=c,PatternNumber = p,subdir="./eny",metadata = Meta)
+
+cts5_energy_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,subdir="./eny",metadata = Meta,
 Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 
 

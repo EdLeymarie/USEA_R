@@ -2,15 +2,19 @@
 % Please edit documentation in R/CTS5_Energy.R
 \name{cts5_energy_process}
 \alias{cts5_energy_process}
-\title{Use NKE routine to estimate energy from technical file}
+\title{Use NKE routine to estimate energy from all technical files}
 \usage{
 cts5_energy_process(
-  Energydata = NULL,
   floatname = "",
   subdir = "./eny",
-  AutoSaveLoad = F,
+  AutoLoad = T,
   FromLastReset = F,
   CycleNumber = NULL,
+  metadata = NULL,
+  default_vol = 800,
+  default_TS = 5,
+  default_SDCard = 0,
+  default_bat_self_discharge = 1.5,
   Nke_ProgPath = ""
 )
 }
@@ -19,25 +23,39 @@ cts5_energy_process(
 
 \item{subdir}{subdir where to put .csv ASCII files}
 
-\item{CycleNumber}{numeric : number of the cycle to decode}
+\item{AutoLoad}{if true, the last estimation will be loaded and only new technical files will be processed}
 
-\item{Nke_ProgPath}{path to the nke decoder (APMTDecrypt.exe or Decoder). This path is stored to Sys.getenv("USEAR_Nke_ProgPath").
+\item{FromLastReset}{if true, restricts the decoding from the last reset}
+
+\item{CycleNumber}{if not null, restricts the decoding to the list of cycles}
+
+\item{default_vol}{default emergence volume in cc. To be used if the inifile file is not found}
+
+\item{default_TS}{default temperature at surface. To be used if sbe41 data are not found}
+
+\item{default_SDCard}{default SDCard status (0 = not present). To be used if information is not found in metadata.}
+
+\item{default_bat_self_discharge}{batterie self discharge in A / year}
+
+\item{Nke_ProgPath}{path to the nke decoder (APMTEnergy.exe). This path is stored to Sys.getenv("USEAR_Nke_ProgPath").
 For Linux, if the Decoder path is in the .bashrc, you can leave this parameters empty.}
-
-\item{PatternNumber}{numeric : number of the Pattern to decode}
 }
 \value{
-No return. This function create ASCII files in the subdir directory
+This function create an ASCII files in the subdir directory
 }
 \description{
-call NKE routine to estimate energy from technical file
+call NKE routine to estimate energy from all technical files included in a directory
 }
 \details{
 this function must be call in the directory where are technical files
 }
 \examples{
-cts5_energy_process(floatname="3ab0",Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 
-cts5_energy_plot(login,floatname)
+Meta<-cts5_readMetaSensor()
+
+cts5_energy_process(floatname="3ab0",Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/",metadata = Meta)
+
+cts5_energy_plot(login,floatname,metadata = Meta)
+
 
 }

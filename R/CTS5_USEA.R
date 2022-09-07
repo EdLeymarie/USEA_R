@@ -115,7 +115,7 @@ cts5_ScanProfilesID<-function(pattern=".*sbe41.hex"){
   filenames<-list.files(pattern=pattern)
   
   
-  #Détermination des numéros de profil
+  # Determination des numeros de profil
   filenames_split<-strsplit(filenames,split="_")
   temp<-NULL
   for (i in 1:length(filenames_split)){
@@ -1648,7 +1648,7 @@ if (!is.null(dataprofile$technical)){
     # CS du 20/06/2022
     # - 0,075 * Ascent_time => cette valeur permet de prendre de la marge sur le temps de navigation
     # - 10 min de sub-surface
-    # - 5 min d'émergence
+    # - 5 min d'emergence
 
     
     # Test MultiParking
@@ -1825,7 +1825,7 @@ for (s in sections){ #s<-sections[1]
   ind<-grep(s,names(oldinifile))
   
   for (i in ind){
-    #recherche de la même section dans newinifile
+    # recherche de la meme section dans newinifile
     inew<-which(names(newinifile)==names(oldinifile)[i])
     
     for (j in 1:length(oldinifile[[i]])){

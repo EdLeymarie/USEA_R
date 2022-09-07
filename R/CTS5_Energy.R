@@ -519,7 +519,7 @@ enyfilename <- paste(subdir,"/",floatname,"_energy.csv",sep = "")
   return(list(IniBat=IniBat,EnyAv=EnyAv,BatStatuspercent=BatStatus,MaxProfile=xMax,remaining=xMax-length(y)))
   }
 else {
-  warnig("No energy file \n")
+  warning("No energy file \n")
   return(NULL)
 }
 

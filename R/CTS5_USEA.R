@@ -41,14 +41,14 @@ else {
 #' concat files in ones
 #'
 #' @description
-#' take the last file with the pattern "ffff_ccc_pp.*" a return the hexafloatname
+#' Concat files in one file.
+#' @param pattern pattern to scan files to be merged
+#' @param fileout filename to save the output
 #' 
 #' @examples 
+#' concatfiles(pattern="ffff_001_01_apmt#[[:digit:]]{2}.ini",fileout="ffff_001_01_apmt.ini")
 #' 
-#' findfloatname(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*")
-#' 
-#' 
-#' 
+
 
 concatfiles<-function(pattern=NULL,fileout=NULL){
   

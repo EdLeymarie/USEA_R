@@ -279,7 +279,7 @@ result<-NULL
   
 if (AutoLoad)  {
   #load old results
-  enyfilename <- paste(subdir,"/",floatname,"energy.csv",sep = "")
+  enyfilename <- paste(subdir,"/",floatname,"_energy.csv",sep = "")
   if (file.exists(enyfilename)){
     cat("open:",enyfilename,"\n")
     result<-read.table(file=enyfilename,sep=";",header = T,check.names = F,

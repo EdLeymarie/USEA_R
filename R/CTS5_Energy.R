@@ -358,7 +358,7 @@ if (length(filenames)>=1){
     }
   }
  
-  cat("save:",paste(subdir,"/",floatname,"energy.csv",sep = ""),"\n") 
+  cat("save:",paste(subdir,"/",floatname,"_energy.csv",sep = ""),"\n") 
   write.table(result,file = paste(subdir,"/",floatname,"_energy.csv",sep = ""),row.names = F,sep=";",quote = F)
   
 }
@@ -402,11 +402,11 @@ else {
 #' @export
 #'
 
-cts5_energy_plot<-function(login,floatname,subdir="./ENY",metadata=NULL,batteryInitialCapacity=0.90,fitLength=10){
+cts5_energy_plot<-function(login,floatname="",subdir="./ENY",metadata=NULL,batteryInitialCapacity=0.90,fitLength=10){
 
 # Automatic hexa floatname
 if (floatname==""){
-  floatname<-findfloatname(CycleNumber=CycleNumber,PatternNumber=PatternNumber)
+  floatname<-findfloatname()
 }
   
 enyData<-read.table(file = paste(subdir,"/",floatname,"_energy.csv",sep = ""),stringsAsFactors = F,sep=";",header = T)

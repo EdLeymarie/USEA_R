@@ -409,109 +409,118 @@ if (floatname==""){
   floatname<-findfloatname()
 }
   
-enyData<-read.table(file = paste(subdir,"/",floatname,"_energy.csv",sep = ""),stringsAsFactors = F,sep=";",header = T)
-
-file=paste(login,"energy.pdf",sep="_")
-
-cat("open:",file,"\n")
-pdf(file=paste(login,"energy.pdf",sep="_"),paper = "a4", width = 0, height = 0)
-par(mfrow=c(3,2))
-
-plot(enyData$PROFILE.Consumption,type="l",xlab = "profiles",ylab = "Energy used per profile (A.h)",main=login)
-
-indConsumption<-grep("Consumption",names(enyData))[-1] #sauf Profile
-
-matplot(enyData[,indConsumption],type="l",lty=1:5,col=1:6,xlab = "profiles",ylab = "energy (A.h)")
-legend("topleft",legend=names(enyData)[indConsumption],lty=1:5,col=1:6,cex=0.5,bty="n")
-
-
-#plotcumul
-enyData$PROFILE.cumul.Consumption<-rep(NA,length(enyData$PROFILE.Consumption))
-for (i in 1:length(enyData$PROFILE.Consumption)){
-  enyData$PROFILE.cumul.Consumption[i]<-sum(enyData$PROFILE.Consumption[1:i])
-}
-plot(enyData$PROFILE.cumul.Consumption,type="l",xlab = "profiles",ylab = "energy cumul (A.h)")
-title(main = list("!! CAUTION BETA VERSION !!",col=2))
-
-IniBat<-NULL
-
-## Battery
-if (!is.null(metadata)){
-  if (!is.null(metadata$HARDWARE$BATTERY$PACK_1)){
-    Battemp<-metadata$HARDWARE$BATTERY$PACK_1[3]
-    Battemp<-strsplit(Battemp,split = " ")[[1]][1]
-    IniBat<-2*as.numeric(Battemp)
+enyfilename <- paste(subdir,"/",floatname,"_energy.csv",sep = "")
+  if (file.exists(enyfilename)){
+    cat("open:",enyfilename,"\n")
+  
+  enyData<-read.table(file = enyfilename,stringsAsFactors = F,sep=";",header = T)
+  
+  file=paste(login,"energy.pdf",sep="_")
+  
+  cat("open:",file,"\n")
+  pdf(file=paste(login,"energy.pdf",sep="_"),paper = "a4", width = 0, height = 0)
+  par(mfrow=c(3,2))
+  
+  plot(enyData$PROFILE.Consumption,type="l",xlab = "profiles",ylab = "Energy used per profile (A.h)",main=login)
+  
+  indConsumption<-grep("Consumption",names(enyData))[-1] #sauf Profile
+  
+  matplot(enyData[,indConsumption],type="l",lty=1:5,col=1:6,xlab = "profiles",ylab = "energy (A.h)")
+  legend("topleft",legend=names(enyData)[indConsumption],lty=1:5,col=1:6,cex=0.5,bty="n")
+  
+  
+  #plotcumul
+  enyData$PROFILE.cumul.Consumption<-rep(NA,length(enyData$PROFILE.Consumption))
+  for (i in 1:length(enyData$PROFILE.Consumption)){
+    enyData$PROFILE.cumul.Consumption[i]<-sum(enyData$PROFILE.Consumption[1:i])
   }
-}
-
-if (!is.numeric(IniBat)){
-  cat("Warning : Default battery capacity \n")
-  IniBat<-260
-}
-
-IniBat<-batteryInitialCapacity*IniBat
-
-
-
-par(new=TRUE)
-plot(100*(IniBat-enyData$PROFILE.cumul.Consumption)/IniBat,type="l",axes=FALSE,col="blue",xlab="",ylab="")
-axis(4,col="blue",col.axis="blue")
-
-EnyAv<-mean(enyData$PROFILE.Consumption)
-
-BatStatus=min(100*(IniBat-enyData$PROFILE.cumul.Consumption)/IniBat)
-
-y<-100*(IniBat-enyData$PROFILE.cumul.Consumption)/IniBat
-x<-1:length(y)
-
-#Fit sur les fitLength derniers profils
-if (length(y)>fitLength){
-
-  y_last<-y[(length(y)-fitLength):length(y)]
-  x_last<-x[(length(y)-fitLength):length(y)]
+  plot(enyData$PROFILE.cumul.Consumption,type="l",xlab = "profiles",ylab = "energy cumul (A.h)")
+  title(main = list("!! CAUTION BETA VERSION !!",col=2))
   
-  l<-lm(y_last~x_last)
+  IniBat<-NULL
   
-  l$coefficients
+  ## Battery
+  if (!is.null(metadata)){
+    if (!is.null(metadata$HARDWARE$BATTERY$PACK_1)){
+      Battemp<-metadata$HARDWARE$BATTERY$PACK_1[3]
+      Battemp<-strsplit(Battemp,split = " ")[[1]][1]
+      IniBat<-2*as.numeric(Battemp)
+    }
+  }
   
-  xMax<-round(-l$coefficients[1]/l$coefficients[2])
+  if (!is.numeric(IniBat)){
+    cat("Warning : Default battery capacity \n")
+    IniBat<-260
+  }
   
-  xfit<-min(x_last):xMax
-  lines(xfit,l$coefficients[1]+l$coefficients[2]*xfit,lty=2,col="blue")
-
-
-
+  IniBat<-batteryInitialCapacity*IniBat
   
-}
+  
+  
+  par(new=TRUE)
+  plot(100*(IniBat-enyData$PROFILE.cumul.Consumption)/IniBat,type="l",axes=FALSE,col="blue",xlab="",ylab="")
+  axis(4,col="blue",col.axis="blue")
+  
+  EnyAv<-mean(enyData$PROFILE.Consumption)
+  
+  BatStatus=min(100*(IniBat-enyData$PROFILE.cumul.Consumption)/IniBat)
+  
+  y<-100*(IniBat-enyData$PROFILE.cumul.Consumption)/IniBat
+  x<-1:length(y)
+  
+  #Fit sur les fitLength derniers profils
+  if (length(y)>fitLength){
+  
+    y_last<-y[(length(y)-fitLength):length(y)]
+    x_last<-x[(length(y)-fitLength):length(y)]
+    
+    l<-lm(y_last~x_last)
+    
+    l$coefficients
+    
+    xMax<-round(-l$coefficients[1]/l$coefficients[2])
+    
+    xfit<-min(x_last):xMax
+    lines(xfit,l$coefficients[1]+l$coefficients[2]*xfit,lty=2,col="blue")
+  
+  
+  
+    
+  }
+  else {
+    xMax<-round(IniBat/EnyAv)
+  }  
+  
+  legend("topleft",legend=c(paste("Energy average (A.h / profile) =",formatC(EnyAv,digits = 2)),
+                            paste("Battery status (%) = ",round(BatStatus)," from ",round(IniBat),"A.h"),
+                            paste("Current profile = ",length(y)),
+                            paste("Max Profile = ",xMax),
+                            paste("remaining = ",xMax-length(y))),lty=NULL,bty="n",cex=0.8)
+  
+  
+  ##4 Pie
+  
+  SumByDevice<-apply(enyData[,indConsumption],2,sum,na.rm=T)
+  labels<-names(SumByDevice)
+  labels<-matrix(unlist(strsplit(labels,split="\\.")),ncol = 2,byrow = T)[,1]
+  
+  SumByDevice<-100*SumByDevice/sum(SumByDevice)
+  
+  labels<-paste(labels, " ",round(SumByDevice),"%",sep="")
+  
+  pie(apply(enyData[,indConsumption],2,sum,na.rm=T),col=rainbow(length(indConsumption)),radius=0.75,
+      labels = labels,cex=0.6)
+  
+  #plot(NULL,NULL)
+  legend("topleft",legend=labels,ncol=5,bty="n",cex=0.6,text.col="blue")
+  
+  dev.off()
+  
+  return(list(IniBat=IniBat,EnyAv=EnyAv,BatStatuspercent=BatStatus,MaxProfile=xMax,remaining=xMax-length(y)))
+  }
 else {
-  xMax<-round(IniBat/EnyAv)
-}  
-
-legend("topleft",legend=c(paste("Energy average (A.h / profile) =",formatC(EnyAv,digits = 2)),
-                          paste("Battery status (%) = ",round(BatStatus)," from ",round(IniBat),"A.h"),
-                          paste("Current profile = ",length(y)),
-                          paste("Max Profile = ",xMax),
-                          paste("remaining = ",xMax-length(y))),lty=NULL,bty="n",cex=0.8)
-
-
-##4 Pie
-
-SumByDevice<-apply(enyData[,indConsumption],2,sum,na.rm=T)
-labels<-names(SumByDevice)
-labels<-matrix(unlist(strsplit(labels,split="\\.")),ncol = 2,byrow = T)[,1]
-
-SumByDevice<-100*SumByDevice/sum(SumByDevice)
-
-labels<-paste(labels, " ",round(SumByDevice),"%",sep="")
-
-pie(apply(enyData[,indConsumption],2,sum,na.rm=T),col=rainbow(length(indConsumption)),radius=0.75,
-    labels = labels,cex=0.6)
-
-#plot(NULL,NULL)
-legend("topleft",legend=labels,ncol=5,bty="n",cex=0.6,text.col="blue")
-
-dev.off()
-
-return(list(IniBat=IniBat,EnyAv=EnyAv,BatStatuspercent=BatStatus,MaxProfile=xMax,remaining=xMax-length(y)))
+  warnig("No energy file \n")
+  return(NULL)
+}
 
 }

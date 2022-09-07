@@ -508,7 +508,7 @@ pie(apply(enyData[,indConsumption],2,sum,na.rm=T),col=rainbow(length(indConsumpt
     labels = labels,cex=0.6)
 
 #plot(NULL,NULL)
-legend("topleft",legend=labels,ncol=7,bty="n",cex=0.6,text.col="blue")
+legend("topleft",legend=labels,ncol=5,bty="n",cex=0.6,text.col="blue")
 
 dev.off()
 

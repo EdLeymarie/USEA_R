@@ -15,7 +15,8 @@ cts5_energy_decode(
   default_vol = 800,
   default_TS = 5,
   default_SDCard = 0,
-  default_bat_self_discharge = 1.5
+  default_bat_self_discharge = 1.5,
+  default_ExtTrig = 0
 )
 }
 \arguments{
@@ -41,6 +42,8 @@ For Linux, if the Decoder path is in the .bashrc, you can leave this parameters 
 \item{default_SDCard}{default SDCard status (0 = not present). To be used if information is not found in metadata.}
 
 \item{default_bat_self_discharge}{batterie self discharge in A / year}
+
+\item{default_ExtTrig}{intensity of the External Triggered sensor in A}
 }
 \value{
 This function create ASCII files in the subdir directory and return a list : TechFilename, IniFilename, filename,

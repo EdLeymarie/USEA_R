@@ -22,6 +22,8 @@
 #' @param default_TS default temperature at surface. To be used if sbe41 data are not found
 #' @param default_SDCard default SDCard status (0 = not present). To be used if information is not found in metadata.
 #' @param default_bat_self_discharge batterie self discharge in A / year
+#' @param default_ExtTrig intensity of the External Triggered sensor in A
+#' 
 #' 
 #' @return This function create ASCII files in the subdir directory and return a list : TechFilename, IniFilename, filename,
 #' CycleNumber,PatternNumber, VolEmergence, TSurf, SDCard)
@@ -49,7 +51,8 @@ cts5_energy_decode<-function(floatname="",
                              default_vol=800,
                              default_TS=5,
                              default_SDCard=0,
-                             default_bat_self_discharge=1.5){
+                             default_bat_self_discharge=1.5,
+                             default_ExtTrig=0){
   
   if (!techfilename ==""){
     s<-strsplit(techfilename,split = "_")[[1]]
@@ -135,6 +138,7 @@ cts5_energy_decode<-function(floatname="",
       VolEmergence<-NA
       TSurf<-NA
       SDCard<-NA
+      ExtTrig<-NA
       
       if (length(Datafilename)>0){
         cat("open:",Datafilename[1],"\n")
@@ -148,6 +152,11 @@ cts5_energy_decode<-function(floatname="",
         #SDCard
         if ("SDCard" %in% names(metadata$HARDWARE$CONTROL_BOARD)){
           SDCard<-as.numeric(metadata$HARDWARE$CONTROL_BOARD["SDCard"]=="Installed")
+        }
+        
+        #ExtTrig
+        if (is.numeric(dataprofile$inifile$SENSOR_13$P56)){
+          ExtTrig<-as.numeric(dataprofile$inifile$SENSOR_13$P56)
         }
         
         #TSurf
@@ -171,13 +180,18 @@ cts5_energy_decode<-function(floatname="",
         SDCard<-default_SDCard
       }
       
+      if (!is.finite(ExtTrig)){
+        ExtTrig<-default_ExtTrig
+      }
+      
       if (!is.finite(TSurf)){
         cat("Warning use default value for TSurface \n")
         TSurf<-default_TS
       }
       
       
-      cmd<-paste(ProgDir,ProgName," ",TechFilename," ",VolEmergence," ",TSurf," ",SDCard," ",default_bat_self_discharge,sep="")
+      cmd<-paste(ProgDir,ProgName," ",TechFilename," ",VolEmergence," ",TSurf," ",
+                 SDCard," ",default_bat_self_discharge," ",ExtTrig,sep="")
       cat(cmd,"\n")
       system(cmd)
       # 
@@ -241,6 +255,7 @@ cts5_energy_read<-function(filename){
 #' @param default_TS default temperature at surface. To be used if sbe41 data are not found
 #' @param default_SDCard default SDCard status (0 = not present). To be used if information is not found in metadata.
 #' @param default_bat_self_discharge batterie self discharge in A / year
+#' @param default_ExtTrig intensity of the External Triggered sensor in A
 #' 
 #' @return This function create an ASCII files in the subdir directory
 #' 
@@ -267,6 +282,7 @@ cts5_energy_process<-function(floatname="",
                               default_TS=5,
                               default_SDCard=0,
                               default_bat_self_discharge=1.5,
+                              default_ExtTrig=0,
                               Nke_ProgPath=""){
   
 
@@ -333,7 +349,7 @@ if (length(filenames)>=1){
     enyinfo<-cts5_energy_decode(techfilename=f,subdir=subdir,metadata=metadata,
                                 default_vol=default_vol,default_TS=default_TS,
                                 default_SDCard=default_SDCard,default_bat_self_discharge=default_bat_self_discharge,
-                                Nke_ProgPath=Nke_ProgPath)
+                                default_ExtTrig=default_ExtTrig,Nke_ProgPath=Nke_ProgPath)
     
     ## read techfile
     techfile<-cts5_readtechnical(filename=f)
@@ -423,10 +439,21 @@ enyfilename <- paste(subdir,"/",floatname,"_energy.csv",sep = "")
   
   plot(enyData$PROFILE.Consumption,type="l",xlab = "profiles",ylab = "Energy used per profile (A.h)",main=login)
   
+  
+  # indConsumption
   indConsumption<-grep("Consumption",names(enyData))[-1] #sauf Profile
   
   matplot(enyData[,indConsumption],type="l",lty=1:5,col=1:6,xlab = "profiles",ylab = "energy (A.h)")
   legend("topleft",legend=names(enyData)[indConsumption],lty=1:5,col=1:6,cex=0.5,bty="n")
+  
+  # indDuration
+  indDuration<-grep("Duration",names(enyData))[-1] #sauf Profile
+  if (length(grep("MEMORY",names(enyData)[indDuration]))){
+    indDuration<-indDuration[-grep("MEMORY",names(enyData)[indDuration])]
+  }
+  
+  matplot(enyData[,indDuration],type="l",lty=1:5,col=1:6,xlab = "profiles",ylab = "Duration time (h)")
+  legend("topleft",legend=names(enyData)[indDuration],lty=1:5,col=1:6,cex=0.5,bty="n")
   
   
   #plotcumul
@@ -498,11 +525,12 @@ enyfilename <- paste(subdir,"/",floatname,"_energy.csv",sep = "")
                             paste("remaining = ",xMax-length(y))),lty=NULL,bty="n",cex=0.8)
   
   
-  ##4 Pie
+  ##4 Pie - Total
   
   SumByDevice<-apply(enyData[,indConsumption],2,sum,na.rm=T)
   labels<-names(SumByDevice)
   labels<-matrix(unlist(strsplit(labels,split="\\.")),ncol = 2,byrow = T)[,1]
+  CTDDuration<-mean(enyData$SBE41.Duration)
   
   SumByDevice<-100*SumByDevice/sum(SumByDevice)
   
@@ -513,6 +541,31 @@ enyfilename <- paste(subdir,"/",floatname,"_energy.csv",sep = "")
   
   #plot(NULL,NULL)
   legend("topleft",legend=labels,ncol=5,bty="n",cex=0.6,text.col="blue")
+  legend("bottomleft",legend=paste("All profiles mean conso=",formatC(EnyAv,digits = 3),
+                                   " - CTD Duration=",formatC(CTDDuration,digits = 3)),cex=0.9,bty="n")
+  
+  ##4 Pie - Last5
+  if (nrow(enyData)>5){
+    enyLastData<-enyData[(nrow(enyData)-5):nrow(enyData),]
+    LastMean<-mean(enyData$PROFILE.Consumption[(nrow(enyData)-5):nrow(enyData)])
+    LastCTDDuration<-mean(enyData$SBE41.Duration[(nrow(enyData)-5):nrow(enyData)])
+    
+    SumByDevice<-apply(enyLastData[,indConsumption],2,sum,na.rm=T)
+    labels<-names(SumByDevice)
+    labels<-matrix(unlist(strsplit(labels,split="\\.")),ncol = 2,byrow = T)[,1]
+    
+    SumByDevice<-100*SumByDevice/sum(SumByDevice)
+    
+    labels<-paste(labels, " ",round(SumByDevice),"%",sep="")
+    
+    pie(apply(enyLastData[,indConsumption],2,sum,na.rm=T),col=rainbow(length(indConsumption)),radius=0.75,
+        labels = labels,cex=0.6)
+    
+    #plot(NULL,NULL)
+    legend("topleft",legend=labels,ncol=5,bty="n",cex=0.6,text.col="blue")
+    legend("bottomleft",legend=paste("Last 5 profiles mean conso=",formatC(LastMean,digits = 3),
+                                     " - CTD Duration=",formatC(LastCTDDuration,digits = 3)),cex=0.9,bty="n")
+  }
   
   dev.off()
   

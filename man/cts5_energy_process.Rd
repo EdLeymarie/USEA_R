@@ -15,6 +15,7 @@ cts5_energy_process(
   default_TS = 5,
   default_SDCard = 0,
   default_bat_self_discharge = 1.5,
+  default_ExtTrig = 0,
   Nke_ProgPath = ""
 )
 }
@@ -36,6 +37,8 @@ cts5_energy_process(
 \item{default_SDCard}{default SDCard status (0 = not present). To be used if information is not found in metadata.}
 
 \item{default_bat_self_discharge}{batterie self discharge in A / year}
+
+\item{default_ExtTrig}{intensity of the External Triggered sensor in A}
 
 \item{Nke_ProgPath}{path to the nke decoder (APMTEnergy.exe). This path is stored to Sys.getenv("USEAR_Nke_ProgPath").
 For Linux, if the Decoder path is in the .bashrc, you can leave this parameters empty.}

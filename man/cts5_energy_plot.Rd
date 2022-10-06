@@ -6,7 +6,7 @@
 \usage{
 cts5_energy_plot(
   login,
-  floatname,
+  floatname = "",
   subdir = "./ENY",
   metadata = NULL,
   batteryInitialCapacity = 0.9,

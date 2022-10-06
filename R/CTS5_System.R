@@ -817,7 +817,7 @@ return(Navdata)
 #' @export
 #'
 cts5_system_Plot<-function(NavData,cycle=NULL,pattern=1:10,xlim=NULL,ylim=NULL,timeWin=c(0,1),relatif=FALSE,timeRange=NULL,
-                           DepthPch=20,Depthtype="b",show.EV=TRUE,show.pump=TRUE,show.title=F,show.cycle=T,
+                           DepthPch=1,PumpPch=2,EVPch=3,Depthtype="b",show.EV=TRUE,show.pump=TRUE,show.title=F,show.cycle=T,
                            show.user=T,legendPos="",add=F){
   
 if (is.null(timeRange)){
@@ -881,7 +881,7 @@ if (show.EV){
   # 
   # points(timeToPlot,-NavData$EVRecord$depth[ind],pch=20,col="cyan")
   
-  points(NavData$EVRecord$date,-NavData$EVRecord$depth,pch=20,col="cyan")
+  points(NavData$EVRecord$date,-NavData$EVRecord$depth,pch=EVPch,col="cyan")
 }
 
 #pump
@@ -893,7 +893,7 @@ if (show.pump){
   #   timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
   # }
   # points(timeToPlot,-NavData$PumpRecord$depth[ind],pch=18,col="red")
-  points(NavData$PumpRecord$date,-NavData$PumpRecord$depth,pch=18,col="red")
+  points(NavData$PumpRecord$date,-NavData$PumpRecord$depth,pch=PumpPch,col="red")
 }
 
 #Abort
@@ -905,7 +905,7 @@ if (!is.null(NavData$BrakeRecord)){
   #   timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
   # }
   # points(timeToPlot,-NavData$BrakeRecord$depth[ind],pch=19,col="orange")
-  points(NavData$BrakeRecord$date,-NavData$BrakeRecord$depth,pch=18,col="red")
+  points(NavData$BrakeRecord$date,-NavData$BrakeRecord$depth,pch=5,col="purple")
 }
 
 # cycle

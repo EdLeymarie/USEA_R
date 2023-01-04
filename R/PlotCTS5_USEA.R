@@ -1074,6 +1074,7 @@ PlotCompRad<-function(dataprofile){
 #' @param technical if true, technical information will be plotted
 #' @param paper paper size
 #' @param mfrow mfrow
+#' @param SensorsToPlot vector of sensors to include in the plot. If NULL plot all sensors.
 #' 
 #' @examples 
 #' 
@@ -1091,11 +1092,14 @@ PlotCompRad<-function(dataprofile){
 #'
 #' PlotCTS5(login=login,dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
 #'
-#'  
+#' # small list of sensors in the terminal
+#' PlotCTS5(dataprofile,add=TRUE,SensorsToPlot=c("ramses","ramses2"))
 #' 
 #' @export
 #'
-PlotCTS5<-function(login="lov",dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2)){
+PlotCTS5<-function(login="lov",dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,
+                   technical=TRUE,paper = "A4",mfrow=c(3,2),
+                   SensorsToPlot=NULL){
 
 
 if (!is.null(dataprofile)){   
@@ -1113,10 +1117,17 @@ if (!is.null(dataprofile)){
   }
   
   
-    
+  ## sensor selection
+  if (is.null(SensorsToPlot)){
+    SensorsToPlot<-names(dataprofile$data)
+  } else {
+    SensorsToPlot<-SensorsToPlot[SensorsToPlot %in% names(dataprofile$data)]
+  }
+  
+  
   #CTD
   #ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,PhaseName] %in% c("DES","ASC"))
-  if ("sbe41" %in% names(dataprofile$data)){
+  if ("sbe41" %in% SensorsToPlot){
     data<-dataprofile$data$sbe41
     plotCTD(data,technical=technical,
             ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_01"))
@@ -1136,7 +1147,7 @@ if (!is.null(dataprofile)){
   
   
   #PlotEcoStd
-  if ("eco" %in% names(dataprofile$data)){
+  if ("eco" %in% SensorsToPlot){
     if ("chlorophyll-a_ug/l" %in% colnames(dataprofile$data$eco)){
       data<-dataprofile$data$eco
       try(PlotEcoStd(data,technical=technical,
@@ -1145,7 +1156,7 @@ if (!is.null(dataprofile)){
   }
   
   #PlotOCR504
-  if ("ocr" %in% names(dataprofile$data)){  
+  if ("ocr" %in% SensorsToPlot){  
     if ("Downwelling-irradiance-380nm" %in% colnames(dataprofile$data$ocr)){
       data<-dataprofile$data$ocr
       try(PlotOCR4(data,technical=technical,
@@ -1154,7 +1165,7 @@ if (!is.null(dataprofile)){
   }
     
   #PlotcRover
-  if ("crover" %in% names(dataprofile$data)){  
+  if ("crover" %in% SensorsToPlot){  
     if ("c-uncalibrated_1/m" %in% colnames(dataprofile$data$crover)){
       data<-dataprofile$data$crover
       try(PlotCROVER(data,technical=technical,
@@ -1163,7 +1174,7 @@ if (!is.null(dataprofile)){
   }
   
   #PlotOptode
-  if ("do" %in% names(dataprofile$data)){  
+  if ("do" %in% SensorsToPlot){  
     if ("doxy_uncalibrated" %in% colnames(dataprofile$data$do)){
       data<-dataprofile$data$do
       try(PlotOptode(data,technical=technical,
@@ -1172,7 +1183,7 @@ if (!is.null(dataprofile)){
   }  
   
   #PlotSuna
-  if ("suna" %in% names(dataprofile$data)){  
+  if ("suna" %in% SensorsToPlot){  
     data<-dataprofile$data$suna
     try(PlotSUNA(data,technical=technical,
              ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_07")))
@@ -1180,7 +1191,7 @@ if (!is.null(dataprofile)){
 
   
   #PlotsbepH
-  if ("sbeph" %in% names(dataprofile$data)){  
+  if ("sbeph" %in% SensorsToPlot){  
     if ("pH_Uncal" %in% colnames(dataprofile$data$sbeph)){
       data<-dataprofile$data$sbeph
       try(PlotSbepH(data,technical=technical,
@@ -1189,62 +1200,62 @@ if (!is.null(dataprofile)){
   }    
   
   #PlotUVP_lpm
-  if ("uvp6_lpm" %in% names(dataprofile$data)){  
+  if ("uvp6_lpm" %in% SensorsToPlot){  
     data<-dataprofile$data$uvp6_lpm
     try(PlotUVP_lpm(data,technical=technical,
                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08")))
   }    
   
   #PlotUVP_txo
-  if ("uvp6_txo" %in% names(dataprofile$data)){  
+  if ("uvp6_txo" %in% SensorsToPlot){  
     data<-dataprofile$data$uvp6_txo
     try(PlotUVP_txo(data,technical=technical,
                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08")))
   }   
     
   #PlotUVP_blk
-  if ("uvp6_blk" %in% names(dataprofile$data)){  
+  if ("uvp6_blk" %in% SensorsToPlot){  
     data<-dataprofile$data$uvp6_blk
     try(PlotUVP_blk(data,technical=technical,
                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08")))
   }        
   
   #PlotRamses
-  if ("ramses" %in% names(dataprofile$data)){  
+  if ("ramses" %in% SensorsToPlot){  
       data<-dataprofile$data$ramses
       try(PlotRamses(data,technical=technical,
                  ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14")))
   }   
   
-  if ("ramses2" %in% names(dataprofile$data)){  
+  if ("ramses2" %in% SensorsToPlot){  
     data<-dataprofile$data$ramses2
     try(PlotRamses(data,technical=technical,
                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14")))
   } 
   
   #IMU
-  if ("imu" %in% names(dataprofile$data)){  
+  if ("imu" %in% SensorsToPlot){  
     data<-dataprofile$data$imu
     try(PlotIMU(data,technical=technical,
                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_20")))
   } 
   
   #Wave 
-  if ("wave" %in% names(dataprofile$data)){  
+  if ("wave" %in% SensorsToPlot){  
     data<-dataprofile$data$wave
     try(PlotWave(data))
   } 
   
   
   #ext_trig
-  if ("ext_trig" %in% names(dataprofile$data)){  
+  if ("ext_trig" %in% SensorsToPlot){  
     data<-dataprofile$data$ext_trig
     try(Plotext_trig(data,technical=technical,
                  ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_13")))
   }   
   
   #mpe
-  if ("mpe" %in% names(dataprofile$data)){  
+  if ("mpe" %in% SensorsToPlot){  
     data<-dataprofile$data$mpe
     try(PlotMPE(data,technical=technical,
             ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_17")))

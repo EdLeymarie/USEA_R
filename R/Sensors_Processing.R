@@ -158,9 +158,17 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
   if ((length(datapH$pH_mV)>5) & (length(dataCTD$Temperature_degC)>5)){
     #il y a assez de data
     
+    ## choix method pour approxfun
+    if (length(unique(dataCTD$Pressure_dbar))>2){
+      #il y a au moins 2 points differents
+      approx_method="linear"
+    } else {
+      approx_method = "constant"
+    }
+    
     #interpolation des donnees CTD
-    t<-approxfun(dataCTD$Pressure_dbar,dataCTD$Temperature_degC,rule = 2,ties="mean")
-    S<-approxfun(dataCTD$Pressure_dbar,dataCTD$Salinity_PSU,rule = 2,ties="mean")
+    t<-approxfun(dataCTD$Pressure_dbar,dataCTD$Temperature_degC,rule = 2,ties="mean",method=approx_method)
+    S<-approxfun(dataCTD$Pressure_dbar,dataCTD$Salinity_PSU,rule = 2,ties="mean",method=approx_method)
     
     #calcul
     Press<-datapH$Pressure_dbar

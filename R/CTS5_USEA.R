@@ -992,7 +992,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         #old format without taxo
         NSamples<-dataprofile$data$uvp6_lpm$NSamples
         NSamples[NSamples==0]<-1 #correction for NSamples=0
-        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/NSamples
+        # mail a Camille du 9/12/2022. On ne normalize pas pour la version sans taxo
+        # dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/NSamples
       }
       
       ## Volume
@@ -1102,7 +1103,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         ind<-dataprofile$data$sbeph$PhaseName=="DES"
         if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
           ## Il y a des donnees en descent
-          pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="DES",
+          pH_Uncal[ind]<-Process_pH_SBE(data=dataprofile$data,NumberPhase="DES",
                                         k0=sbepH_k[1],k2=sbepH_k[2],
                                         coefsp=sbepH_f)
         }
@@ -1110,7 +1111,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         ind<-dataprofile$data$sbeph$PhaseName=="PAR"
         if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
           ## Il y a des donnees en Parking
-          pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="PAR",
+          pH_Uncal[ind]<-Process_pH_SBE(data=dataprofile$data,NumberPhase="PAR",
                                         k0=sbepH_k[1],k2=sbepH_k[2],
                                         coefsp=sbepH_f)
         }
@@ -1118,7 +1119,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         ind<-dataprofile$data$sbeph$PhaseName=="ASC"
         if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
           ## Il y a des donnees en Asc
-          pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="ASC",
+          pH_Uncal[ind]<-Process_pH_SBE(data=dataprofile$data,NumberPhase="ASC",
                                         k0=sbepH_k[1],k2=sbepH_k[2],
                                         coefsp=sbepH_f)
         }

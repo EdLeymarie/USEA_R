@@ -2,9 +2,9 @@ Package: USEAR
 Type: Package
 Title: R Tools for Using CTS5-USEA float
 Version: 0.9
-Date: 2023-01-04
+Date: 2023-02-09
 Author: Edouard Leymarie
 Maintainer: Edouard Leymarie <edouard.leymarie@imev-mer.fr>
-Description: R Tools for Using CTS5-USEA float
+Description: R Tools for decoding raw data from CTS5-USEA Provor float from nke manufacturer
 License: What license is it under?
 RoxygenNote: 7.1.1

@@ -706,7 +706,7 @@ list_time_as_character<-function(list){
 #' @export
 #'
 
-cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumber=NULL,include_tech0=FALSE,FromLastReset=T){
+cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumber=NULL,include_tech0=FALSE,FromLastReset=FALSE){
   
   if (is.null(filenames)){
     filenames<-list.files(pattern=pattern)

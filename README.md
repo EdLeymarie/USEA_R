@@ -14,3 +14,8 @@ dataprofile<-cts5_readProfile(CycleNumber=124,include.inifile=T)
 dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 
 PlotCTS5(login=login,dataprofile)
+
+Installation:
+install.packages("remotes")
+remotes::install_github("EdLeymarie/USEA_R")
+

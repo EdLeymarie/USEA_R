@@ -112,25 +112,27 @@ concatfiles<-function(pattern=NULL,fileout=NULL){
 
 cts5_ScanProfilesID<-function(pattern=".*sbe41.hex"){
   
+  temp<-NULL
   filenames<-list.files(pattern=pattern)
   
-  
-  # Determination des numeros de profil
-  filenames_split<-strsplit(filenames,split="_")
-  temp<-NULL
-  for (i in 1:length(filenames_split)){
-    temp<-rbind(temp,c(filenames_split[[i]][1],filenames_split[[i]][2],filenames_split[[i]][3]))
+  if (length(filenames)>0){  
+    # Determination des numeros de profil
+    filenames_split<-strsplit(filenames,split="_")
+    temp<-NULL
+    for (i in 1:length(filenames_split)){
+      temp<-rbind(temp,c(filenames_split[[i]][1],filenames_split[[i]][2],filenames_split[[i]][3]))
+    }
+    
+    # Suppression des 0
+    temp<-data.frame(temp,stringsAsFactors = FALSE)
+    temp[,2]<-as.numeric(temp[,2])
+    temp[,3]<-as.numeric(temp[,3])
+    temp<-temp[temp[,3] != 0,]
+    colnames(temp)<-c("floatname","cycle","profile")
+    
+    #Elimination des doublons
+    temp<-unique(temp)
   }
-  
-  # Suppression des 0
-  temp<-data.frame(temp,stringsAsFactors = FALSE)
-  temp[,2]<-as.numeric(temp[,2])
-  temp[,3]<-as.numeric(temp[,3])
-  temp<-temp[temp[,3] != 0,]
-  colnames(temp)<-c("floatname","cycle","profile")
-  
-  #Elimination des doublons
-  temp<-unique(temp)
   
   return(temp)
 }
@@ -802,7 +804,7 @@ if (length(dataprofile$data)>0){
     for (i in 2:length(dataprofile$data)){
     
     data<-dataprofile$data[[i]]
-    data$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[i]),nrow(data))
+    data$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[i],exact = T),nrow(data))
     data$CycleNumber<-rep(dataprofile$CycleNumber,nrow(data))
     data$PatternNumber<-rep(dataprofile$PatternNumber,nrow(data))
     
@@ -837,7 +839,9 @@ if (length(dataprofile$data)>0){
       GPS<-dataprofile$technical$GPS
       dataMerged<-cbind(dataMerged[,1:2],NA,NA,dataMerged[,-(1:2)])
       dataMerged<-rbind(dataMerged,NA)
-      dataMerged[dim(dataMerged)[1],c(1,3:6,9)]<-c(0,GPS$`lat (deg)`,GPS$`lon (deg)`,as.numeric(dataMerged[1,5:6]),-1)
+      dataMerged[dim(dataMerged)[1],c(1,3:9)]<-c(0,GPS$`lat (deg)`,GPS$`lon (deg)`,as.numeric(dataMerged[1,5:6]),"SUR",-1,"GPS")
+      dataMerged$CycleNumber<-as.numeric(dataMerged$CycleNumber)
+      dataMerged$PatternNumber<-as.numeric(dataMerged$PatternNumber)
       
       ##temp
       dataMerged[,2]<-as.numeric(dataMerged[,2])

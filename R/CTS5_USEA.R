@@ -110,7 +110,7 @@ concatfiles<-function(pattern=NULL,fileout=NULL){
 #'
 
 
-cts5_ScanProfilesID<-function(pattern=".*sbe41.hex"){
+cts5_ScanProfilesID<-function(pattern="^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}_sbe41.*.hex"){
   
   temp<-NULL
   filenames<-list.files(pattern=pattern)

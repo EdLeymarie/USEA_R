@@ -162,8 +162,6 @@ cts5_ScanProfilesID<-function(pattern="^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]
 #' @examples 
 #' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 #' 
-#' cts5_system_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,
-#' Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 #' 
 #' @export
 #'

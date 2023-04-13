@@ -4,7 +4,9 @@
 \alias{cts5_ScanProfilesID}
 \title{find sensor list from Meta files}
 \usage{
-cts5_ScanProfilesID(pattern = ".*sbe41.hex")
+cts5_ScanProfilesID(
+  pattern = "^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}_sbe41.*.hex"
+)
 }
 \arguments{
 \item{pattern}{pattern used to list data}

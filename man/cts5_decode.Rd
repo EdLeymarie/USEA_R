@@ -39,7 +39,5 @@ this function must be call in the directory where are .hex files
 \examples{
 cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 
-cts5_system_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,
-Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 
 }

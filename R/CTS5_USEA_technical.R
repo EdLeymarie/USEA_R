@@ -842,13 +842,14 @@ cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumb
 #' create a KML file from technical files
 #'
 #' @description
-#' read  _technical.txt files and create a KML file to be read with Google Earth
+#' read  technical, autotest or default files and create a KML file to be read with Google Earth
 #'
 #' @param pattern pattern used to select files
 #' @param filenamelist list of files to open
 #' @param output name of the KML file
 #' @param CycleToProcess vector of float cycle to include in the KML file. If Null, all cycle will be included
 #' @param start First Cycle number to process. 
+#' @param id id to identify points in the kml, either : date, cycle or  relativecycle
 #'
 #' @return a KML file
 #' 
@@ -866,7 +867,9 @@ cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumb
 #'
 
 
-cts5_create_kml<-function(pattern=".*technical.*.txt",filenamelist=NULL,output="PositionAPMT.kml",start=1,CycleToProcess=NULL,path=".",id="cycle"){
+cts5_create_kml<-function(pattern=".*autotest.*.txt|.*technical.txt|.*default.*.txt",
+                          filenamelist=NULL,output="PositionAPMT.kml",
+                          start=1,CycleToProcess=NULL,path=".",id="cycle"){
   setwd(path)
   
   if (is.null(filenamelist)) {

@@ -588,6 +588,13 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
       }
     }
     
+    #conversion en numeric
+    if ("SENSOR_CROVER" %in% names(L$SENSORS)){
+      if (length(L$SENSORS$SENSOR_CROVER)>1){      
+        L$SENSORS$SENSOR_CROVER$PATH_LENGTH<-as.numeric(L$SENSORS$SENSOR_CROVER$PATH_LENGTH)
+        L$SENSORS$SENSOR_CROVER$CALIBRATION<-as.numeric(L$SENSORS$SENSOR_CROVER$CALIBRATION)}
+    }
+    
     if ("SENSOR_IMU" %in% names(L$SENSORS)){
       if (length(L$SENSORS$SENSOR_IMU)>1){      
         L$SENSORS$SENSOR_IMU$COMPASS<-XML_ConvertSection(L$SENSORS$SENSOR_IMU$COMPASS)

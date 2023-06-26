@@ -1034,11 +1034,36 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   })
   
   ### crover ####
-  try(if (("crover" %in% names(dataprofile$data)) & ProcessUncalibrated) {
-    if ("Corr-Sig-Raw_CN" %in% colnames(dataprofile$data$crover)){
+  try(if ("crover" %in% names(dataprofile$data)) {
+    
+    SENSOR_CROVER<-NULL
+    
+    if (!is.null(metadata$SENSOR_CROVER)){
+      
+      SENSOR_CROVER<-metadata$SENSOR_CROVER
+      
+      ## In case we have 0 in the calibration
+      if (!all(unlist(SENSOR_CROVER) != 0)){
+        SENSOR_CROVER<-NULL
+      }
+    }
+    
+    ## Calibration par defaut
+    if (is.null(SENSOR_CROVER)) {
+      cat("!! Warning : No CROVER calibration found \n")
+      
+      if (ProcessUncalibrated){
+        cat("!! Default calibration is used \n")
+        SENSOR_CROVER<-list(PATH_LENGTH=25,CALIBRATION=12766)
+      }
+      
+    }
+    
+    
+    if (("Corr-Sig-Raw_CN" %in% colnames(dataprofile$data$crover)) & !is.null(SENSOR_CROVER)){
       CSCdark=0
-      CSCcal=12766
-      x=0.25
+      CSCcal=SENSOR_CROVER$CALIBRATION
+      x=SENSOR_CROVER$PATH_LENGTH/100
       dataprofile$data$crover[,"c-uncalibrated_1/m"] <- -log((dataprofile$data$crover[,"Corr-Sig-Raw_CN"]-CSCdark)/(CSCcal-CSCdark))/x
     }
   })

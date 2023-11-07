@@ -9,7 +9,7 @@ cts5_readalltech(
   filenames = NULL,
   CycleNumber = NULL,
   include_tech0 = FALSE,
-  FromLastReset = FALSE
+  FromLastReset = T
 )
 }
 \arguments{

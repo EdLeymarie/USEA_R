@@ -735,7 +735,7 @@ if (floatname==""){
 if (is.null(sysfile_number)){
   syslist<-list.files(pattern=paste(floatname,".*_system.*.hex",sep=""))
   sysfile_number<- matrix(unlist(strsplit(syslist,split="_")),ncol=3,byrow = T)[,3]
-  sysfile_number<- unique(as.numeric(substr(sysfile_number,1,5)))
+  sysfile_number<- as.numeric(substr(sysfile_number,1,5))
 }
   
 if (is.null(Navdata) & AutoSaveLoad){
@@ -793,9 +793,8 @@ return(Navdata)
 #' @param pattern pattern to plot
 #' @param xlim for plot function
 #' @param ylim plot ylim
-#' @param timeWin relative time window (if xlim=NULL) expressed as a vector of 2 floats. timeWin=c(0,1) is the full window.
+#' @param timeWin relative time window (if xlim=NULL)
 #' @param relatif If True, time in min is relative to the first date 
-#' @param timeRange vector of two dates that delimit the plotted data.
 #' 
 #' @return list containing the parsed system information
 #' 
@@ -810,40 +809,29 @@ return(Navdata)
 #' cts5_system_Plot(Navdata,cycle = 46,relatif = T,xlim=c(0,1500),show.cycle = F)
 #' cts5_system_Plot(Navdata,cycle = 49,relatif = T,show.cycle = F,add=T)
 #' 
-#' ## To plot an Ice braking
-#' Brakedate<-NavData$BrakeRecord$date[1]
-#' cts5_system_Plot(NavData,timeRange=c(Brakedate-1800,Brakedate+1800))
-#' 
 #' @export
 #'
-cts5_system_Plot<-function(NavData,cycle=NULL,pattern=1:10,xlim=NULL,ylim=NULL,timeWin=c(0,1),relatif=FALSE,timeRange=NULL,
-                           DepthPch=1,PumpPch=2,EVPch=3,Depthtype="b",show.EV=TRUE,show.pump=TRUE,show.title=F,show.cycle=T,
-                           show.user=T,legendPos="",add=F){
+cts5_system_Plot<-function(NavData,cycle=NULL,pattern=1:10,xlim=NULL,ylim=NULL,timeWin=c(0,1),relatif=FALSE,DepthPch=20,
+                  Depthtype="b",show.EV=TRUE,show.pump=TRUE,show.title=F,show.cycle=T,show.user=T,legendPos="",add=F){
   
-if (is.null(timeRange)){
-  if (is.null(cycle)){
-    cycle=unique(NavData$DepthRecord[,"CycleNumber"])
-  }
-  if (is.null(pattern)){
-    pattern<-unique(NavData$DepthRecord[,"PatternNumber"])
-  }  
-   
-  
-  #Depth
-  ind<-(NavData$AllDepth[,"CycleNumber"] %in% cycle) & (NavData$AllDepth[,"PatternNumber"] %in% pattern)
-  
-  timeToPlot<-NavData$AllDepth$date[ind]
-  
-  # Echelle relative de temps
-  RefTime<-0
-  if (relatif){
-    RefTime<-min(timeToPlot)
-    timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
-  }
+if (is.null(cycle)){
+  cycle=unique(NavData$DepthRecord[,"CycleNumber"])
 }
-else {
-  ind<-(NavData$AllDepth$date > timeRange[1]) & (NavData$AllDepth$date < timeRange[2])
-  timeToPlot<-NavData$AllDepth$date[ind]
+if (is.null(pattern)){
+  pattern<-unique(NavData$DepthRecord[,"PatternNumber"])
+}  
+ 
+
+#Depth
+ind<-(NavData$AllDepth[,"CycleNumber"] %in% cycle) & (NavData$AllDepth[,"PatternNumber"] %in% pattern)
+
+timeToPlot<-NavData$AllDepth$date[ind]
+
+# Echelle relative de temps
+RefTime<-0
+if (relatif){
+  RefTime<-min(timeToPlot)
+  timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
 }
 
 if (is.null(xlim)){
@@ -862,7 +850,8 @@ else {
   points(timeToPlot,-NavData$AllDepth$depth[ind],lty=1,type=Depthtype,pch=DepthPch)
 }
 
-if (show.title){
+if (show.title)
+{
     if (is.null(cycle)){
     title(main="All profils")
   }
@@ -873,39 +862,35 @@ if (show.title){
 
 #EV
 if (show.EV){
-  # ind<-(NavData$EVRecord[,"CycleNumber"] %in% cycle) & (NavData$EVRecord[,"PatternNumber"] %in% pattern)
-  # timeToPlot<-NavData$EVRecord$date[ind]
-  # if (relatif){
-  #   timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
-  # }
-  # 
-  # points(timeToPlot,-NavData$EVRecord$depth[ind],pch=20,col="cyan")
+  ind<-(NavData$EVRecord[,"CycleNumber"] %in% cycle) & (NavData$EVRecord[,"PatternNumber"] %in% pattern)
+  timeToPlot<-NavData$EVRecord$date[ind]
+  if (relatif){
+    timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
+  }
   
-  points(NavData$EVRecord$date,-NavData$EVRecord$depth,pch=EVPch,col="cyan")
+  points(timeToPlot,-NavData$EVRecord$depth[ind],pch=20,col="cyan")
 }
 
 #pump
 if (show.pump){
-  # ind<-(NavData$PumpRecord[,"CycleNumber"] %in% cycle) & (NavData$PumpRecord[,"PatternNumber"] %in% pattern)
-  # 
-  # timeToPlot<-NavData$PumpRecord$date[ind]
-  # if (relatif){
-  #   timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
-  # }
-  # points(timeToPlot,-NavData$PumpRecord$depth[ind],pch=18,col="red")
-  points(NavData$PumpRecord$date,-NavData$PumpRecord$depth,pch=PumpPch,col="red")
+  ind<-(NavData$PumpRecord[,"CycleNumber"] %in% cycle) & (NavData$PumpRecord[,"PatternNumber"] %in% pattern)
+  
+  timeToPlot<-NavData$PumpRecord$date[ind]
+  if (relatif){
+    timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
+  }
+  points(timeToPlot,-NavData$PumpRecord$depth[ind],pch=18,col="red")
 }
 
 #Abort
 if (!is.null(NavData$BrakeRecord)){
-  # ind<-(NavData$BrakeRecord[,"CycleNumber"] %in% cycle) & (NavData$BrakeRecord[,"PatternNumber"] %in% pattern)
-  # 
-  # timeToPlot<-NavData$BrakeRecord$date[ind]
-  # if (relatif){
-  #   timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
-  # }
-  # points(timeToPlot,-NavData$BrakeRecord$depth[ind],pch=19,col="orange")
-  points(NavData$BrakeRecord$date,-NavData$BrakeRecord$depth,pch=5,col="purple")
+  ind<-(NavData$BrakeRecord[,"CycleNumber"] %in% cycle) & (NavData$BrakeRecord[,"PatternNumber"] %in% pattern)
+  
+  timeToPlot<-NavData$BrakeRecord$date[ind]
+  if (relatif){
+    timeToPlot<-difftime(timeToPlot,RefTime,units = "min")
+  }
+  points(timeToPlot,-NavData$BrakeRecord$depth[ind],pch=19,col="orange")
 }
 
 # cycle

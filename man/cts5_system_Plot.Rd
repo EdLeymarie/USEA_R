@@ -12,10 +12,7 @@ cts5_system_Plot(
   ylim = NULL,
   timeWin = c(0, 1),
   relatif = FALSE,
-  timeRange = NULL,
-  DepthPch = 1,
-  PumpPch = 2,
-  EVPch = 3,
+  DepthPch = 20,
   Depthtype = "b",
   show.EV = TRUE,
   show.pump = TRUE,
@@ -37,11 +34,9 @@ cts5_system_Plot(
 
 \item{ylim}{plot ylim}
 
-\item{timeWin}{relative time window (if xlim=NULL) expressed as a vector of 2 floats. timeWin=c(0,1) is the full window.}
+\item{timeWin}{relative time window (if xlim=NULL)}
 
 \item{relatif}{If True, time in min is relative to the first date}
-
-\item{timeRange}{vector of two dates that delimit the plotted data.}
 }
 \value{
 list containing the parsed system information
@@ -56,10 +51,6 @@ cts5_system_Plot(NavData,cycle=5,pattern=1)
 ## To compare profiles
 cts5_system_Plot(Navdata,cycle = 46,relatif = T,xlim=c(0,1500),show.cycle = F)
 cts5_system_Plot(Navdata,cycle = 49,relatif = T,show.cycle = F,add=T)
-
-## To plot an Ice braking
-Brakedate<-NavData$BrakeRecord$date[1]
-cts5_system_Plot(NavData,timeRange=c(Brakedate-1800,Brakedate+1800))
 }
 \description{
 plot trajectory of the float from \code{\link{cts5_system_parse}}

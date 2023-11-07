@@ -5,7 +5,7 @@
 \title{create a KML file from technical files}
 \usage{
 cts5_create_kml(
-  pattern = ".*autotest.*.txt|.*technical.txt|.*default.*.txt",
+  pattern = ".*technical.*.txt",
   filenamelist = NULL,
   output = "PositionAPMT.kml",
   start = 1,
@@ -24,14 +24,12 @@ cts5_create_kml(
 \item{start}{First Cycle number to process.}
 
 \item{CycleToProcess}{vector of float cycle to include in the KML file. If Null, all cycle will be included}
-
-\item{id}{id to identify points in the kml, either : date, cycle or  relativecycle}
 }
 \value{
 a KML file
 }
 \description{
-read  technical, autotest or default files and create a KML file to be read with Google Earth
+read  _technical.txt files and create a KML file to be read with Google Earth
 }
 \examples{
  

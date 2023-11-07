@@ -531,11 +531,6 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
     
     xml<-scan(filename,what = character(0))
   
-    
-    ##elimination padding
-    ind<-grep("</FLOAT>",xml)
-    xml<-xml[1:ind[1]]
-    
     ##test non ascii
     for (i in 1:length(xml)){
        if (sum(charToRaw(xml[i]) == "ff")>0){
@@ -546,6 +541,11 @@ cts5_readMetaSensor<-function(floatname="",CycleNumber=NULL,PatternNumber=NULL,f
          xml[i]<-"SN=' ' />"
        }
     }
+    
+    ##elimination padding
+    ind<-grep("</FLOAT>",xml)
+    xml<-xml[1:ind[1]]
+    
     
     xml<-xmlParse(xml)
     L<-xmlToList(xml)
@@ -846,19 +846,32 @@ cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumb
 #**************************************************
 
 #**************************************************
-#' create a KML file from technical files
+#' create a KML or GPX file from technical files
 #'
 #' @description
-#' read  technical, autotest or default files and create a KML file to be read with Google Earth
+#' read  technical, autotest or default files and create a KML or GPX
+#' file to be read with Google Earth, OpenCPN ...
 #'
 #' @param pattern pattern used to select files
 #' @param filenamelist list of files to open
-#' @param output name of the KML file
+#' @param output name of the KML or GPX file
 #' @param CycleToProcess vector of float cycle to include in the KML file. If Null, all cycle will be included
 #' @param start First Cycle number to process. 
-#' @param id id to identify points in the kml, either : date, cycle or  relativecycle
-#'
-#' @return a KML file
+#' @param id id to identify points in the file, either : "date", 
+#' "cycle" or  "relativecycle"
+#' @param namevector : vector of names to be used as point's name.
+#' @param color : Color of points in KML file
+#' Red = ff0000ff,
+#' Yellow = ff00ffff,
+#' Blue = ffff0000,
+#' Green = ff00ff00,
+#' Purple = ff800080,
+#' Orange = ff0080ff,
+#' Brown = ff336699,
+#' Pink = ffff00ff
+#' @param type "kml" or "gpx" : choose file type
+
+#' @return a KML or GPX file
 #' 
 #' @examples  
 #' 
@@ -876,7 +889,8 @@ cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumb
 
 cts5_create_kml<-function(pattern=".*autotest.*.txt|.*technical.txt|.*default.*.txt",
                           filenamelist=NULL,output="PositionAPMT.kml",
-                          start=1,CycleToProcess=NULL,path=".",id="cycle"){
+                          start=1,CycleToProcess=NULL,path=".",id="cycle",
+                          color='ff00ffff',outputtype="kml",namevector=NULL){
   setwd(path)
   
   if (is.null(filenamelist)) {
@@ -915,12 +929,17 @@ cts5_create_kml<-function(pattern=".*autotest.*.txt|.*technical.txt|.*default.*.
       str<-strsplit(data[indGPS],split="=")
       Lat<-ConvDeg(strsplit(str[[1]][3],split=" ")[[1]][1])
       Lon<-ConvDeg(strsplit(str[[1]][4],split=" ")[[1]][1])
-      if (id=="date"){
-        name<-paste(strsplit(str[[1]][2],split=" ")[[1]][1:2],collapse=" ")}
-      if (id=="cycle") {
-        name<-strsplit(filename,split="_")[[1]][2]}
-      if (id=="relativecycle") {
-        name<-NCycle}
+      if (is.null(namevector)){
+        if (id=="date"){
+          name<-paste(strsplit(str[[1]][2],split=" ")[[1]][1:2],collapse=" ")}
+        if (id=="cycle") {
+          name<-strsplit(filename,split="_")[[1]][2]}
+        if (id=="relativecycle") {
+          name<-NCycle}
+      } else {
+        
+        name<-rep(namevector,length.out=length(filenamelist))[match(filename,filenamelist)]
+      }
       
       if (dim(datapoint)[1]==0){
         datapoint<-as.data.frame(t(c(Lon,Lat)))
@@ -938,17 +957,16 @@ cts5_create_kml<-function(pattern=".*autotest.*.txt|.*technical.txt|.*default.*.
     }
   }
   
-  #Creation du fichier KML
-  if (output != ""){
+  #formatage
+  datapoint[,1]<-as.numeric(datapoint[,1])
+  datapoint[,2]<-as.numeric(datapoint[,2])
+  dimnames(datapoint)[[2]]<-c("Lon","Lat","name","filename","infos")
+  
+  
+  ### Creation du fichier KML ###
+  if ((outputtype == "kml") & (output != "")){
     if (file.exists(output)){file.remove(output)}
-    datapoint[,1]<-as.numeric(datapoint[,1])
-    datapoint[,2]<-as.numeric(datapoint[,2])
-    dimnames(datapoint)[[2]]<-c("Lon","Lat","name","filename","infos")
-    
-    # Utilisation de rgdal et sp
-    # coordinates(datapoint)<-c("Lon","Lat")
-    # proj4string(datapoint) <- CRS("+proj=longlat +datum=WGS84")
-    # writeOGR(datapoint,output, layer="APMT",driver="KML")
+
     
     # kml in manual
     
@@ -959,6 +977,14 @@ cts5_create_kml<-function(pattern=".*autotest.*.txt|.*technical.txt|.*default.*.
 	          '<SimpleField name="filename" type="string"></SimpleField>',
 	          '<SimpleField name="infos" type="string"></SimpleField>',
             '</Schema>',
+            '<Style id="APMT">',
+              '<IconStyle>',
+              paste('<color>',color,'</color>',sep=""),
+              '</IconStyle>',
+              '<LabelStyle>',
+              paste('<color>',color,'</color>',sep=""),
+              '</LabelStyle>',
+            '</Style>',
             '<Folder><name>APMT</name>')
     
     #Point
@@ -966,6 +992,7 @@ cts5_create_kml<-function(pattern=".*autotest.*.txt|.*technical.txt|.*default.*.
       kmlf<-c(kmlf,
               '<Placemark>',
               paste('<name>',datapoint$name[i],'</name>',sep=""),
+              '<styleUrl>#APMT</styleUrl>',
               '<ExtendedData><SchemaData schemaUrl="#APMT">',
               paste('<SimpleData name="filename">',datapoint$filename[i],'</SimpleData>',sep=""),
               paste('<SimpleData name="infos">',
@@ -986,6 +1013,45 @@ cts5_create_kml<-function(pattern=".*autotest.*.txt|.*technical.txt|.*default.*.
     
   }
   
+  
+  ### Creation du fichier GPX ###
+  if ((outputtype == "gpx") & (output != "")){
+    if (file.exists(output)){file.remove(output)}
+    
+    
+    # gpx in manual
+    
+    #header
+    gpxf<-c('<?xml version="1.0"?>',
+            '<gpx version="1.1" creator="USEAR" >')
+    
+    #Point
+    for (i in 1:nrow(datapoint)){
+      gpxf<-c(gpxf,
+              paste('<wpt lat= "',datapoint$Lat[i],
+                    '" lon="',datapoint$Lon[i],'">',sep=''),
+                #<time>2023-08-09T14:36:40Z</time>
+              paste('<name>',datapoint$name[i],'</name>',sep=""),
+              '<sym>triangle</sym>',
+              '<type>WPT</type>',
+              '<extensions>',
+                '<opencpn:viz_name>1</opencpn:viz_name>',
+                '<opencpn:arrival_radius>0.050</opencpn:arrival_radius>',
+                '<opencpn:waypoint_range_rings visible="false" number="0" step="1" units="0" colour="#FF0000" />',
+                '<opencpn:scale_min_max UseScale="false" ScaleMin="2147483646" ScaleMax="0" />',
+                '</extensions>',
+              '</wpt>')
+              
+    }
+    
+    #gpx End
+    gpxf<-c(gpxf,'</gpx>')
+    
+    
+    #write
+    write(gpxf,file=output)
+    
+  }
   #  return(datapoint)
   
 }

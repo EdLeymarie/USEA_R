@@ -79,7 +79,10 @@ return(result)
 #' read from default files by \code{\link{Recover_ScanDefault}}. 
 #'
 #' @param filename name of the text file which contains the positions.
-#' @param KMLfile name of the KML file generated
+#' @param KMLfile name of the KML file to be generated. No file is 
+#' created if "".
+#' @param GPXfile name of the GPX file to be generated. No file is 
+#' created if "".
 #' 
 #' @return a data frame which contains the positions in various format and the speed and course of the float.
 #' 
@@ -92,7 +95,9 @@ return(result)
 #' @export
 #'
 #'
-Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml"){
+Recover_ScanPosition<-function(filename="Positions.txt",
+                               KMLfile="Positions.kml",
+                               GPXfile=""){
   datatemp<-read.table(filename,header=FALSE,sep=" ",stringsAsFactors=FALSE)
   
   #lecture date
@@ -143,7 +148,7 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
     data<-cbind(data,dist_nm,speed_kts,course)
   }
 
-  #Creation du fichier KML
+  ### Creation du fichier KML
   if (KMLfile != ""){
     if (file.exists(KMLfile)){file.remove(KMLfile)}
     # kml in manual
@@ -178,6 +183,44 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
     
   }
   
+  ### Creation du fichier GPX ###
+  if (GPXfile != ""){
+    if (file.exists(GPXfile)){file.remove(GPXfile)}
+    
+    
+    # gpx in manual
+    
+    #header
+    gpxf<-c('<?xml version="1.0"?>',
+            '<gpx version="1.1" creator="USEAR" >')
+    
+    #Point
+    for (i in 1:nrow(data)){
+      gpxf<-c(gpxf,
+              paste('<wpt lat= "',data$'Lat.deg.'[i],
+                    '" lon="',data$'Lon.deg.'[i],'">',sep=''),
+              #<time>2023-08-09T14:36:40Z</time>
+              paste('<name>',data$time[i],'</name>',sep=""),
+              '<sym>triangle</sym>',
+              '<type>WPT</type>',
+              '<extensions>',
+              '<opencpn:viz_name>1</opencpn:viz_name>',
+              '<opencpn:arrival_radius>0.050</opencpn:arrival_radius>',
+              '<opencpn:waypoint_range_rings visible="false" number="0" step="1" units="0" colour="#FF0000" />',
+              '<opencpn:scale_min_max UseScale="false" ScaleMin="2147483646" ScaleMax="0" />',
+              '</extensions>',
+              '</wpt>')
+      
+    }
+    
+    #gpx End
+    gpxf<-c(gpxf,'</gpx>')
+    
+    
+    #write
+    write(gpxf,file=GPXfile)
+  }
+  
   return(data)
   
 }
@@ -190,7 +233,10 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
 #'
 #' @param pattern pattern of the technical/default files
 #' @param Outputfilename filename of the Positions file
-#' @param KMLfile name of the KML file generated
+#' @param KMLfile name of the KML file to be generated. No file is 
+#' created if "".
+#' @param GPXfile name of the GPX file to be generated. No file is 
+#' created if "".
 #' 
 #' @return identical as \code{\link{Recover_ScanPosition}}
 #' 
@@ -201,7 +247,10 @@ Recover_ScanPosition<-function(filename="Positions.txt",KMLfile="Positions.kml")
 #' @export
 #'
 #'
-Recover_ScanDefault<-function(pattern=".*_default_.*.txt",Outputfilename="Positions.txt",KMLfile="Positions.kml"){
+Recover_ScanDefault<-function(pattern=".*_default_.*.txt",
+                              Outputfilename="Positions.txt",
+                              KMLfile="Positions.kml",
+                              GPXfile=""){
  
 filenames<-list.files(pattern = pattern)   
 
@@ -222,7 +271,7 @@ filenames<-list.files(pattern = pattern)
   cat("write:",Outputfilename,"\n")
   write(Positions,file = Outputfilename)
   
-  Recover_ScanPosition(filename=Outputfilename,KMLfile=KMLfile)
+  Recover_ScanPosition(filename=Outputfilename,KMLfile=KMLfile,GPXfile=GPXfile)
   }
 else {
   warning("no file to process")
@@ -244,7 +293,8 @@ else {
 #' 
 #' @return projected position
 #' 
-#' @examples data<-Recover_ScanDefault()
+#' @examples 
+#' data<-Recover_ScanDefault()
 #' Recover_PredictPosition(nextMin=1,data=data) # estimate the position in 1 min from now
 #' 
 #' 

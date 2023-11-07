@@ -53,8 +53,8 @@ cts5_readDatalogger<-function(filename){
 
 datalogger<-scan(file = filename,skip = 1,what = character())
 
-VectId<-as.character(c(0:2,7,12,13,16,18,20))
-VectName<-c("sbe41","do","ocr","eco","sbeph","crover","ramses","mpe","ramses2")
+VectId<-as.character(c(0:2,7,16,18))
+VectName<-c("sbe41","do","ocr","eco","ramses","mpe")
 
 
 ## Decodage
@@ -120,14 +120,7 @@ if (!is.null(logger$data$ocr)){
 
 ## RAMSES
 if (!is.null(logger$data$ramses)){
-  lspectre<-length(colnames(logger$data$ramses))-6
-  colnames(logger$data$ramses)[-(1:4)]<-c("ramses_int_time","ramses_dark_count",paste("ramses_raw_count",1:lspectre,sep = ""))
-}
-
-## RAMSES2
-if (!is.null(logger$data$ramses2)){
-  lspectre<-length(colnames(logger$data$ramses2))-6
-  colnames(logger$data$ramses2)[-(1:4)]<-c("ramses_int_time","ramses_dark_count",paste("ramses_raw_count",1:lspectre,sep = ""))
+  colnames(logger$data$ramses)[-(1:4)]<-c("ramses_int_time","ramses_dark_count",paste("ramses_raw_count",1:245,sep = ""))
 }
 
 ## MPE

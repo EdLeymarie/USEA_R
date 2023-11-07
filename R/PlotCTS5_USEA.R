@@ -264,7 +264,7 @@ PlotOptode<-function(data,technical=TRUE,ZoneDepth=NULL){
 
 #**************************************************
 #Plot CRover
-# data<-dataprofile$data$crover
+
 
 ###
 
@@ -299,22 +299,11 @@ PlotCROVER<-function(data,technical=TRUE,ZoneDepth=NULL){
   #Plot c
   if (dim(data)[1]>5){
     
-    # All time
-    depth_breaks <- pretty(data$Pressure_dbar, n = 50)
-    cs <- list(cols = tim.colors(length(depth_breaks)-1),breaks = depth_breaks,name = "depth",unit = "(db)",labels = seq(1,length(depth_breaks), 5))
-    cols = tim.colors(length(depth_breaks)-1)[cut(data$Pressure_dbar,breaks = depth_breaks)]
-    
-    plot(x=data$Date,y=data$`c-uncalibrated_1/m`,type="b",pch=20,col=cols,xlab="Date",ylab="c-uncalibrated_1/m")
-    cs.draw(cs,horiz=T,side = 1)
-    
-    
-    # Profile
-    ind<-data$PhaseName=="ASC"
-    if (sum(ind)>1){
-      plot(data$`c-uncalibrated_1/m`[ind],-data$Pressure_dbar[ind],type="l",
-           xlab="c-uncalibrated_1/m",ylab="depth",col=2)
-      plotDepthZones(ZoneDepth)
+    plot(NULL,NULL,xlim=range(data[,"c-uncalibrated_1/m"],na.rm = TRUE, finite = TRUE),ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="c-uncalibrated_1/m",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(data[data[,"PhaseName"]==i,"c-uncalibrated_1/m"],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
     }
+    plotDepthZones(ZoneDepth)
     
   }
   
@@ -433,8 +422,7 @@ PlotSbepH<-function(data,technical=TRUE,ZoneDepth=NULL){
 }
 
 #**************************************************
-#Plot lpm
-# data<-dataprofile$data$uvp6_lpm
+#Plot OCTOPUS
 PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot Chronologie
@@ -460,24 +448,20 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
     }
   }
   
-  #### Class Size
+  #### Class
   title_list<-c("UVP6 NPart_Class1-6","UVP6 NPart_Class7-12","UVP6 NPart_Class13-18")
-  IndSize<-grep("NP_Size",colnames(data))
-  class_list<-rbind(IndSize[1:6],IndSize[7:12],IndSize[13:18])
+  class_list<-rbind(7:12,13:18,19:24)
   
   for (i in 1:length(title_list)){
     temp<-data[,class_list[i,]]
     
-    # ## correction Nimages or NSamples
-    # Now in Processdata
-    # if ("Nimages" %in% colnames(data)){
-    #   # new taxo format
-    #   temp<-temp/data$Nimages}
-    # if ("NSamples" %in% colnames(data)){
-    #   #old format without taxo
-    #   NSamples<-data$NSamples
-    #   NSamples[NSamples==0]<-1 #correction for NSamples=0
-    #   temp<-temp/NSamples}
+    ## correction Nimages or NSamples
+    if ("Nimages" %in% colnames(data)){
+      temp<-temp/data$Nimages}
+    if ("NSamples" %in% colnames(data)){
+      NSamples<-data$NSamples
+      NSamples[NSamples==0]<-1 #correction for NSamples=0
+      temp<-temp/NSamples}
     
     if (sum(temp>0,na.rm=T) > 2){
       temp.min<-min(temp[temp>0],na.rm=T)
@@ -499,8 +483,7 @@ PlotUVP_lpm<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #### Mean Grey
   title_list<-c("UVP6 MGrey_Class1-6","UVP6 MGrey_Class7-12","UVP6 MGrey_Class13-18")
-  IndSize<-grep("MG_Size",colnames(data))
-  class_list<-rbind(IndSize[1:6],IndSize[7:12],IndSize[13:18])
+  class_list<-rbind(25:30,31:36,37:42)
   
   for (i in 1:length(title_list)){
     temp<-data[,class_list[i,]]
@@ -576,14 +559,6 @@ PlotUVP_blk<-function(data,technical=TRUE,ZoneDepth=NULL){
 
 #**************************************************
 #Plot UVP_txo
-
-## Taxo Name
-# Model_reference = Mglob_20220421
-taxo_name<-c("Acantharia","Actinopterygii","Appendicularia","Aulacanthidae",
-             "Calanoida","Chaetognatha","Collodaria","Creseis","Foraminifera",
-             "Rhizaria","Salpida","artefact","crystal","detritus","fiber<detritus",
-             "other<living","puff","small-bell<Hydrozoa","solitaryglobule","tuff")
-
 PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot Chronologie
@@ -620,12 +595,10 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   Nclass<-sum(ExistClass)
   if (Nclass>0){
     cols<-rainbow(Nclass)
-    matplot(dataASC[,indNbr][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectNbr",ylab = "Depth",
-            main="Ascent Object Number",log="x",col=cols)
-    xlim<-dataASC[,indNbr][,ExistClass]
-    xlim<-range(xlim[xlim>0])
-    plotDepthZones(ZoneDepth,x=xlim)
-    legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
+    matplot(dataASC[,indNbr][,ExistClass]/dataASC$Nimages,-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectNbr",ylab = "Depth",
+            main="Ascent Object Number",col=cols)
+    plotDepthZones(ZoneDepth)
+    legend("bottomright",legend=colnames(dataASC)[indNbr][ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No ObjectNbr Class in UVP6 Taxo\n")
@@ -641,7 +614,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     matplot(dataASC[,indSize][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectSize",ylab = "Depth",
             main="Ascent Object Size",col=cols)
     plotDepthZones(ZoneDepth)
-    legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
+    legend("bottomright",legend=colnames(dataASC)[indSize][ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No Size Class in UVP6 Taxo\n")
@@ -657,7 +630,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     matplot(dataASC[,indGL][,ExistClass],-dataASC$Pressure_dbar,type="l",lty=1,xlab="ObjectGL",ylab = "Depth",
             main="Ascent Object Grey Level",col=cols)
     plotDepthZones(ZoneDepth)
-    legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
+    legend("bottomright",legend=colnames(dataASC)[indGL][ExistClass],lty=1,bty="y",col=cols)
   }
   else {
     cat("No GL Class in UVP6 Taxo\n")
@@ -669,23 +642,17 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
   GLAv<-apply(dataASC[,indGL],2,mean,na.rm=T)
   
   if (sum(SumNbr)>0){
-    
-    indPie<-SumNbr>0
-    
-    barplot(SumNbr[indPie],log="y",names.arg = taxo_name[indPie],col = rainbow(length(taxo_name)),
-            ylab = "ASC integrated abundance (AU)",
-            las=2,cex.names = 0.65)
   
-    # xrange<-range(which(SumNbr>0))
-    # 
-    # yrange<-c(SumNbr,SizeAv,GLAv)
-    # yrange<-range(yrange[yrange>0],finite = T)
-    # 
-    # plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
-    # lines(1:40,SizeAv,col=2)
-    # lines(1:40,GLAv,col=3)
-    # legend("bottomright",legend=c("Object Number sum","Object Size Av","Object GL Av"),lty=1,col=1:3,bty="n",cex=0.75)
-    # 
+    xrange<-range(which(SumNbr>0))
+    
+    yrange<-c(SumNbr,SizeAv,GLAv)
+    yrange<-range(yrange[yrange>0],finite = T)
+    
+    plot(1:40,SumNbr,type="l",log="y",ylim=yrange,xlim=xrange,xlab="class",ylab="",main="Ascent")
+    lines(1:40,SizeAv,col=2)
+    lines(1:40,GLAv,col=3)
+    legend("bottomright",legend=c("Object Number sum","Object Size Av","Object GL Av"),lty=1,col=1:3,bty="n",cex=0.75)
+    
   }
   
   ## PARKING
@@ -701,9 +668,9 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
     Nclass<-sum(ExistClass)
     if (Nclass>0){
       cols<-rainbow(Nclass)
-      matplot(as.numeric(dataPAR$Date),dataPAR[,indNbr][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectNbr",
+      matplot(as.numeric(dataPAR$Date)/dataPAR$Nimages,dataPAR[,indNbr][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectNbr",
               main="Parking Object Number", col=cols)
-      legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
+      legend("bottomright",legend=colnames(dataPAR)[indNbr][ExistClass],lty=1,bty="y",col=cols)
     }
     else {
       cat("No ObjectNbr Class in UVP6 Taxo at Parking \n")
@@ -719,7 +686,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
       cols<-rainbow(Nclass)
       matplot(as.numeric(dataPAR$Date),dataPAR[,indSize][,ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectSize",
               main="Parking Object Size",col=cols)
-      legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
+      legend("bottomright",legend=colnames(dataPAR)[indSize][ExistClass],lty=1,bty="y",col=cols)
     }
     else {
       cat("No Size Class in UVP6 Taxo at Parking \n")
@@ -734,7 +701,7 @@ PlotUVP_txo<-function(data,technical=TRUE,ZoneDepth=NULL){
       cols<-rainbow(Nclass)
       matplot(as.numeric(dataPAR$Date),dataPAR[,indGL][ExistClass],type="l",lty=1,xlab="Time",ylab = "ObjectGL",
               main="Parking Object Grey Level",col=cols)
-      legend("bottomright",legend=taxo_name[ExistClass],lty=1,bty="y",col=cols)
+      legend("bottomright",legend=colnames(dataPAR)[indGL][ExistClass],lty=1,bty="y",col=cols)
     }
     else {
       cat("No GL Class in UVP6 Taxo at Parking\n")
@@ -926,73 +893,6 @@ Plotext_trig<-function(data,technical=TRUE,ZoneDepth=NULL){
 }
 
 #**************************************************
-#Plot IMU
-# data<-dataprofile$data$imu
-PlotIMU<-function(data,technical=TRUE,ZoneDepth=NULL){
-  
-  #Plot technical
-  if (technical){
-    #Plot Chronologie
-    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
-    title(main="IMU")
-    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
-    
-    legend("topright",legend=unique(data[,"PhaseName"]),pch = 16,col=1:length(unique(data[,"PhaseName"])),bty="n")
-    
-  }
-  
-  #Plot data
-  ## IntTime et Tilt
-  ind<-which(data[,"PhaseName"] == "ASC")
-  if (("tilt" %in% colnames(data)) & ("heading" %in% colnames(data))){
-    plot(data$tilt[ind],-data[ind,"Pressure_dbar"],type="l",col=1,xlab="Tilt",ylab="Depth",main="Tilt")
-    plotDepthZones(ZoneDepth)
-    
-    # #convertion en coordonnees ndc
-    # InsertPos<-c(grconvertX(c(0.5,0.95), from = "npc", to = "ndc"),
-    #              grconvertY(c(0.15,0.8), from = "npc", to = "ndc"))
-    # 
-    # #creation de l'insert
-    # oldpar <- par()
-    # par(fig = InsertPos, new = TRUE)
-    # par(mar = c(0.1, 0.1, 0.1, 0.1),mgp=c(3,0.1,0))
-    
-    plot(data$tilt[ind],-data[ind,"Pressure_dbar"],type="l",col=1,ylim=c(-20,0),
-         main="Tilt-Zoom")#cex=0.5,cex.axis=0.5,tcl=-0.1)
-
-    # par(fig = oldpar$fig)
-    # par(mar = oldpar$mar)
-    # par(mgp = oldpar$mgp)
-    # par(mfrow = oldpar$mfrow,new=F)
-    
-    plot(data$heading[ind],-data[ind,"Pressure_dbar"],type="l",col="blue",xlab="Tilt",ylab="Depth",main="Tilt")
-    plotDepthZones(ZoneDepth)
-    
-    
-  }
-  
-}
-
-#**************************************************
-#Plot wave
-# data<-dataprofile$data$wave
-PlotWave<-function(data){
-  plot(data$Date,data$heading,type="l",xlab="date",ylab="Heading",
-       main="Heading at surface")
-  
-  plot(data$Date,data$tilt,type="l",xlab="date",ylab="Tilt",
-       main="Tilt at surface")
-  legend("topright",legend=paste("mean=",formatC(mean(data$tilt),digit=3)),
-         bty="n")
-  
-  plot(data$Date,data$acceleration,type="l",xlab="date",ylab="Acceleration",
-       main="Acceleration at surface")
-  legend("topright",legend=paste("mean=",formatC(mean(data$acceleration),digit=3)),
-         bty="n")
-  
-}
-
-#**************************************************
 #Plot RAD sensors together
 # data<-dataprofile$data$ext_trig
 PlotCompRad<-function(dataprofile){
@@ -1020,9 +920,8 @@ PlotCompRad<-function(dataprofile){
       
       MeanOCR<-median(Sig[data$Pressure_dbar<5])
       
-      if (!is.na(MeanOCR)){     
-        CoefNorm<-MeanOCR/MeanMPE
-        SigMPE<-CoefNorm*SigMPE}
+      CoefNorm<-MeanOCR/MeanMPE
+      SigMPE<-CoefNorm*SigMPE
       
       ## Plot
       xlim=range(SigMPE[SigMPE>0],na.rm = TRUE, finite = TRUE)
@@ -1074,7 +973,6 @@ PlotCompRad<-function(dataprofile){
 #' @param technical if true, technical information will be plotted
 #' @param paper paper size
 #' @param mfrow mfrow
-#' @param SensorsToPlot vector of sensors to include in the plot. If NULL plot all sensors.
 #' 
 #' @examples 
 #' 
@@ -1092,14 +990,11 @@ PlotCompRad<-function(dataprofile){
 #'
 #' PlotCTS5(login=login,dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
 #'
-#' # small list of sensors in the terminal
-#' PlotCTS5(dataprofile,add=TRUE,SensorsToPlot=c("ramses","ramses2"))
+#'  
 #' 
 #' @export
 #'
-PlotCTS5<-function(login="lov",dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,
-                   technical=TRUE,paper = "A4",mfrow=c(3,2),
-                   SensorsToPlot=NULL){
+PlotCTS5<-function(login="lov",dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2)){
 
 
 if (!is.null(dataprofile)){   
@@ -1113,21 +1008,13 @@ if (!is.null(dataprofile)){
       cat("create:",filename,"\n",sep="")
       pdf(file=filename,paper = paper, width = 0, height = 0)
       par(mfrow=mfrow)
-
   }
   
   
-  ## sensor selection
-  if (is.null(SensorsToPlot)){
-    SensorsToPlot<-names(dataprofile$data)
-  } else {
-    SensorsToPlot<-SensorsToPlot[SensorsToPlot %in% names(dataprofile$data)]
-  }
-  
-  
+    
   #CTD
   #ind<-(dataMerged[,"SensorType"]==0) & (dataMerged[,PhaseName] %in% c("DES","ASC"))
-  if ("sbe41" %in% SensorsToPlot){
+  if ("sbe41" %in% names(dataprofile$data)){
     data<-dataprofile$data$sbe41
     plotCTD(data,technical=technical,
             ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_01"))
@@ -1147,122 +1034,108 @@ if (!is.null(dataprofile)){
   
   
   #PlotEcoStd
-  if ("eco" %in% SensorsToPlot){
+  if ("eco" %in% names(dataprofile$data)){
     if ("chlorophyll-a_ug/l" %in% colnames(dataprofile$data$eco)){
       data<-dataprofile$data$eco
-      try(PlotEcoStd(data,technical=technical,
-                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_04")))
+      PlotEcoStd(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_04"))
     }
   }
   
   #PlotOCR504
-  if ("ocr" %in% SensorsToPlot){  
+  if ("ocr" %in% names(dataprofile$data)){  
     if ("Downwelling-irradiance-380nm" %in% colnames(dataprofile$data$ocr)){
       data<-dataprofile$data$ocr
-      try(PlotOCR4(data,technical=technical,
-               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_03")))
+      PlotOCR4(data,technical=technical,
+               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_03"))
     }
   }
     
   #PlotcRover
-  if ("crover" %in% SensorsToPlot){  
+  if ("crover" %in% names(dataprofile$data)){  
     if ("c-uncalibrated_1/m" %in% colnames(dataprofile$data$crover)){
       data<-dataprofile$data$crover
-      try(PlotCROVER(data,technical=technical,
-                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_06")))
+      PlotCROVER(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_06"))
     }
   }
   
   #PlotOptode
-  if ("do" %in% SensorsToPlot){  
+  if ("do" %in% names(dataprofile$data)){  
     if ("doxy_uncalibrated" %in% colnames(dataprofile$data$do)){
       data<-dataprofile$data$do
-      try(PlotOptode(data,technical=technical,
-                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_02")))
+      PlotOptode(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_02"))
     }
   }  
   
   #PlotSuna
-  if ("suna" %in% SensorsToPlot){  
+  if ("suna" %in% names(dataprofile$data)){  
     data<-dataprofile$data$suna
-    try(PlotSUNA(data,technical=technical,
-             ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_07")))
+    PlotSUNA(data,technical=technical,
+             ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_07"))
   }
 
   
   #PlotsbepH
-  if ("sbeph" %in% SensorsToPlot){  
+  if ("sbeph" %in% names(dataprofile$data)){  
     if ("pH_Uncal" %in% colnames(dataprofile$data$sbeph)){
       data<-dataprofile$data$sbeph
-      try(PlotSbepH(data,technical=technical,
-                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_05")))
+      PlotSbepH(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_05"))
     }
   }    
   
   #PlotUVP_lpm
-  if ("uvp6_lpm" %in% SensorsToPlot){  
+  if ("uvp6_lpm" %in% names(dataprofile$data)){  
     data<-dataprofile$data$uvp6_lpm
-    try(PlotUVP_lpm(data,technical=technical,
-                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08")))
+    PlotUVP_lpm(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08"))
   }    
   
   #PlotUVP_txo
-  if ("uvp6_txo" %in% SensorsToPlot){  
+  if ("uvp6_txo" %in% names(dataprofile$data)){  
     data<-dataprofile$data$uvp6_txo
-    try(PlotUVP_txo(data,technical=technical,
-                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08")))
+    PlotUVP_txo(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08"))
   }   
     
   #PlotUVP_blk
-  if ("uvp6_blk" %in% SensorsToPlot){  
+  if ("uvp6_blk" %in% names(dataprofile$data)){  
     data<-dataprofile$data$uvp6_blk
-    try(PlotUVP_blk(data,technical=technical,
-                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08")))
+    PlotUVP_blk(data,technical=technical,
+                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_08"))
   }        
   
   #PlotRamses
-  if ("ramses" %in% SensorsToPlot){  
+  if ("ramses" %in% names(dataprofile$data)){  
       data<-dataprofile$data$ramses
-      try(PlotRamses(data,technical=technical,
-                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14")))
+      PlotRamses(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14"))
   }   
   
-  if ("ramses2" %in% SensorsToPlot){  
+  if ("ramses2" %in% names(dataprofile$data)){  
     data<-dataprofile$data$ramses2
-    try(PlotRamses(data,technical=technical,
-               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14")))
+    PlotRamses(data,technical=technical,
+               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_14"))
   } 
-  
-  #IMU
-  if ("imu" %in% SensorsToPlot){  
-    data<-dataprofile$data$imu
-    try(PlotIMU(data,technical=technical,
-               ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_20")))
-  } 
-  
-  #Wave 
-  if ("wave" %in% SensorsToPlot){  
-    data<-dataprofile$data$wave
-    try(PlotWave(data))
-  } 
-  
   
   #ext_trig
-  if ("ext_trig" %in% SensorsToPlot){  
+  if ("ext_trig" %in% names(dataprofile$data)){  
     data<-dataprofile$data$ext_trig
-    try(Plotext_trig(data,technical=technical,
-                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_13")))
+    Plotext_trig(data,technical=technical,
+                 ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_13"))
   }   
   
   #mpe
-  if ("mpe" %in% SensorsToPlot){  
+  if ("mpe" %in% names(dataprofile$data)){  
     data<-dataprofile$data$mpe
-    try(PlotMPE(data,technical=technical,
-            ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_17")))
+    PlotMPE(data,technical=technical,
+            ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_17"))
   }   
   
   #Plot RAD sensors together
-  try(PlotCompRad(dataprofile))
+  PlotCompRad(dataprofile)
   
   
   if (!add){

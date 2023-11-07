@@ -158,9 +158,17 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
   if ((length(datapH$pH_mV)>5) & (length(dataCTD$Temperature_degC)>5)){
     #il y a assez de data
     
+    ## choix method pour approxfun
+    if (length(unique(dataCTD$Pressure_dbar))>2){
+      #il y a au moins 2 points differents
+      approx_method="linear"
+    } else {
+      approx_method = "constant"
+    }
+    
     #interpolation des donnees CTD
-    t<-approxfun(dataCTD$Pressure_dbar,dataCTD$Temperature_degC,rule = 2,ties="mean")
-    S<-approxfun(dataCTD$Pressure_dbar,dataCTD$Salinity_PSU,rule = 2,ties="mean")
+    t<-approxfun(dataCTD$Pressure_dbar,dataCTD$Temperature_degC,rule = 2,ties="mean",method=approx_method)
+    S<-approxfun(dataCTD$Pressure_dbar,dataCTD$Salinity_PSU,rule = 2,ties="mean",method=approx_method)
     
     #calcul
     Press<-datapH$Pressure_dbar
@@ -278,17 +286,18 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
 
 #**************************************************
 #*
-# Compute Ramses
+# Compute Ramses single spectra ######
 #* Input : X = c(ramses_int_time,ramses_dark_count, I) 
+#* where I is the spectra in count to be processed
 #* 
-#* Output : Physical units uW/cm2/nm
+#* Output : Physical units uW/cm2/nm vector with the same length than I
 #*
 #**************************************************
 
 ra_single<-function(x,B0,B1,S,B0_Dark,B1_Dark){
-t<-as.numeric(x[1])
-offset<-as.numeric(x[2])
-I<-x[-(1:2)]
+t<-as.numeric(x[1]) #Integration time
+offset<-as.numeric(x[2]) #Offset = Dark_average
+I<-x[-(1:2)] #count spectra
 
 #Etape1 Normalisation
 M<-I/65535
@@ -318,7 +327,20 @@ return(E/S)
 Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater=T){
   
 if (!file.exists(calib_file)){  
+  
+  #test 1 : avec pattern
+  calib_file_pattern<-calib_file
   calib_file<-list.files(pattern = calib_file)[1]
+  
+  if (!file.exists(calib_file)){
+    cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
+    
+    #test 2 : generic
+    calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
+    
+    cat("!! Default Ramses calibration is used \n")
+  }
+  
 }
   
 if (file.exists(calib_file)){
@@ -350,7 +372,7 @@ if (file.exists(calib_file)){
   colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
 }
 else {
-  warning("Ramses, no calibration file for:",calib_file,"\n")
+  warning("Ramses, no calibration file found:",calib_file,"\n")
   dataCal<-NULL
 }
   
@@ -358,3 +380,85 @@ return(dataCal)
   
 }
 
+#**************************************************
+#*
+# Compute IMU ######
+#*
+#**************************************************
+# data<-dataprofile$data$wave
+# imu_cal<-Meta$SENSORS$SENSOR_IMU
+
+IMU_processHeading<-function(RawMag,imu_cal){
+  
+  compass_cal<-imu_cal$COMPASS
+  mag_cal<-imu_cal$MAGNETOMETER
+  
+  # Compensation simple et Orientation
+  PhyMagx=RawMag[1]+mag_cal$mx0
+  PhyMagy=RawMag[3]+mag_cal$mz0
+  PhyMagz=RawMag[2]+mag_cal$my0
+  
+  # Compensation compas
+  PhyMagx=PhyMagx+compass_cal$hi1
+  PhyMagy=PhyMagy+compass_cal$hi2
+  
+  PhyMagx=PhyMagx*compass_cal$si11 + PhyMagy*compass_cal$si12
+  PhyMagy=PhyMagx*compass_cal$si21 + PhyMagy*compass_cal$si22
+  
+  # Calcul de l'angle
+  fHead = atan2(PhyMagy,PhyMagx)
+  
+  # On retourne le résultat
+  return( fHead *180.0 / pi )
+  
+}
+
+IMU_processAcc<-function(RawAcc,acc_cal){
+  
+  #Calibration et orientation
+  PhyAccx=4*acc_cal$axg*(RawAcc[1]+acc_cal$ax0)/65536
+  PhyAccy=4*acc_cal$azg*(RawAcc[3]+acc_cal$az0)/65536
+  PhyAccz=4*acc_cal$ayg*(RawAcc[2]+acc_cal$ay0)/65536
+  
+  # Calcul du Tilt
+  fTilt = atan2(sqrt(PhyAccx*PhyAccx + PhyAccy*PhyAccy),PhyAccz)
+  fTilt = fTilt*180.0 / pi
+  
+  # Calcul du module de l'acceleration
+  fAccTot = sqrt(PhyAccx*PhyAccx + PhyAccy*PhyAccy + PhyAccz*PhyAccz)
+  
+  
+  # On retourne le résultat
+  return( c(fTilt,fAccTot) )
+  
+}
+
+Process_RawIMU<-function(data,imu_cal){
+  heading<-NULL
+  tilt<-NULL
+  acceleration<-NULL
+  
+  if (("ACCELEROMETER" %in% names(imu_cal)) & ("COMPASS" %in% names(imu_cal)) & ("MAGNETOMETER" %in% names(imu_cal))){
+  
+    indAcc<-grep("RawA",colnames(data))
+    indMag<-grep("RawM",colnames(data))
+    
+    for (i in 1:nrow(data)){
+      fheading<-IMU_processHeading(as.numeric(data[i,indMag]),imu_cal)
+      
+      tempacc<-IMU_processAcc(as.numeric(data[i,indAcc]),imu_cal$ACCELEROMETER)
+      
+      heading<-c(heading,fheading)
+      tilt<-c(tilt,tempacc[1])
+      acceleration<-c(acceleration,tempacc[2])
+    }
+    
+    data<-cbind(data,heading,tilt,acceleration)
+  }
+  else {
+    warning("NO IMU calibration \n")
+    data<-NULL
+  }
+    
+  return(data)
+}

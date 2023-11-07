@@ -2,16 +2,19 @@
 % Please edit documentation in R/CTS5_USEA_technical.R
 \name{cts5_create_kml}
 \alias{cts5_create_kml}
-\title{create a KML file from technical files}
+\title{create a KML or GPX file from technical files}
 \usage{
 cts5_create_kml(
-  pattern = ".*technical.*.txt",
+  pattern = ".*autotest.*.txt|.*technical.txt|.*default.*.txt",
   filenamelist = NULL,
   output = "PositionAPMT.kml",
   start = 1,
   CycleToProcess = NULL,
   path = ".",
-  id = "cycle"
+  id = "cycle",
+  color = "ff00ffff",
+  outputtype = "kml",
+  namevector = NULL
 )
 }
 \arguments{
@@ -19,17 +22,35 @@ cts5_create_kml(
 
 \item{filenamelist}{list of files to open}
 
-\item{output}{name of the KML file}
+\item{output}{name of the KML or GPX file}
 
 \item{start}{First Cycle number to process.}
 
 \item{CycleToProcess}{vector of float cycle to include in the KML file. If Null, all cycle will be included}
+
+\item{id}{id to identify points in the file, either : "date", 
+"cycle" or  "relativecycle"}
+
+\item{color}{: Color of points in KML file
+Red = ff0000ff,
+Yellow = ff00ffff,
+Blue = ffff0000,
+Green = ff00ff00,
+Purple = ff800080,
+Orange = ff0080ff,
+Brown = ff336699,
+Pink = ffff00ff}
+
+\item{namevector}{: vector of names to be used as point's name.}
+
+\item{type}{"kml" or "gpx" : choose file type}
 }
 \value{
-a KML file
+a KML or GPX file
 }
 \description{
-read  _technical.txt files and create a KML file to be read with Google Earth
+read  technical, autotest or default files and create a KML or GPX
+file to be read with Google Earth, OpenCPN ...
 }
 \examples{
  

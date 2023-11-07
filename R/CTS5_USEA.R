@@ -15,8 +15,7 @@ require(chron)
 #' 
 #' findfloatname(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*")
 #' 
-#' 
-#' 
+
 findfloatname<-function(pattern="^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*",
                         CycleNumber=NULL,PatternNumber=1){
   
@@ -32,6 +31,41 @@ if (length(flist)>0){
 else {
   return("")
 }
+}
+
+#**************************************************
+
+# Concat files
+
+#**************************************************
+#' concat files in ones
+#'
+#' @description
+#' Concat files in one file.
+#' @param pattern pattern to scan files to be merged
+#' @param fileout filename to save the output
+#' 
+#' @examples 
+#' concatfiles(pattern="ffff_001_01_apmt#[[:digit:]]{2}.ini",fileout="ffff_001_01_apmt.ini")
+#' 
+
+
+concatfiles<-function(pattern=NULL,fileout=NULL){
+  
+  filenames<-list.files(pattern=pattern)
+  
+  if ((length(filenames)>1)){
+    
+    datacat<-NULL
+    for (filename in filenames){
+      datacat<-c(datacat,readBin(filename,what="raw",n=25*1024))
+    }
+    
+    cat("cat ",pattern," > ",fileout,"\n")
+    
+    writeBin(datacat,fileout)
+    
+  }
 }
 
 #**************************************************
@@ -76,27 +110,29 @@ else {
 #'
 
 
-cts5_ScanProfilesID<-function(pattern=".*sbe41.hex"){
+cts5_ScanProfilesID<-function(pattern="^[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}_sbe41.*.hex"){
   
+  temp<-NULL
   filenames<-list.files(pattern=pattern)
   
-  
-  #Détermination des numéros de profil
-  filenames_split<-strsplit(filenames,split="_")
-  temp<-NULL
-  for (i in 1:length(filenames_split)){
-    temp<-rbind(temp,c(filenames_split[[i]][1],filenames_split[[i]][2],filenames_split[[i]][3]))
+  if (length(filenames)>0){  
+    # Determination des numeros de profil
+    filenames_split<-strsplit(filenames,split="_")
+    temp<-NULL
+    for (i in 1:length(filenames_split)){
+      temp<-rbind(temp,c(filenames_split[[i]][1],filenames_split[[i]][2],filenames_split[[i]][3]))
+    }
+    
+    # Suppression des 0
+    temp<-data.frame(temp,stringsAsFactors = FALSE)
+    temp[,2]<-as.numeric(temp[,2])
+    temp[,3]<-as.numeric(temp[,3])
+    temp<-temp[temp[,3] != 0,]
+    colnames(temp)<-c("floatname","cycle","profile")
+    
+    #Elimination des doublons
+    temp<-unique(temp)
   }
-  
-  # Suppression des 0
-  temp<-data.frame(temp,stringsAsFactors = FALSE)
-  temp[,2]<-as.numeric(temp[,2])
-  temp[,3]<-as.numeric(temp[,3])
-  temp<-temp[temp[,3] != 0,]
-  colnames(temp)<-c("floatname","cycle","profile")
-  
-  #Elimination des doublons
-  temp<-unique(temp)
   
   return(temp)
 }
@@ -126,8 +162,6 @@ cts5_ScanProfilesID<-function(pattern=".*sbe41.hex"){
 #' @examples 
 #' cts5_decode(CycleNumber=c,PatternNumber = p,subdir="./CSV")
 #' 
-#' cts5_system_decode(floatname = floatname,CycleNumber=c,PatternNumber=p,
-#' Nke_ProgPath="D:/Data/Provor_USEA/USEA_R/")
 #' 
 #' @export
 #'
@@ -179,19 +213,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
       
       #Concat  
       pattern=paste(floatname,"_",formatC(cycle,width=3,flag="0"),"_",formatC(Pattern,width=2,flag="0"),"_",sensor,"#[[:digit:]]{2}.hex",sep="")
-      filenames<-list.files(pattern=pattern)
-      if ((length(filenames)>1)){
-        
-        datacat<-NULL
-        for (filename in filenames){
-          datacat<-c(datacat,readBin(filename,what="raw",n=25*1024))
-        }
-        
-        cat("cat ",pattern," > ",SensorFilename,"\n")
-        
-        writeBin(datacat,SensorFilename)
-        
-      }
+      concatfiles(pattern = pattern, fileout = SensorFilename)
       
       #decodage
       if (file.exists(SensorFilename)){
@@ -251,7 +273,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
                           "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig",
-                          "mpe","ramses2","imu")
+                          "mpe","ramses2","imu","wave")
 #' 
 
 #**************************************************
@@ -301,7 +323,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern="",exact=F){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120,121)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -360,7 +382,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   # nom du fichier
   if (filename==""){
-    pattern<-paste("^",floatname,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),"_",sensor,".*.csv",sep="")
+    pattern<-paste("^",floatname,"_",formatC(CycleNumber,width=3,flag="0"),"_",formatC(PatternNumber,width=2,flag="0"),"_",sensor,"\\.",".*csv",sep="")
     filename<-list.files(pattern=pattern)[1]
   }
   else {
@@ -371,9 +393,14 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     sensor<-strsplit(s[4],split="\\.")[[1]][1]
   }
   
-  
-  
   DepthName<-"Pressure_dbar"
+  
+  
+  #### Pre screnning
+  file_ncol<-0
+  if (sensor %in% c("imu") & file.exists(filename)){
+    file_ncol<-ncol(read.table(filename,header=FALSE,sep=sep,dec=dec,stringsAsFactors = FALSE,fill = TRUE))
+  }
   
   #****************************
   #* BEGIN Sensors description
@@ -454,9 +481,9 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   ##-8b uvp6_txo 3 Valeurs par champs : Nbr d'objets, taille moyenne et Gris moyen : 3*40
   if (sensor == "uvp6_txo"){
     
-    V1<-paste("ObjectNbr",1:40,sep = "")
-    V2<-paste("ObjectSize",1:40,sep = "")
-    V3<-paste("ObjectGL",1:40,sep = "")
+    V1<-paste("RawNbr",1:40,sep = "")
+    V2<-paste("RawSize",1:40,sep = "")
+    V3<-paste("RawGL",1:40,sep = "")
     temp<-rep("",120)
     temp[seq(1,length.out=40,by=3)]<-V1
     temp[seq(2,length.out=40,by=3)]<-V2
@@ -508,162 +535,211 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   ##-16 imu
   if (sensor == "imu"){
-    data.colnames<-c("tilt","heading")
+    if (file_ncol==12){
+      #IMU Raw
+      data.colnames<-c("Temperature","RawAx","RawAy","RawAz",
+                       "RawGx","RawGy","RawGz","RawMx","RawMy","RawMz")
+    } else {
+      #IMU Tilt-Heading
+      data.colnames<-c("tilt","heading")
+    }
+    
     # SensorType=120
   }
   
-  #****************************
-  #* END Sensors description
-  #* **************************
-
-  SensorType = cts5_SensorTypeId(sensor,exact=T)
-  
-  Sensor_NChannel<-length(data.colnames)
-  
-  
-  datatemp.colnames<-c("Date",DepthName,"processing",data.colnames,paste("SD(",data.colnames,")",sep=""),paste("MEAN(",c(DepthName,data.colnames),")",sep=""))
-
-  
-  MaxCol=length(datatemp.colnames)-1
-  
-  #traitement
-  
-  if (file.exists(filename)){
-    cat("open:",filename,"\n")
-    Data<-read.table(filename,header=FALSE,sep=sep,dec=dec,stringsAsFactors = FALSE,fill = TRUE,col.names = 1:MaxCol)
-    #Data<-Data[-length(Data[,1]),]
-    
-    Dataclean<-NULL
-    
-    
-    #Recherche des mode de processing {(RW),(DW), ...}
-    indPro<-grep("^\\(",Data[,1])
-    processing<-rep("",length=nrow(Data))
-    
-    if (length(indPro)>0){
-      indPro<-c(indPro,nrow(Data))
-      for (i in 1:(length(indPro)-1)){
-        processing[indPro[i]:indPro[i+1]]<-Data[indPro[i],1]
+  ##-17wave
+  if (sensor == "wave"){
+    #!! wave is processed in a different way
+    if (file.exists(filename)){
+      cat("open:",filename,"\n")
+      data<-scan(filename,skip = 1,sep=",",what = character(0))
+      
+      # Conversion temps
+      if (length(grep("linux",filename))>0){
+        #Format Linux
+        datedeb<-as.POSIXct(as.numeric(data[1]),origin = "1970-01-01",tz="UTC")
       }
-    }
-    
-    Data<-cbind(Data[,1:2],processing,Data[,-(1:2)])
-    
-    colnames(Data)<-datatemp.colnames
-    
-    #Recherche des phases
-    ind<-grep("\\[",Data[,1])
-    ind<-c(ind,nrow(Data))
-    for (i in 1:(length(ind)-1)){
-      datatemp<-Data[(ind[i]+1):(ind[i+1]),]
-      # suppression des non numeriques
-      datatemp<-datatemp[!is.na(datatemp[,2]),]
-      
-      if (nrow(datatemp)>0){
-      
-        # identification des phases
-        if (Data[ind[i],1]=="[DESCENT]"){NumberPhase<-"DES"}
-        if (Data[ind[i],1]=="[PARK]"){NumberPhase<-"PAR"}
-        if (Data[ind[i],1]=="[DEEP_PROFILE]"){NumberPhase<-"DEE"}
-        if (Data[ind[i],1]=="[SHORT_PARK]"){NumberPhase<-"SHP"}
-        if (Data[ind[i],1]=="[ASCENT]"){NumberPhase<-"ASC"}
-        if (Data[ind[i],1]=="[SURFACE]"){NumberPhase<-"SUR"}
-        
-        # En mode Park et Surface le processing est RW obligatoirement
-        if (NumberPhase %in% c("PAR","SHP","SUR")){
-          datatemp$processing<-"(RW)"
-        }
-        
-        # Reorganisation des donnees en fonction du processing
-        for (pro in unique(datatemp$processing)){
-          if (pro == "(AM)(MD)"){
-            datatemp[datatemp$processing == pro,(6+Sensor_NChannel):(6+2*Sensor_NChannel)]<-datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(4+2*Sensor_NChannel)]
-            datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(3+2*Sensor_NChannel)]<-NA
-          }
-        }
-        
-        
-        datatemp<-cbind(datatemp[,c(2,1)],CycleNumber,PatternNumber,NumberPhase,as.character(filename),SensorType,datatemp[,-(1:2)])
-        
-        Dataclean<-rbind(Dataclean,datatemp)
+      else {
+        #Format Windows
+        datedeb<-strptime(data[1],format = "%Y-%m-%d %H:%M:%S",tz="UTC")
       }
       
-    }
-    
-    colnames(Dataclean)[3:7]<-c("NumberCycle","NumberPattern","PhaseName","Files","SensorType")
-    
-    # Elimination des colonnes NA pour suna et ramses
-    if (sensor %in% c("eco","suna","ramses","ramses2","opus_lgt","uvp6_lpm","uvp6_blk","uvp6_txo")){
-      indNA<-apply(Dataclean,2,function(c){all(is.na(c))})
-      Dataclean<-Dataclean[,!indNA]
-    }
-    
-    
-    ## Organisation nom de variables
-    if (sensor %in% c("uvp6_lpm","uvp6_txo")){
-      #Test the old file where the first column is not the pressure but the number of image
-      if (all(Dataclean$Pressure_dbar == round(Dataclean$Pressure_dbar))){
-        Dataclean<-cbind(Dataclean[,2],Dataclean[,9],Dataclean[,3:8],Dataclean[,1],Dataclean[,-(1:9)])
-        colnames(Dataclean)[c(1:2,9)]<-c("Date",DepthName,"NSamples")
-      }
-    }
-    
-    ## uvp6_blk old version without RE
-    if ((sensor == "uvp6_blk") & (ncol(Dataclean) == 14)){
-      colnames(Dataclean)[9:14]<-data.colnames[-1]
-    }
-    
-    # ## uvp6_blk new version with RE
-    # if ((sensor == "uvp6_blk") & (ncol(Dataclean) == 15)){
-    #   Dataclean<-cbind(Dataclean[,2],Dataclean[,1],Dataclean[,3:8],Dataclean[,-(1:8)])
-    #   colnames(Dataclean)[c(1:2,9)]<-c("Date",DepthName,"Nimages")
-    # }
-    
-    ## Elimination des colonnes inutiles
-    if ((length(grep("SD",Dataclean$processing))==0) & (length(grep("SD\\(",colnames(Dataclean)))>0)){
-      Dataclean<-Dataclean[,-grep("SD\\(",colnames(Dataclean))]
-    }
-
-    if ((length(grep("MD",Dataclean$processing))==0) & (length(grep("MEAN\\(",colnames(Dataclean)))>0)){
-      Dataclean<-Dataclean[,-grep("MEAN\\(",colnames(Dataclean))]
-    }
-    
-    
-    # Elimination processing
-    if (sensor %in% c("ext_trig")){
-      Dataclean<-Dataclean[,-grep("processing",colnames(Dataclean))]
-    }
-    
-    # Conversion temps
-    if (length(grep("linux",filename))>0){
-      #Format Linux
-      Dataclean$Date<-as.POSIXct(as.numeric(Dataclean$Date),origin = "1970-01-01",tz="UTC")
+      iTemperature<-data[2]
+      
+      dataMat<-as.numeric(data[-(1:2)])
+      dataMat<-matrix(dataMat,ncol=6,byrow = T)
+      dataMat<-data.frame(dataMat)
+      colnames(dataMat)<-c("RawAx","RawAy","RawAz","RawMx","RawMy","RawMz")
+      
+      freq=4 #Hz
+      Date<-datedeb+((1:nrow(dataMat))-1)/freq
+      
+      PhaseName<-rep("SUR",nrow(dataMat))
+      
+      Dataclean<-cbind(Date,PhaseName,dataMat)
     }
     else {
-      #Format Windows
-      Dataclean$Date<-strptime(Dataclean$Date,format = "%Y-%m-%d %H:%M:%S",tz="UTC")
-    }
-    Dataclean$Date<-strptime(Dataclean$Date,format = "%Y-%m-%d %H:%M:%S",tz="UTC")
-    
-    ## Tri chronologique pour Multi-Parking
-    Dataclean<-Dataclean[order(Dataclean$Date),]
-    
-    #Forcage Numerique
-    if (ncol(Dataclean) >= 9 ){
-      for (i in (9:ncol(Dataclean))){
-        Dataclean[,i]<-as.numeric(Dataclean[,i])
-      }
+      cat("No file for ",pattern,"\n")
+      Dataclean<-NULL
     }
     
-    
-    #write.table(Dataclean,file = "Dataclean.txt",col.names = T,row.names = F,sep=";")
-    
-  }
-  else {
-    cat("No file for ",pattern,"\n")
-    Dataclean<-NULL
   }
   
+  
+  #****************************
+  #* END Sensors description - generic processing
+  #* **************************
+  
+  if (sensor != "wave"){
+
+    SensorType = cts5_SensorTypeId(sensor,exact=T)
+    
+    Sensor_NChannel<-length(data.colnames)
+    
+    
+    datatemp.colnames<-c("Date",DepthName,"processing",data.colnames,paste("SD(",data.colnames,")",sep=""),paste("MEAN(",c(DepthName,data.colnames),")",sep=""))
+  
+    
+    MaxCol=length(datatemp.colnames)-1
+    
+    #traitement
+    
+    if (file.exists(filename)){
+      cat("open:",filename,"\n")
+      Data<-read.table(filename,header=FALSE,sep=sep,dec=dec,stringsAsFactors = FALSE,fill = TRUE,col.names = 1:MaxCol)
+      #Data<-Data[-length(Data[,1]),]
+      
+      Dataclean<-NULL
+      
+      
+      #Recherche des mode de processing {(RW),(DW), ...}
+      indPro<-grep("^\\(",Data[,1])
+      processing<-rep("",length=nrow(Data))
+      
+      if (length(indPro)>0){
+        indPro<-c(indPro,nrow(Data))
+        for (i in 1:(length(indPro)-1)){
+          processing[indPro[i]:indPro[i+1]]<-Data[indPro[i],1]
+        }
+      }
+      
+      Data<-cbind(Data[,1:2],processing,Data[,-(1:2)])
+      
+      colnames(Data)<-datatemp.colnames
+      
+      #Recherche des phases
+      ind<-grep("\\[",Data[,1])
+      ind<-c(ind,nrow(Data))
+      for (i in 1:(length(ind)-1)){
+        datatemp<-Data[(ind[i]+1):(ind[i+1]),]
+        # suppression des non numeriques
+        datatemp<-datatemp[!is.na(datatemp[,2]),]
+        
+        if (nrow(datatemp)>0){
+        
+          # identification des phases
+          if (Data[ind[i],1]=="[DESCENT]"){NumberPhase<-"DES"}
+          if (Data[ind[i],1]=="[PARK]"){NumberPhase<-"PAR"}
+          if (Data[ind[i],1]=="[DEEP_PROFILE]"){NumberPhase<-"DEE"}
+          if (Data[ind[i],1]=="[SHORT_PARK]"){NumberPhase<-"SHP"}
+          if (Data[ind[i],1]=="[ASCENT]"){NumberPhase<-"ASC"}
+          if (Data[ind[i],1]=="[SURFACE]"){NumberPhase<-"SUR"}
+          
+          # En mode Park et Surface le processing est RW obligatoirement
+          if (NumberPhase %in% c("PAR","SHP","SUR")){
+            datatemp$processing<-"(RW)"
+          }
+          
+          # Reorganisation des donnees en fonction du processing
+          for (pro in unique(datatemp$processing)){
+            if (pro == "(AM)(MD)"){
+              datatemp[datatemp$processing == pro,(6+Sensor_NChannel):(6+2*Sensor_NChannel)]<-datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(4+2*Sensor_NChannel)]
+              datatemp[datatemp$processing == pro,(4+Sensor_NChannel):(3+2*Sensor_NChannel)]<-NA
+            }
+          }
+          
+          
+          datatemp<-cbind(datatemp[,c(2,1)],CycleNumber,PatternNumber,NumberPhase,as.character(filename),SensorType,datatemp[,-(1:2)])
+          
+          Dataclean<-rbind(Dataclean,datatemp)
+        }
+        
+      }
+      
+      colnames(Dataclean)[3:7]<-c("NumberCycle","NumberPattern","PhaseName","Files","SensorType")
+      
+      # Elimination des colonnes NA pour suna et ramses
+      if (sensor %in% c("eco","suna","ramses","ramses2","opus_lgt","uvp6_lpm","uvp6_blk","uvp6_txo")){
+        indNA<-apply(Dataclean,2,function(c){all(is.na(c))})
+        Dataclean<-Dataclean[,!indNA]
+      }
+      
+      
+      ## Organisation nom de variables
+      if (sensor %in% c("uvp6_lpm","uvp6_txo")){
+        #Test the old file where the first column is not the pressure but the number of image
+        if (all(Dataclean$Pressure_dbar == round(Dataclean$Pressure_dbar))){
+          Dataclean<-cbind(Dataclean[,2],Dataclean[,9],Dataclean[,3:8],Dataclean[,1],Dataclean[,-(1:9)])
+          colnames(Dataclean)[c(1:2,9)]<-c("Date",DepthName,"NSamples")
+        }
+      }
+      
+      ## uvp6_blk old version without RE
+      if ((sensor == "uvp6_blk") & (ncol(Dataclean) == 14)){
+        colnames(Dataclean)[9:14]<-data.colnames[-1]
+      }
+      
+      # ## uvp6_blk new version with RE
+      # if ((sensor == "uvp6_blk") & (ncol(Dataclean) == 15)){
+      #   Dataclean<-cbind(Dataclean[,2],Dataclean[,1],Dataclean[,3:8],Dataclean[,-(1:8)])
+      #   colnames(Dataclean)[c(1:2,9)]<-c("Date",DepthName,"Nimages")
+      # }
+      
+      ## Elimination des colonnes inutiles
+      if ((length(grep("SD",Dataclean$processing))==0) & (length(grep("SD\\(",colnames(Dataclean)))>0)){
+        Dataclean<-Dataclean[,-grep("SD\\(",colnames(Dataclean))]
+      }
+  
+      if ((length(grep("MD",Dataclean$processing))==0) & (length(grep("MEAN\\(",colnames(Dataclean)))>0)){
+        Dataclean<-Dataclean[,-grep("MEAN\\(",colnames(Dataclean))]
+      }
+      
+      
+      # Elimination processing
+      if (sensor %in% c("ext_trig")){
+        Dataclean<-Dataclean[,-grep("processing",colnames(Dataclean))]
+      }
+      
+      # Conversion temps
+      if (length(grep("linux",filename))>0){
+        #Format Linux
+        Dataclean$Date<-as.POSIXct(as.numeric(Dataclean$Date),origin = "1970-01-01",tz="UTC")
+      }
+      else {
+        #Format Windows
+        Dataclean$Date<-strptime(Dataclean$Date,format = "%Y-%m-%d %H:%M:%S",tz="UTC")
+      }
+      Dataclean$Date<-strptime(Dataclean$Date,format = "%Y-%m-%d %H:%M:%S",tz="UTC")
+      
+      ## Tri chronologique pour Multi-Parking
+      Dataclean<-Dataclean[order(Dataclean$Date),]
+      
+      #Forcage Numerique
+      if (ncol(Dataclean) >= 9 ){
+        for (i in (9:ncol(Dataclean))){
+          Dataclean[,i]<-as.numeric(Dataclean[,i])
+        }
+      }
+      
+      
+      #write.table(Dataclean,file = "Dataclean.txt",col.names = T,row.names = F,sep=";")
+      
+    }
+    else {
+      cat("No file for ",pattern,"\n")
+      Dataclean<-NULL
+    }
+  }
   
   return(Dataclean)
 }
@@ -726,7 +802,7 @@ if (length(dataprofile$data)>0){
     for (i in 2:length(dataprofile$data)){
     
     data<-dataprofile$data[[i]]
-    data$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[i]),nrow(data))
+    data$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[i],exact = T),nrow(data))
     data$CycleNumber<-rep(dataprofile$CycleNumber,nrow(data))
     data$PatternNumber<-rep(dataprofile$PatternNumber,nrow(data))
     
@@ -761,7 +837,9 @@ if (length(dataprofile$data)>0){
       GPS<-dataprofile$technical$GPS
       dataMerged<-cbind(dataMerged[,1:2],NA,NA,dataMerged[,-(1:2)])
       dataMerged<-rbind(dataMerged,NA)
-      dataMerged[dim(dataMerged)[1],c(1,3:6,9)]<-c(0,GPS$`lat (deg)`,GPS$`lon (deg)`,as.numeric(dataMerged[1,5:6]),-1)
+      dataMerged[dim(dataMerged)[1],c(1,3:9)]<-c(0,GPS$`lat (deg)`,GPS$`lon (deg)`,as.numeric(dataMerged[1,5:6]),"SUR",-1,"GPS")
+      dataMerged$CycleNumber<-as.numeric(dataMerged$CycleNumber)
+      dataMerged$PatternNumber<-as.numeric(dataMerged$PatternNumber)
       
       ##temp
       dataMerged[,2]<-as.numeric(dataMerged[,2])
@@ -813,8 +891,8 @@ return(dataMerged)
 #'
 cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
-  ### ECO
-  if ("eco" %in% names(dataprofile$data)) {
+  ### ECO ####
+  try(if ("eco" %in% names(dataprofile$data)) {
     
     SENSOR_ECO<-NULL
     
@@ -862,10 +940,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_ppb)"]<-SENSOR_ECO$CHANNEL_03[1]*dataprofile$data$eco[,"SD(colored-dissolved-organic-matter_CN)"]
       }
     }
-  }
+  })
   
-  ### OCR
-  if ("ocr" %in% names(dataprofile$data)) {
+  ### OCR ####
+  try(if ("ocr" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_OCR) & ("Downwelling-irradiance-380nm_CN" %in% colnames(dataprofile$data$ocr))){
       dataprofile$data$ocr[,"Downwelling-irradiance-380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
         (dataprofile$data$ocr[,"Downwelling-irradiance-380nm_CN"]-metadata$SENSOR_OCR$CHANNEL_01[1])
@@ -880,30 +958,118 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         (dataprofile$data$ocr[,"Photosynthetic-Active-Radiation_CN"]-metadata$SENSOR_OCR$CHANNEL_04[1])
       
       }
-  }
+  })
   
-  ### uvp6_lpm
-  if ("uvp6_lpm" %in% names(dataprofile$data)) {
+  ### uvp6_lpm ####
+  try(if ("uvp6_lpm" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_UVP6)){
-      uvp6_Size_class<-strsplit(metadata$SENSOR_UVP6$HW_CONF,split=",")[[1]][26:43]
+      ## les tailles sont les 18 derniers parametres
+      uvp6_Size_class<-metadata$SENSOR_UVP6$HW_CONF[grep("Lower_limit_size",names(metadata$SENSOR_UVP6$HW_CONF))]
+
+      
+      uvp6_vol<-as.numeric(metadata$SENSOR_UVP6$HW_CONF["Image_volume"])
+      if (is.na(uvp6_vol)){
+        uvp6_vol<-0.7
+        cat("Warning : default UVP6 volume \n")
+      }
+      
       data.colnames<-c(paste("NP_Size_",uvp6_Size_class,sep=""),paste("MG_Size_",uvp6_Size_class,sep=""))
       
-      colnames(dataprofile$data$uvp6_lpm)[7:42]<-data.colnames
+      ##Duplique lpm data
+      processed_lpm<-dataprofile$data$uvp6_lpm[,grep("_Class",colnames(dataprofile$data$uvp6_lpm))]
+      
+      # Process
+      colnames(processed_lpm)<-data.colnames
+      dataprofile$data$uvp6_lpm<-cbind(dataprofile$data$uvp6_lpm,processed_lpm)
+      
+      indNP<-grep("NP_Size_",colnames(dataprofile$data$uvp6_lpm))
+      
+      ## correction Nimages or NSamples
+      if ("Nimages" %in% colnames(dataprofile$data$uvp6_lpm)){
+        # new taxo format
+        dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/dataprofile$data$uvp6_lpm$Nimages
+        }
+      
+      if ("NSamples" %in% colnames(dataprofile$data$uvp6_lpm)){
+        #old format without taxo
+        NSamples<-dataprofile$data$uvp6_lpm$NSamples
+        NSamples[NSamples==0]<-1 #correction for NSamples=0
+        # mail a Camille du 9/12/2022. On ne normalize pas pour la version sans taxo
+        # dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/NSamples
+      }
+      
+      ## Volume
+      dataprofile$data$uvp6_lpm[,indNP]<-dataprofile$data$uvp6_lpm[,indNP]/uvp6_vol
+      
     }
-  }
+  })
   
-  ### crover
-  if (("crover" %in% names(dataprofile$data)) & ProcessUncalibrated) {
-    if ("Corr-Sig-Raw_CN" %in% colnames(dataprofile$data$crover)){
+  ### uvp6_txo ####
+  try(if ("uvp6_txo" %in% names(dataprofile$data)) {
+    if (!is.null(metadata$SENSOR_UVP6)){
+      
+      uvp6_vol<-as.numeric(metadata$SENSOR_UVP6$HW_CONF["Image_volume"])
+      if (is.na(uvp6_vol)){
+        uvp6_vol<-0.7
+        cat("Warning : default UVP6 volume \n")
+      }
+      
+      ##Duplique txo data
+      processed_txo<-dataprofile$data$uvp6_txo[,grep("Raw",colnames(dataprofile$data$uvp6_txo))]
+      colnames(processed_txo)<-gsub("Raw","Object",colnames(processed_txo))
+      
+      # Process
+      indONumb<-grep("ObjectNbr",colnames(processed_txo))
+      
+      ## correction Nimages
+      if ("Nimages" %in% colnames(dataprofile$data$uvp6_txo)){
+        Nimages<-dataprofile$data$uvp6_txo$Nimages
+        processed_txo[,indONumb]<-processed_txo[,indONumb]/Nimages
+        processed_txo[,indONumb]<-processed_txo[,indONumb]/uvp6_vol
+      }
+      
+      dataprofile$data$uvp6_txo<-cbind(dataprofile$data$uvp6_txo,processed_txo)
+      
+    }
+  })
+  
+  ### crover ####
+  try(if ("crover" %in% names(dataprofile$data)) {
+    
+    SENSOR_CROVER<-NULL
+    
+    if (!is.null(metadata$SENSOR_CROVER)){
+      
+      SENSOR_CROVER<-metadata$SENSOR_CROVER
+      
+      ## In case we have 0 in the calibration
+      if (!all(unlist(SENSOR_CROVER) != 0)){
+        SENSOR_CROVER<-NULL
+      }
+    }
+    
+    ## Calibration par defaut
+    if (is.null(SENSOR_CROVER)) {
+      cat("!! Warning : No CROVER calibration found \n")
+      
+      if (ProcessUncalibrated){
+        cat("!! Default calibration is used \n")
+        SENSOR_CROVER<-list(PATH_LENGTH=25,CALIBRATION=12766)
+      }
+      
+    }
+    
+    
+    if (("Corr-Sig-Raw_CN" %in% colnames(dataprofile$data$crover)) & !is.null(SENSOR_CROVER)){
       CSCdark=0
-      CSCcal=12766
-      x=0.25
+      CSCcal=SENSOR_CROVER$CALIBRATION
+      x=SENSOR_CROVER$PATH_LENGTH/100
       dataprofile$data$crover[,"c-uncalibrated_1/m"] <- -log((dataprofile$data$crover[,"Corr-Sig-Raw_CN"]-CSCdark)/(CSCcal-CSCdark))/x
     }
-  }
+  })
   
-  ### DO
-  if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
+  ### DO ####
+  try(if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
     if ("c1phase_deg" %in% colnames(dataprofile$data$do)){
       
     if (is.list(metadata$SENSOR_DO)){
@@ -920,7 +1086,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         phasecoef0<-0
       }
       
-      }
+    }
         
       if (!is.null(coefs)){
       #dataprofile$data$do[,"doxy_uncalibrated"]<-Process_DO_Bittig(C1phase=dataprofile$data$do[,"c1phase_deg"],C2phase=dataprofile$data$do[,"c2phase_deg"],temp=dataprofile$data$do[,"tempdoxy_degC"],Pres=dataprofile$data$do[,"Pressure_dbar"],
@@ -932,40 +1098,67 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
                                                                    COEF = coefs, PHASECOEF0 = phasecoef0)
       }
     }
-  }
+  })
   
-  ### sbepH
-  if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
-    if (("pH_mV" %in% colnames(dataprofile$data$sbeph)) & ProcessUncalibrated){
+  ### sbepH ####
+  try(if (("sbeph" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
+    if ("pH_mV" %in% colnames(dataprofile$data$sbeph)) {
       
-      pH_Uncal<-rep(NA,nrow(dataprofile$data$sbeph))
-      
-      ##DESCENT
-      ind<-dataprofile$data$sbeph$PhaseName=="DES"
-      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
-        ## Il y a des donnees en descent
-        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="DES")
+      if (length(metadata$SENSOR_SBEPH) > 1){
+        sbepH_k<-metadata$SENSOR_SBEPH$K
+        sbepH_f<-metadata$SENSOR_SBEPH$F_POLY_COEFF[2:7]
       }
-      ##PArk
-      ind<-dataprofile$data$sbeph$PhaseName=="PAR"
-      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
-        ## Il y a des donnees en Parking
-        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="PAR")
-      }
-      ##ASCENT
-      ind<-dataprofile$data$sbeph$PhaseName=="ASC"
-      if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
-        ## Il y a des donnees en Asc
-        pH_Uncal[ind]<-Process_pH_SBE(dataprofile$data,NumberPhase="ASC")
+      else {
+        cat("!! Warning : No sbepH calibration found \n")
+        sbepH_k<-NULL
+        sbepH_f<-NULL
+        
+        if (ProcessUncalibrated){
+          cat("!! Default pH calibration is used \n")
+          sbepH_k <- c(-1.392151,-1.0798E-03)
+          sbepH_f <- c(2.5064E-05,-4.4107E-08,4.7311E-11,-2.8822E-14,9.2132E-18,-1.1965E-21) 
+          phasecoef0<-0
+        }
+        
       }
       
-      dataprofile$data$sbeph[,"pH_Uncal"]<-pH_Uncal
+      if ((!is.null(sbepH_k)) & (!is.null(sbepH_f)) ){
+        
+        pH_Uncal<-rep(NA,nrow(dataprofile$data$sbeph))
+        
+        ##DESCENT
+        ind<-dataprofile$data$sbeph$PhaseName=="DES"
+        if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
+          ## Il y a des donnees en descent
+          pH_Uncal[ind]<-Process_pH_SBE(data=dataprofile$data,NumberPhase="DES",
+                                        k0=sbepH_k[1],k2=sbepH_k[2],
+                                        coefsp=sbepH_f)
+        }
+        ##PArk
+        ind<-dataprofile$data$sbeph$PhaseName=="PAR"
+        if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
+          ## Il y a des donnees en Parking
+          pH_Uncal[ind]<-Process_pH_SBE(data=dataprofile$data,NumberPhase="PAR",
+                                        k0=sbepH_k[1],k2=sbepH_k[2],
+                                        coefsp=sbepH_f)
+        }
+        ##ASCENT
+        ind<-dataprofile$data$sbeph$PhaseName=="ASC"
+        if (dim(dataprofile$data$sbeph[ind,])[1] > 2){
+          ## Il y a des donnees en Asc
+          pH_Uncal[ind]<-Process_pH_SBE(data=dataprofile$data,NumberPhase="ASC",
+                                        k0=sbepH_k[1],k2=sbepH_k[2],
+                                        coefsp=sbepH_f)
+        }
+        
+        dataprofile$data$sbeph[,"pH_Uncal"]<-pH_Uncal
+      }
       
     }
-  }
+  })
   
-  ### Ramses
-  if ("ramses" %in% names(dataprofile$data)) {
+  ### Ramses ####
+  try(if ("ramses" %in% names(dataprofile$data)) {
     
     if ("inifile" %in% names(dataprofile)){
       PixelStart=dataprofile$inifile$SENSOR_14$P54
@@ -1000,10 +1193,10 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       }
     }
     
-  }
+  })
   
-  ### Ramses
-  if ("ramses2" %in% names(dataprofile$data)) {
+  ### Ramses2 ####
+  try(if ("ramses2" %in% names(dataprofile$data)) {
     
     if ("inifile" %in% names(dataprofile)){
       PixelStart=dataprofile$inifile$SENSOR_21$P54
@@ -1030,21 +1223,38 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       dataCal<-Process_Ramses(dataprofile$data$ramses2,PixelStart=PixelStart,PixelStop=PixelStop,
                               PixelBinning=PixelBinning,calib_file=calib_file)
       
-      dataprofile$data$ramses2<-cbind(dataprofile$data$ramses2,dataCal)
+      if (!is.null(dataCal)){
+        dataprofile$data$ramses2<-cbind(dataprofile$data$ramses2,dataCal)
+      }
+      
+      
     }
     
-  }
+  })
   
-  ### MPE
-  if ("mpe" %in% names(dataprofile$data)) {
+  ### MPE ####
+  try(if ("mpe" %in% names(dataprofile$data)) {
     if (!is.null(metadata$SENSOR_MPE) & ("Voltage" %in% colnames(dataprofile$data$mpe))){
-      
-      dataprofile$data$mpe[,"Physical"]<-1E4*dataprofile$data$mpe$Voltage/as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])
-
+      if (!is.null(metadata$SENSOR_MPE$PHOTODETECTOR)){
+        dataprofile$data$mpe[,"Physical"]<-1E4*dataprofile$data$mpe$Voltage/as.numeric(metadata$SENSOR_MPE$PHOTODETECTOR[1])
+      }
     }
-  }
+  })
   
+  ### wave ####
+  try(if ("wave" %in% names(dataprofile$data) & !is.null(metadata$SENSOR_IMU)){
+    data<-dataprofile$data$wave
+    try(dataprofile$data$wave<-Process_RawIMU(data,metadata$SENSOR_IMU))
+  })
   
+  ### IMU ####
+  try(if ("imu" %in% names(dataprofile$data)){
+    data<-dataprofile$data$imu
+    if ((ncol(data)==14) & !is.null(metadata$SENSOR_IMU)){
+      cat("Process Raw IMU \n")
+      try(dataprofile$data$imu<-Process_RawIMU(data,metadata$SENSOR_IMU))
+    }
+  })
   
   return(dataprofile)
   
@@ -1251,6 +1461,20 @@ if (!is.null(dataprofile)){
 cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1,OnlyFilename=F){
   
   
+  ### concatenation automatique des ini
+  listiniconcat<-list.files(pattern=paste("^",floatname,".*_apmt#01.ini",sep=""))
+  if (length(listiniconcat)>=1){
+    for (i in 1:length(listiniconcat)){
+      fileout<-paste(strsplit(listiniconcat[i],split="#")[[1]][1],".ini",sep="")
+      
+      if (!file.exists(fileout)){
+        pattern=paste(strsplit(listiniconcat[i],split="#")[[1]][1],"#[[:digit:]]{2}.ini",sep="")
+        concatfiles(pattern=pattern,fileout=fileout)
+      }
+    }
+  }
+  
+  
   ## Selection of the file
   if (inifilename == ""){
     ## look for the ini file which describe the cycle and pattern
@@ -1382,7 +1606,8 @@ cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1,O
 #' }
 #' 
 #' 
-#' @details must be used where the ini files could be found.
+#' @details Must be used where the ini files could be found.If a new inifile is found (afeter a _command), 
+#' the new parameters will be used.
 #' 
 #' @examples 
 #' 
@@ -1415,8 +1640,8 @@ if (!is.null(dataprofile$technical)){
     iniFile<-cts5_readIni(inifilename=NewIni)
   }
   
-  ## Add 30 min at surface
-  CurrentTime<-CurrentTime+1800
+  ## Add 60 min at surface
+  CurrentTime<-CurrentTime+3600
   
   if (!is.null(iniFile)){
   
@@ -1449,6 +1674,12 @@ if (!is.null(dataprofile$technical)){
     NextSurface<-NA
     SynchroMode=""
     
+    # CS du 20/06/2022
+    # - 0,075 * Ascent_time => cette valeur permet de prendre de la marge sur le temps de navigation
+    # - 10 min de sub-surface
+    # - 5 min d'emergence
+
+    
     # Test MultiParking
     MultiP_Flag<- length(strsplit(as.character(ini_NextPatt$P1),split = ";")[[1]]) > 1
     
@@ -1457,14 +1688,14 @@ if (!is.null(dataprofile$technical)){
       
       # Case 1 : Profile define by depth
       if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="false")){
-        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1.075/iniFile$TECHNICAL$P3)+15*60
         NextSurface<-CurrentTime+PatternDuration
         SynchroMode="Depth"
       }
       
       # Case 2 : Profile define by depth and synchro
       if ((ini_NextPatt$P3==0) & (tolower(ini_NextPatt$P7)=="true")){
-        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+        PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1.075/iniFile$TECHNICAL$P3)+15*60
         NextSurface<-CurrentTime+PatternDuration
         HSync<-strptime(ini_NextPatt$P4,format = "%H:%M:%S",tz="UTC")
         
@@ -1519,10 +1750,10 @@ if (!is.null(dataprofile$technical)){
       MultiP_time<- as.numeric(strsplit(as.character(ini_NextPatt$P8),split = ";")[[1]])
       
       ## Pattern Duration without parkings
-      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1/iniFile$TECHNICAL$P3)
+      PatternDuration<-100*ini_NextPatt$P2*(1/iniFile$TECHNICAL$P2+1.075/iniFile$TECHNICAL$P3)+15*60
       
       ## plus parkings
-      PatternDuration<- PatternDuration + sum(MultiP_time)
+      PatternDuration<- PatternDuration + sum(MultiP_time) 
       
       # Case 5 : MultiP No synchro
       if (tolower(ini_NextPatt$P7)=="false"){
@@ -1623,7 +1854,7 @@ for (s in sections){ #s<-sections[1]
   ind<-grep(s,names(oldinifile))
   
   for (i in ind){
-    #recherche de la même section dans newinifile
+    # recherche de la meme section dans newinifile
     inew<-which(names(newinifile)==names(oldinifile)[i])
     
     for (j in 1:length(oldinifile[[i]])){

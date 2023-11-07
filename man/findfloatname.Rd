@@ -17,6 +17,4 @@ take the last file with the pattern "ffff_ccc_pp.*" a return the hexafloatname
 
 findfloatname(pattern="[[:alnum:]]{4}_[[:digit:]]{3}_[[:digit:]]{2}.*")
 
-
-
 }

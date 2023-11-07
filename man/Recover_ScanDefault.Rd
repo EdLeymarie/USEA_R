@@ -7,7 +7,8 @@
 Recover_ScanDefault(
   pattern = ".*_default_.*.txt",
   Outputfilename = "Positions.txt",
-  KMLfile = "Positions.kml"
+  KMLfile = "Positions.kml",
+  GPXfile = ""
 )
 }
 \arguments{
@@ -15,17 +16,21 @@ Recover_ScanDefault(
 
 \item{Outputfilename}{filename of the Positions file}
 
-\item{KMLfile}{name of the KML file generated}
+\item{KMLfile}{name of the KML file to be generated. No file is 
+created if "".}
+
+\item{GPXfile}{name of the GPX file to be generated. No file is 
+created if "".}
 }
 \value{
-identical as \code{\link{ScanPosition2Recover}}
+identical as \code{\link{Recover_ScanPosition}}
 }
 \description{
-This function read technical/default files and write the Potions file to be called by \code{\link{ScanPosition2Recover}}
+This function read technical/default files and write the Postions file to be called by \code{\link{Recover_ScanPosition}}
 }
 \examples{
-ScanDefault2Recover()
-
-
+Recover_ScanDefault()
+Recover_ScanDefault(pattern=".*technical.*.txt")
+Recover_ScanDefault(pattern=".*(technical|default).*.txt")
 
 }

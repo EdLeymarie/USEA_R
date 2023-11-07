@@ -11,7 +11,7 @@
 #' 
 #' @examples 
 #' 
-#' Save_UVP62EcoTaxa(login,dataprofile,Meta$SENSORS$SENSOR_UVP6$HW_CONF,subdir="./uvp6/")
+#' Save_UVP62EcoTaxa(login,dataprofile,UVP6_HW_CONF=Meta$SENSORS$SENSOR_UVP6$HW_CONF,subdir="./uvp6/")
 #' 
 #' 
 #' 
@@ -37,37 +37,55 @@ Save_UVP62EcoTaxa<-function(login,dataprofile,UVP6_HW_CONF=NULL,subdir=""){
     
     
     ## Formatage UVP6_HW_CONF
-    UVP6_HW_CONF<-strsplit(UVP6_HW_CONF,split = ",")[[1]]
-    UVP6_MetaNames<-c("Camera_ref","Acquisition_mode","Default_acquisition_configuration","Delay_after_power_up_on_time_mode",
-    "Light_ref","Correction_table_activation","Time_between_lighting_power_up_and_trigger",
-    "Time_between_lighting_trigger_and_acquisition","Pressure_sensor_ref","Pressure_offset",
-    "Storage_capacity","Minimum_remaining_memory_for_thumbnail_saving","Baud_Rate",
-    "IP_adress","Black_level","Shutter","Gain","Threshold","Aa","Exp","Pixel_Size",
-    "Image_volume","Calibration_date","Last_parameters_modification","Operator_email",
-    paste("Lower_limit_size_class_",1:18,sep=""))
-    
     UVP6SN<-UVP6_HW_CONF[1]
+    UVP6_Meta<-cbind(names(UVP6_HW_CONF),UVP6_HW_CONF)
+
     
-    UVP6_Meta<-cbind(UVP6_MetaNames,UVP6_HW_CONF)
     
     #**************************************************************
     ## 1- data LPM
-    if ((nrow(dataprofile$data$uvp6_lpm)>0) & (nrow(dataprofile$data$uvp6_blk)>0)){
+    if ((nrow(dataprofile$data$uvp6_lpm)>0) & (nrow(dataprofile$data$uvp6_blk)>0) & !is.na(Lat)){
       
       ## Formatage des colonnes lpm
       dataUVP<-cbind(dataprofile$data$uvp6_lpm[,c("Date","Pressure_dbar")],Lat,Lon,dataprofile$data$uvp6_lpm[,-(1:2)])
+      
+      #Supression donnees calibrees
+      indPro<-grep("_Size_",colnames(dataUVP))
+      if (length(indPro)>0){
+        dataUVP<-dataUVP[,-indPro]
+      }
+      
       dataUVP[,1]<-format(dataUVP[,1],format="%Y%m%dT%H%M%S")
       colnames(dataUVP)[1:2]<-c("DATE_TIME","PRES_decibar")
       colnames(dataUVP)[3:4]<-c("LATITUDE_decimal_degree","LONGITUDE_decimal_degree")
       
-      
-      # indcol<-c(1:5,grep("NSamples",colnames(dataUVP)),grep("UVP6_Temp",colnames(dataUVP))
-      #           ,grep("NP_",colnames(dataUVP))
-      #           ,grep("MG_",colnames(dataUVP)))
-      # 
-      # dataUVP<-dataUVP[,indcol]
-      
       dataUVP<-dataUVP[,-grep("processing",colnames(dataUVP))]
+      
+      ## Formatage class lpm & Grey en fonction de la version uvp
+      if (as.numeric(UVP6_HW_CONF["Lower_limit_size_class_1"])>50){
+        ## UVP6 Taxo On doit decaler les colonnes lpm
+        datatemp_lpm<-dataUVP[,grep("NP_Class",colnames(dataUVP))]
+        datatemp_grey<-dataUVP[,grep("MG_Class",colnames(dataUVP))]
+        
+        #moyenne de grey pondéré par lpm
+        for (r in 1:nrow(datatemp_grey)){
+          Num <- datatemp_lpm[r,17]+datatemp_lpm[r,18]
+          if (Num>0){
+            datatemp_grey[r,17]<-(datatemp_lpm[r,17]*datatemp_grey[r,17]+datatemp_lpm[r,18]*datatemp_grey[r,18])/Num
+          }
+        }
+        
+        #decalage et somme lpm
+        datatemp_lpm<-cbind(rep(NA,nrow(datatemp_lpm)),datatemp_lpm)
+        datatemp_lpm[,18]<-apply(datatemp_lpm[,18:19],1,sum)
+        
+        dataUVP[,grep("NP_Class",colnames(dataUVP))] <- datatemp_lpm[,1:18]
+        
+        #decalage grey
+        datatemp_grey<-cbind(rep(NA,nrow(datatemp_grey)),datatemp_grey)
+        dataUVP[,grep("MG_Class",colnames(dataUVP))] <- datatemp_grey[,1:18]
+        
+      }
       
       #Formatage Colonnes
       

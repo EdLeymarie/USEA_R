@@ -11,7 +11,8 @@ PlotCTS5(
   add = FALSE,
   technical = TRUE,
   paper = "A4",
-  mfrow = c(3, 2)
+  mfrow = c(3, 2),
+  SensorsToPlot = NULL
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ current open device}
 \item{paper}{paper size}
 
 \item{mfrow}{mfrow}
+
+\item{SensorsToPlot}{vector of sensors to include in the plot. If NULL plot all sensors.}
 }
 \description{
 PlotCTS5 : create a pdf file with profile plots
@@ -50,6 +53,7 @@ dataprofile<-cts5_ProcessData(Meta$SENSORS,dataprofile)
 
 PlotCTS5(login=login,dataprofile,PhaseToPlot=c("PRE","DES","PAR","ASC","SUR"),add=FALSE,technical=TRUE,paper = "A4",mfrow=c(3,2))
 
- 
+# small list of sensors in the terminal
+PlotCTS5(dataprofile,add=TRUE,SensorsToPlot=c("ramses","ramses2"))
 
 }

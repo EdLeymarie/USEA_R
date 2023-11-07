@@ -23,7 +23,8 @@ list containing the information
 Provides information about the next pattern including the next surface time estimated
 }
 \details{
-must be used where the ini files could be found.
+Must be used where the ini files could be found.If a new inifile is found (afeter a _command), 
+the new parameters will be used.
 }
 \examples{
 

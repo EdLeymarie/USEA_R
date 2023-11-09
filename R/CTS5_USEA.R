@@ -1,5 +1,6 @@
 options(stringsAsFactors = FALSE)
 require(chron)
+require(stringr)
 
 #**************************************************
 
@@ -791,6 +792,11 @@ EnTeteCom<-c("Pressure_dbar","Date","CycleNumber","PatternNumber","PhaseName","S
 dataMerged<-NULL
 
 if (length(dataprofile$data)>0){
+  
+  #change name of Ramses2
+  if ("ramses2" %in% names(dataprofile$data)){
+    colnames(dataprofile$data$ramses2)<-str_replace_all(colnames(dataprofile$data$ramses2),"ramses","ramses2")
+  }
 
   dataMerged<-dataprofile$data[[1]]
   dataMerged$SensorType<-rep(cts5_SensorTypeId(names(dataprofile$data)[1]),nrow(dataMerged))

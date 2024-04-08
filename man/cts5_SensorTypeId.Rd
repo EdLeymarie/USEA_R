@@ -39,6 +39,7 @@ SensorType
 119 : HydroC
 120 : imu
 121 : wave
+122 : fltrider
 }
 \examples{
 cts5_SensorTypeId("")

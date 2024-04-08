@@ -385,8 +385,11 @@ return(dataCal)
 # Compute IMU ######
 #*
 #**************************************************
-# data<-dataprofile$data$wave
-# imu_cal<-Meta$SENSORS$SENSOR_IMU
+
+# Calcul le Heading a partir des donnees raw Mag
+# via Process_RawIMU
+# Inputs RawMag et calibration
+# Outputs Heading en degres
 
 IMU_processHeading<-function(RawMag,imu_cal){
   
@@ -413,6 +416,12 @@ IMU_processHeading<-function(RawMag,imu_cal){
   
 }
 
+#**************************************************
+# Calcul le tilt et l'acceleration totale en fonction des 3 accelerations
+# via Process_RawIMU
+# Inputs RawAcc et calibration
+# Outputs tilt en degres et acceleration en g
+
 IMU_processAcc<-function(RawAcc,acc_cal){
   
   #Calibration et orientation
@@ -433,6 +442,16 @@ IMU_processAcc<-function(RawAcc,acc_cal){
   
 }
 
+#**************************************************
+# Calcul le heading, tilt et l'acceleration totale en fonction des 3 accelerations
+# appelee par cts5_ProcessData
+# Inputs : data=dataprofile$data$imu
+#         imu_cal=Meta$SENSORS$SENSOR_IMU 
+#
+# Outputs data avec heading,tilt,acceleration
+
+# data<-dataprofile$data$imu
+# imu_cal<-Meta$SENSORS$SENSOR_IMU
 Process_RawIMU<-function(data,imu_cal){
   heading<-NULL
   tilt<-NULL

@@ -250,8 +250,19 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
         #Deplacement des fichiers
         if (subdir != "."){
           filename<-paste(floatname,"_",formatC(cycle,width=3,flag="0"),"_",formatC(Pattern,width=2,flag="0"),"_",sensor,OSlabel,".csv",sep="")
-          file.rename(from=filename,to=paste(subdir,filename,sep="/"))
+          if (file.exists(filename)){
+            file.rename(from=filename,to=paste(subdir,filename,sep="/"))
+          }
         }
+        
+        
+        #FLTRIDER
+        if (sensor == "fltrider"){
+          filename<-paste(floatname,"_",formatC(cycle,width=3,flag="0"),"_",formatC(Pattern,width=2,flag="0"),"_",sensor,OSlabel,".tgz",sep="")
+          file.rename(from=filename,to=paste("FLTRIDER",filename,sep="/"))
+          untar(tarfile = paste("./FLTRIDER/",filename,sep=""),verbose = TRUE,exdir = "FLTRIDER")
+        }
+        
       }
       else {
         cat(SensorFilename,", does not exists \n")
@@ -274,7 +285,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
                           "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig",
-                          "mpe","ramses2","imu","wave")
+                          "mpe","ramses2","imu","wave","fltrider")
 #' 
 
 #**************************************************
@@ -311,6 +322,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' 119 : HydroC
 #' 120 : imu
 #' 121 : wave
+#' 122 : fltrider  
 #' 
 #' @examples 
 #' cts5_SensorTypeId("")
@@ -324,7 +336,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern="",exact=F){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120,121)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120,121,122)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -387,7 +399,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     filename<-list.files(pattern=pattern)[1]
   }
   else {
-    s<-strsplit(f,split="_")[[1]]
+    s<-strsplit(filename,split="_")[[1]]
     floatname<-s[1]
     CycleNumber<-as.numeric(s[2])
     PatternNumber<-as.numeric(s[3])
@@ -396,8 +408,21 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   DepthName<-"Pressure_dbar"
   
+  ### Sensor markup
+  ## identifiant sensor dans fichier csv à partir du decoder v2.7
+  Sensor_markup<-NA
+  if (file.exists(filename)){
+    cat("open:",filename,"\n")
+    temp<-scan(filename,what=character(0))[1]
+    if (regexpr("#[[:digit:]]+#",temp)[1]==1){
+      Sensor_markup<-as.numeric(substr(temp,2,nchar(temp)-1))
+      cat("Sensor_markup:",Sensor_markup,"\n")
+    } else {
+      cat("No Sensor_markup","\n")
+    }
+  }
   
-  #### Pre screnning
+  #### Pre screening
   file_ncol<-0
   if (sensor %in% c("imu") & file.exists(filename)){
     file_ncol<-ncol(read.table(filename,header=FALSE,sep=sep,dec=dec,stringsAsFactors = FALSE,fill = TRUE))
@@ -553,7 +578,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     #!! wave is processed in a different way
     if (file.exists(filename)){
       cat("open:",filename,"\n")
-      data<-scan(filename,skip = 1,sep=",",what = character(0))
+      data<-scan(filename,skip = 2,sep=",",what = character(0)) #skip 2 depuis version 2.7
       
       # Conversion temps
       if (length(grep("linux",filename))>0){
@@ -606,7 +631,6 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     #traitement
     
     if (file.exists(filename)){
-      cat("open:",filename,"\n")
       Data<-read.table(filename,header=FALSE,sep=sep,dec=dec,stringsAsFactors = FALSE,fill = TRUE,col.names = 1:MaxCol)
       #Data<-Data[-length(Data[,1]),]
       
@@ -1374,7 +1398,7 @@ if (csv.subdir != ""){
 ## Open data
 dataprofile$data<-list()
 
-for (sensor in sensors){ #sensor<-sensors[1]
+for (sensor in sensors){ #sensor<-sensors[2]
   data<-try(cts5_readcsv(floatname=floatname,CycleNumber=CycleNumber,PatternNumber=PatternNumber,sensor=sensor,dec=dec))
   
   if (is.data.frame(data)){

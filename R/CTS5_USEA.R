@@ -578,7 +578,8 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     #!! wave is processed in a different way
     if (file.exists(filename)){
       cat("open:",filename,"\n")
-      data<-scan(filename,skip = 2,sep=",",what = character(0)) #skip 2 depuis version 2.7
+      data<-scan(filename,skip = 0,comment.char = "#",sep=",",what = character(0)) # comment.char = "#" depuis version 2.7
+      data<-data[-1]#depuis version 2.7
       
       # Conversion temps
       if (length(grep("linux",filename))>0){

@@ -922,6 +922,8 @@ return(dataMerged)
 #'
 cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
+  dataprofile$processing<-NULL
+  
   ### ECO ####
   try(if ("eco" %in% names(dataprofile$data)) {
     
@@ -1216,12 +1218,18 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         
       }
       
-      dataCal<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
+      listOut<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
                               PixelBinning=PixelBinning,calib_file=calib_file)
       
-      if (!is.null(dataCal)){
-        dataprofile$data$ramses<-cbind(dataprofile$data$ramses,dataCal)
+      if (!is.null(listOut$dataCal)){
+        dataprofile$data$ramses<-cbind(dataprofile$data$ramses,listOut$dataCal)
       }
+      
+      dataprofile$processing$ramses$PixelStart <- PixelStart
+      dataprofile$processing$ramses$PixelStop <- PixelStop
+      dataprofile$processing$ramses$PixelBinning <- PixelBinning
+      dataprofile$processing$ramses$calib_file <- listOut$calib_file
+      
     }
     
   })
@@ -1251,12 +1259,17 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         calib_file=paste("SAM.*",metadata$SENSOR_RAMSES2$SENSOR,".*AllCal.txt",sep="")
       }
       
-      dataCal<-Process_Ramses(dataprofile$data$ramses2,PixelStart=PixelStart,PixelStop=PixelStop,
+      listOut<-Process_Ramses(dataprofile$data$ramses2,PixelStart=PixelStart,PixelStop=PixelStop,
                               PixelBinning=PixelBinning,calib_file=calib_file)
       
-      if (!is.null(dataCal)){
-        dataprofile$data$ramses2<-cbind(dataprofile$data$ramses2,dataCal)
+      if (!is.null(listOut$dataCal)){
+        dataprofile$data$ramses2<-cbind(dataprofile$data$ramses2,listOut$dataCal)
       }
+      
+      dataprofile$processing$ramses2$PixelStart <- PixelStart
+      dataprofile$processing$ramses2$PixelStop <- PixelStop
+      dataprofile$processing$ramses2$PixelBinning <- PixelBinning
+      dataprofile$processing$ramses2$calib_file <- listOut$calib_file
       
       
     }

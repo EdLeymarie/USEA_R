@@ -370,13 +370,18 @@ if (file.exists(calib_file)){
   
   wave<-round(wave*100)/100
   colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
+  
+  #listOut
+  listOut<-list(dataCal=dataCal,calib_file=calib_file)
 }
 else {
   warning("Ramses, no calibration file found:",calib_file,"\n")
   dataCal<-NULL
+  #listOut
+  listOut<-list(dataCal=dataCal,calib_file=NULL)
 }
   
-return(dataCal) 
+return(listOut) 
   
 }
 

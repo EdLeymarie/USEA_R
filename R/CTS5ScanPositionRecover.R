@@ -268,6 +268,19 @@ filenames<-list.files(pattern = pattern)
     
   }
   
+  ##Ordre chrono
+  if (length(Positions)>1){
+    TimeV<-NULL
+    for (i in 1:length(Positions)){
+      temp<-substr(Positions[i],1,21)
+      temp<-as.numeric(strptime(temp,format = "UTC=%y-%m-%d %H:%M:%S"))
+      TimeV<-c(TimeV,temp)
+    }
+    Positions<-Positions[order(TimeV)]
+    
+  }
+  
+  
   cat("write:",Outputfilename,"\n")
   write(Positions,file = Outputfilename)
   

@@ -525,8 +525,16 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
   
   ##-10 ramses
   if (sensor %in% c("ramses","ramses2")){
-    data.colnames<-c("ramses_int_time","ramses_depth1","ramses_depth2","ramses_tilt1","ramses_tilt2","ramses_dark_count",
-                     "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
+    if (Sensor_markup %in% 41:42){
+      ## New Ramses with time counter
+      data.colnames<-c("ramses_int_time","ramses_depth1","ramses_depth2","ramses_tilt1","ramses_tilt2",
+                       "ramses_TimeOffset","ramses_dark_count",
+                       "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
+    } else {
+      data.colnames<-c("ramses_int_time","ramses_depth1","ramses_depth2","ramses_tilt1","ramses_tilt2","ramses_dark_count",
+                "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
+    }
+    
     # SensorType=113
   }
   
@@ -961,6 +969,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       if ("colored-dissolved-organic-matter_CN" %in% colnames(dataprofile$data$eco)){
         dataprofile$data$eco[,"colored-dissolved-organic-matter_ppb"]<-SENSOR_ECO$CHANNEL_03[1]*(dataprofile$data$eco[,"colored-dissolved-organic-matter_CN"]-SENSOR_ECO$CHANNEL_03[2])
       }
+      
+      dataprofile$processing$eco<-SENSOR_ECO
         
       ## SD
       if ("SD(chlorophyll-a_CN)" %in% colnames(dataprofile$data$eco)){
@@ -989,6 +999,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       
       dataprofile$data$ocr[,"Photosynthetic-Active-Radiation"]<-metadata$SENSOR_OCR$CHANNEL_04[2]*metadata$SENSOR_OCR$CHANNEL_04[3]*
         (dataprofile$data$ocr[,"Photosynthetic-Active-Radiation_CN"]-metadata$SENSOR_OCR$CHANNEL_04[1])
+      
+      dataprofile$processing$ocr<-metadata$SENSOR_OCR
       
       }
   })
@@ -1098,6 +1110,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       CSCcal=SENSOR_CROVER$CALIBRATION
       x=SENSOR_CROVER$PATH_LENGTH/100
       dataprofile$data$crover[,"c-uncalibrated_1/m"] <- -log((dataprofile$data$crover[,"Corr-Sig-Raw_CN"]-CSCdark)/(CSCcal-CSCdark))/x
+      
+      dataprofile$processing$crover<-SENSOR_CROVER
     }
   })
   
@@ -1129,6 +1143,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       dataprofile$data$do[,"doxy_uncalibrated"]<-Process_DO_AADI_SVU(C1phase=dataprofile$data$do[,"c1phase_deg"],C2phase=dataprofile$data$do[,"c2phase_deg"],temp=dataprofile$data$do[,"tempdoxy_degC"],Pres=dataprofile$data$do[,"Pressure_dbar"],
                                                                    tempCTD=dataprofile$data$sbe41[,"Temperature_degC"],salCTD=dataprofile$data$sbe41[,"Salinity_PSU"],PRESCTD=dataprofile$data$sbe41[,"Pressure_dbar"],
                                                                    COEF = coefs, PHASECOEF0 = phasecoef0)
+      dataprofile$processing$do$coefs<-coefs
+      dataprofile$processing$do$phasecoef0<-phasecoef0
       }
     }
   })
@@ -1901,15 +1917,16 @@ for (s in sections){ #s<-sections[1]
     # recherche de la meme section dans newinifile
     inew<-which(names(newinifile)==names(oldinifile)[i])
     
-    for (j in 1:length(oldinifile[[i]])){
-      if (oldinifile[[i]][[j]] != newinifile[[inew]][[j]]){
-        temp<-paste("!param-",tolower(names(oldinifile)[i]),"-",substr(names(oldinifile[[i]])[j],2,5)
-                    ,":",newinifile[[inew]][[j]],sep="")
-        command<-c(command,temp)
-        
+    if (length(inew)>0){
+      for (j in 1:length(oldinifile[[i]])){
+        if (oldinifile[[i]][[j]] != newinifile[[inew]][[j]]){
+          temp<-paste("!param-",tolower(names(oldinifile)[i]),"-",substr(names(oldinifile[[i]])[j],2,5)
+                      ,":",newinifile[[inew]][[j]],sep="")
+          command<-c(command,temp)
+          
+        }
       }
     }
-    
   }
   
   

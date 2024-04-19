@@ -89,50 +89,48 @@ Process_DO_AADI_SVU <- function(C1phase,C2phase,temp, Pres,tempCTD,salCTD, PRESC
   salCTD <- approx(PRESCTD,salCTD, Pres, rule=2,ties = "mean")$y 
   
   #COEF if NULL (for plotting)
-  if (is.null(COEF)){
-    COEF <- c(5.6725661e-03,8.2915275e-05,1.0033795e-06,6.2236942e-02,-9.3470722e-05,-1.4554620e-02,1.2110645e-03) # From Henry
+  if (!is.null(COEF) & !is.null(PHASECOEF0)){
+  
+    TCPhase <-  (C1phase - C2phase) + PHASECOEF0
+    
+    # first part of pressure effect
+    TCPhase = TCPhase + 0.1 * Pres/1000 # do O2-independent phase adjustment
+    
+    KSV <-  COEF[1] + (COEF[2]  * temp) + (COEF[3] * temp * temp)
+    
+    #print(KSV[20:100])
+    
+    P0 <- COEF[4]  + COEF[5] * temp
+    
+    #print(P0[20:100])
+    
+    PC <- COEF[6]  + COEF[7] * TCPhase
+    
+    #print(PC[20:100])
+    # oxygen concentration in umol/l (in freshwater)
+    O2_molar_fresh <- ((P0/PC)-1) / KSV
+    
+    rhumid = 1
+    atm_press=1.01325
+    
+    pH2Ofresh = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*0))
+    pH2O = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*salCTD))
+    
+    #th0=1-(0.999025+0.00001426*tempCTD-0.00000006436*tempCTD^2)
+    sca_T=log((298.15-tempCTD)/(273.15+tempCTD))
+    Scorr=((exp(salCTD*(-0.00624097-0.00693498*sca_T-0.00690358*sca_T^2-0.00429155*sca_T^3)-0.00000031168*salCTD^2)))
+    # oxygen concentration in umol/l (salinity corrected)
+    O2_molar_salt=O2_molar_fresh*(atm_press-pH2Ofresh)/(atm_press-pH2O)*Scorr
+  
+    # correcion de pression
+    #O2conc_sal = O2conc_sal * (1+ ((3.2)/100 *(Pres/1000)))
+    pcfactor=4.19+0.022*tempCTD
+    O2conc_sal = O2_molar_salt * (1+ ((pcfactor)/100 *(Pres/1000))) # in umol/L, pressure corrected, salinity compensated
+    
+    # divide by density to get umol/kg for DOXY
+  } else {
+    O2conc_sal<-NA
   }
-  if (is.null(PHASECOEF0)){
-    PHASECOEF0 <- 0 # From Henry
-  }
-  
-  TCPhase <-  (C1phase - C2phase) + PHASECOEF0
-  
-  # first part of pressure effect
-  TCPhase = TCPhase + 0.1 * Pres/1000 # do O2-independent phase adjustment
-  
-  KSV <-  COEF[1] + (COEF[2]  * temp) + (COEF[3] * temp * temp)
-  
-  #print(KSV[20:100])
-  
-  P0 <- COEF[4]  + COEF[5] * temp
-  
-  #print(P0[20:100])
-  
-  PC <- COEF[6]  + COEF[7] * TCPhase
-  
-  #print(PC[20:100])
-  # oxygen concentration in umol/l (in freshwater)
-  O2_molar_fresh <- ((P0/PC)-1) / KSV
-  
-  rhumid = 1
-  atm_press=1.01325
-  
-  pH2Ofresh = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*0))
-  pH2O = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*salCTD))
-  
-  #th0=1-(0.999025+0.00001426*tempCTD-0.00000006436*tempCTD^2)
-  sca_T=log((298.15-tempCTD)/(273.15+tempCTD))
-  Scorr=((exp(salCTD*(-0.00624097-0.00693498*sca_T-0.00690358*sca_T^2-0.00429155*sca_T^3)-0.00000031168*salCTD^2)))
-  # oxygen concentration in umol/l (salinity corrected)
-  O2_molar_salt=O2_molar_fresh*(atm_press-pH2Ofresh)/(atm_press-pH2O)*Scorr
-
-  # correcion de pression
-  #O2conc_sal = O2conc_sal * (1+ ((3.2)/100 *(Pres/1000)))
-  pcfactor=4.19+0.022*tempCTD
-  O2conc_sal = O2_molar_salt * (1+ ((pcfactor)/100 *(Pres/1000))) # in umol/L, pressure corrected, salinity compensated
-  
-  # divide by density to get umol/kg for DOXY
   
   return(O2conc_sal)
   

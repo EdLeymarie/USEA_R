@@ -214,7 +214,59 @@ PlotOCR4<-function(data,technical=TRUE,ZoneDepth=NULL){
   
 }
 
-
+#**************************************************
+#Plot OCR507IR 
+PlotOCR507IR<-function(data,technical=TRUE,ZoneDepth=NULL){
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("OCR",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
+    
+    #Plot Ecart
+    ind<-which(data[,"PhaseName"] == "ASC")
+    if (length(ind)>2){   
+      depth<-data$Pressure_dbar[ind]
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta OCR",xlab="delta [db]",ylab="depth [db]")
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
+    }
+  }
+  
+  #Plot Radio
+  colpal<-rev(rainbow(7))
+  
+  data<-data[data$PhaseName=="ASC",]
+  data$PAR<-data$PAR/10
+  
+  ## Irradiance
+  xlim=c(1E-3,max(data[,19:25],na.rm=TRUE))
+  matplot(data[,19:25],-data$Pressure_dbar,log="x",type="l",col=c(colpal[2:7],1),lty=1,xlab="Irradiance",ylab="Depth"
+          ,xlim=xlim)
+  
+  title(main="Irradiance Ascent")
+  legend("bottomright",legend=c("IRR380","IRR412","IRR443","IRR490","IRR510","IRR560","IRR665","PAR/10"),lty=1,col=c(colpal,1),cex=0.75,bty="n")
+  plotDepthZones(ZoneDepth,x = xlim)
+  
+  ## Radiance
+  xlim=c(1E-5,max(data[,26:32],na.rm=TRUE))
+  matplot(data[,26:32],-data$Pressure_dbar,log="x",type="l",col=colpal,lty=1,xlab="Irradiance",ylab="Depth"
+          ,xlim=xlim)
+  
+  title(main="Radiance Ascent")
+  legend("bottomright",legend=c("Rad380","Rad412","Rad443","Rad490","Rad510","Rad560","Rad665"),lty=1,col=colpal,cex=0.75,bty="n")
+  plotDepthZones(ZoneDepth,x = xlim)
+    
+  
+}
 
 #**************************************************
 #Plot Optode
@@ -1155,12 +1207,18 @@ if (!is.null(dataprofile)){
     }
   }
   
-  #PlotOCR504
+  #PlotOCR
   if ("ocr" %in% SensorsToPlot){  
     if ("Downwelling-irradiance-380nm" %in% colnames(dataprofile$data$ocr)){
       data<-dataprofile$data$ocr
       try(PlotOCR4(data,technical=technical,
                ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_03")))
+    }
+    
+    if ("RAD665" %in% colnames(dataprofile$data$ocr)){
+      data<-dataprofile$data$ocr
+      try(PlotOCR507IR(data,technical=technical,
+                   ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_03")))
     }
   }
     

@@ -452,9 +452,16 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     # SensorType=9
   }
   
-  ##-4 ocr
-  if (sensor == "ocr"){
+  ##-4 ocr504
+  if (sensor == "ocr" & (is.na(Sensor_markup) | Sensor_markup==5)){
     data.colnames<-c("Downwelling-irradiance-380nm_CN","Downwelling-irradiance-412nm_CN","Downwelling-irradiance-490nm_CN","Photosynthetic-Active-Radiation_CN")
+    # SensorType=12
+  }
+  
+  ##-4 ocr507IR
+  if (sensor == "ocr" & Sensor_markup==7){
+    data.colnames<-c("IRR380","IRR443","IRR490","IRR510","IRR560","IRR665","PAR","RAD380","RAD412","RAD443","RAD490","RAD510","RAD560","RAD665")
+    data.colnames<-paste(data.colnames,"CN",sep="_")
     # SensorType=12
   }
   
@@ -531,8 +538,9 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
                        "ramses_TimeOffset","ramses_dark_count",
                        "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
     } else {
-      data.colnames<-c("ramses_int_time","ramses_depth1","ramses_depth2","ramses_tilt1","ramses_tilt2","ramses_dark_count",
-                "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
+      data.colnames<-c("ramses_int_time","ramses_depth1","ramses_depth2","ramses_tilt1","ramses_tilt2",
+                       "ramses_dark_count",
+                       "ramses_N_channels",paste("ramses_raw_count",1:250,sep=""))
     }
     
     # SensorType=113
@@ -987,6 +995,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
   ### OCR ####
   try(if ("ocr" %in% names(dataprofile$data)) {
+    
+    ## OCR504
     if (!is.null(metadata$SENSOR_OCR) & ("Downwelling-irradiance-380nm_CN" %in% colnames(dataprofile$data$ocr))){
       dataprofile$data$ocr[,"Downwelling-irradiance-380nm"]<-metadata$SENSOR_OCR$CHANNEL_01[2]*metadata$SENSOR_OCR$CHANNEL_01[3]*
         (dataprofile$data$ocr[,"Downwelling-irradiance-380nm_CN"]-metadata$SENSOR_OCR$CHANNEL_01[1])
@@ -1002,7 +1012,24 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       
       dataprofile$processing$ocr<-metadata$SENSOR_OCR
       
+    }
+    
+    ## OCR507IR
+    if (!is.null(metadata$SENSOR_OCR)) {
+      if (metadata$SENSOR_OCR$SENSOR["Model"] == "OCR507IR"){
+        for (i in 1:14){
+          tempname1<-colnames(dataprofile$data$ocr)[4+i]
+          tempname2<-strsplit(tempname1,split = "_")[[1]][1]
+          
+          dataprofile$data$ocr[,tempname2]<-Meta$SENSORS$SENSOR_OCR[[1+i]][2]*Meta$SENSORS$SENSOR_OCR[[1+i]][3]*
+            (dataprofile$data$ocr[,tempname1]-Meta$SENSORS$SENSOR_OCR[[1+i]][1])
+        }
+        
+        
+        dataprofile$processing$ocr<-metadata$SENSOR_OCR
+        
       }
+    }
   })
   
   ### uvp6_lpm ####

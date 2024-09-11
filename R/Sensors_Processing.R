@@ -285,7 +285,7 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
 #**************************************************
 #*
 # Compute Ramses single spectra ######
-#* Input : X = c(ramses_int_time,ramses_dark_count, I) 
+#* Input : x = c(ramses_int_time,ramses_dark_count, I) 
 #* where I is the spectra in count to be processed
 #* 
 #* Output : Physical units uW/cm2/nm vector with the same length than I
@@ -312,7 +312,7 @@ D<-C-offset
 #Etape3 Integration time normalisation
 E<-D*8192/t
 
-#Change to uW/cm2/nm
+#Change for uW/cm2/nm
 E<-E/10
   
 #Etape4 Sensitivity
@@ -322,7 +322,7 @@ return(E/S)
 
 #**************************************************
 
-Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater=T){
+Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater="auto"){
   
 if (!file.exists(calib_file)){  
   
@@ -350,12 +350,6 @@ if (file.exists(calib_file)){
   wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})
   B0<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B0[c(sq[i],sq[i]+PixelBinning-1)])})
   B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
-  if (InWater){
-    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
-  } else {
-    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
-    cat("Ramses : apply in Air calibration \n")
-  }
   
   indDark<-ramses_cal$Wave == -1
   B0_Dark=mean(ramses_cal$B0[indDark],na.rm = T)
@@ -363,20 +357,57 @@ if (file.exists(calib_file)){
   
   ind<-c(grep("ramses_int_time",colnames(data)),grep("ramses_dark_count",colnames(data)),grep("ramses_raw_count",colnames(data)))
   
-  #Process calibration
-  dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+  dataCal<-NULL
+  
+  if (InWater=="yes"){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply in water calibration \n")
+    #Process calibration
+    dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    
+    sum_inAir=0
+  } 
+  
+  if (InWater=="no"){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply in Air calibration \n")
+    
+    #Process calibration
+    dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    
+    sum_inAir=nrow(dataCal)
+  }
+  
+  if (InWater=="auto"){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+    Sair<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply auto in air calibration \n")
+    
+    #Process calibration in water
+    inAir<-data$PhaseName=="SUR"
+    dataCal<-t(apply(data[!inAir,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    
+    #Process calibration in air
+    sum_inAir<-sum(inAir)
+    cat("Data in air:",sum_inAir,"\n")
+    dataCal_air<-t(apply(data[inAir,ind],1,ra_single,B0=B0,B1=B1,S=Sair,B0_Dark,B1_Dark))
+    
+    dataCal<-rbind(dataCal,dataCal_air)
+  }
+  
+
   
   wave<-round(wave*100)/100
   colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
   
   #listOut
-  listOut<-list(dataCal=dataCal,calib_file=calib_file)
+  listOut<-list(dataCal=dataCal,calib_file=calib_file,InWater=InWater,sum_inAir=sum_inAir)
 }
 else {
   warning("Ramses, no calibration file found:",calib_file,"\n")
   dataCal<-NULL
   #listOut
-  listOut<-list(dataCal=dataCal,calib_file=NULL)
+  listOut<-list(dataCal=dataCal,calib_file=NULL,InWater=InWater,sum_inAir=NULL)
 }
   
 return(listOut) 

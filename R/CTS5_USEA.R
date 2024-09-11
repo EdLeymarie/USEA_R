@@ -1261,8 +1261,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         
       }
       
-      listOut<-Process_Ramses(dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
-                              PixelBinning=PixelBinning,calib_file=calib_file)
+      listOut<-Process_Ramses(data=dataprofile$data$ramses,PixelStart=PixelStart,PixelStop=PixelStop,
+                              PixelBinning=PixelBinning,calib_file=calib_file,InWater="auto")
       
       if (!is.null(listOut$dataCal)){
         dataprofile$data$ramses<-cbind(dataprofile$data$ramses,listOut$dataCal)
@@ -1272,6 +1272,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       dataprofile$processing$ramses$PixelStop <- PixelStop
       dataprofile$processing$ramses$PixelBinning <- PixelBinning
       dataprofile$processing$ramses$calib_file <- listOut$calib_file
+      dataprofile$processing$ramses$InWaterMode <- listOut$InWater
+      dataprofile$processing$ramses$sum_inAir <- listOut$sum_inAir
       
     }
     
@@ -1302,8 +1304,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
         calib_file=paste("SAM.*",metadata$SENSOR_RAMSES2$SENSOR,".*AllCal.txt",sep="")
       }
       
-      listOut<-Process_Ramses(dataprofile$data$ramses2,PixelStart=PixelStart,PixelStop=PixelStop,
-                              PixelBinning=PixelBinning,calib_file=calib_file)
+      listOut<-Process_Ramses(data=dataprofile$data$ramses2,PixelStart=PixelStart,PixelStop=PixelStop,
+                              PixelBinning=PixelBinning,calib_file=calib_file,InWater="yes")
       
       if (!is.null(listOut$dataCal)){
         dataprofile$data$ramses2<-cbind(dataprofile$data$ramses2,listOut$dataCal)
@@ -1313,6 +1315,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       dataprofile$processing$ramses2$PixelStop <- PixelStop
       dataprofile$processing$ramses2$PixelBinning <- PixelBinning
       dataprofile$processing$ramses2$calib_file <- listOut$calib_file
+      dataprofile$processing$ramses2$InWaterMode <- listOut$InWater
+      dataprofile$processing$ramses2$sum_inAir <- listOut$sum_inAir
       
       
     }

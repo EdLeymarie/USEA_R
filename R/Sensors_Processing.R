@@ -89,48 +89,50 @@ Process_DO_AADI_SVU <- function(C1phase,C2phase,temp, Pres,tempCTD,salCTD, PRESC
   salCTD <- approx(PRESCTD,salCTD, Pres, rule=2,ties = "mean")$y 
   
   #COEF if NULL (for plotting)
-  if (!is.null(COEF) & !is.null(PHASECOEF0)){
-  
-    TCPhase <-  (C1phase - C2phase) + PHASECOEF0
-    
-    # first part of pressure effect
-    TCPhase = TCPhase + 0.1 * Pres/1000 # do O2-independent phase adjustment
-    
-    KSV <-  COEF[1] + (COEF[2]  * temp) + (COEF[3] * temp * temp)
-    
-    #print(KSV[20:100])
-    
-    P0 <- COEF[4]  + COEF[5] * temp
-    
-    #print(P0[20:100])
-    
-    PC <- COEF[6]  + COEF[7] * TCPhase
-    
-    #print(PC[20:100])
-    # oxygen concentration in umol/l (in freshwater)
-    O2_molar_fresh <- ((P0/PC)-1) / KSV
-    
-    rhumid = 1
-    atm_press=1.01325
-    
-    pH2Ofresh = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*0))
-    pH2O = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*salCTD))
-    
-    #th0=1-(0.999025+0.00001426*tempCTD-0.00000006436*tempCTD^2)
-    sca_T=log((298.15-tempCTD)/(273.15+tempCTD))
-    Scorr=((exp(salCTD*(-0.00624097-0.00693498*sca_T-0.00690358*sca_T^2-0.00429155*sca_T^3)-0.00000031168*salCTD^2)))
-    # oxygen concentration in umol/l (salinity corrected)
-    O2_molar_salt=O2_molar_fresh*(atm_press-pH2Ofresh)/(atm_press-pH2O)*Scorr
-  
-    # correcion de pression
-    #O2conc_sal = O2conc_sal * (1+ ((3.2)/100 *(Pres/1000)))
-    pcfactor=4.19+0.022*tempCTD
-    O2conc_sal = O2_molar_salt * (1+ ((pcfactor)/100 *(Pres/1000))) # in umol/L, pressure corrected, salinity compensated
-    
-    # divide by density to get umol/kg for DOXY
-  } else {
-    O2conc_sal<-NA
+  if (is.null(COEF)){
+    COEF <- c(5.6725661e-03,8.2915275e-05,1.0033795e-06,6.2236942e-02,-9.3470722e-05,-1.4554620e-02,1.2110645e-03) # From Henry
   }
+  if (is.null(PHASECOEF0)){
+    PHASECOEF0 <- 0 # From Henry
+  }
+  
+  TCPhase <-  (C1phase - C2phase) + PHASECOEF0
+  
+  # first part of pressure effect
+  TCPhase = TCPhase + 0.1 * Pres/1000 # do O2-independent phase adjustment
+  
+  KSV <-  COEF[1] + (COEF[2]  * temp) + (COEF[3] * temp * temp)
+  
+  #print(KSV[20:100])
+  
+  P0 <- COEF[4]  + COEF[5] * temp
+  
+  #print(P0[20:100])
+  
+  PC <- COEF[6]  + COEF[7] * TCPhase
+  
+  #print(PC[20:100])
+  # oxygen concentration in umol/l (in freshwater)
+  O2_molar_fresh <- ((P0/PC)-1) / KSV
+  
+  rhumid = 1
+  atm_press=1.01325
+  
+  pH2Ofresh = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*0))
+  pH2O = rhumid * (exp(24.4543-(67.4509*(100/(tempCTD+273.15)))-(4.8489*log(((273.15+tempCTD)/100)))-0.000544*salCTD))
+  
+  #th0=1-(0.999025+0.00001426*tempCTD-0.00000006436*tempCTD^2)
+  sca_T=log((298.15-tempCTD)/(273.15+tempCTD))
+  Scorr=((exp(salCTD*(-0.00624097-0.00693498*sca_T-0.00690358*sca_T^2-0.00429155*sca_T^3)-0.00000031168*salCTD^2)))
+  # oxygen concentration in umol/l (salinity corrected)
+  O2_molar_salt=O2_molar_fresh*(atm_press-pH2Ofresh)/(atm_press-pH2O)*Scorr
+
+  # correcion de pression
+  #O2conc_sal = O2conc_sal * (1+ ((3.2)/100 *(Pres/1000)))
+  pcfactor=4.19+0.022*tempCTD
+  O2conc_sal = O2_molar_salt * (1+ ((pcfactor)/100 *(Pres/1000))) # in umol/L, pressure corrected, salinity compensated
+  
+  # divide by density to get umol/kg for DOXY
   
   return(O2conc_sal)
   
@@ -284,18 +286,17 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
 
 #**************************************************
 #*
-# Compute Ramses single spectra ######
-#* Input : x = c(ramses_int_time,ramses_dark_count, I) 
-#* where I is the spectra in count to be processed
+# Compute Ramses ######
+#* Input : X = c(ramses_int_time,ramses_dark_count, I) 
 #* 
-#* Output : Physical units uW/cm2/nm vector with the same length than I
+#* Output : Physical units uW/cm2/nm
 #*
 #**************************************************
 
 ra_single<-function(x,B0,B1,S,B0_Dark,B1_Dark){
-t<-as.numeric(x[1]) #Integration time
-offset<-as.numeric(x[2]) #Offset = Dark_average
-I<-x[-(1:2)] #count spectra
+t<-as.numeric(x[1])
+offset<-as.numeric(x[2])
+I<-x[-(1:2)]
 
 #Etape1 Normalisation
 M<-I/65535
@@ -312,7 +313,7 @@ D<-C-offset
 #Etape3 Integration time normalisation
 E<-D*8192/t
 
-#Change for uW/cm2/nm
+#Change to uW/cm2/nm
 E<-E/10
   
 #Etape4 Sensitivity
@@ -322,34 +323,49 @@ return(E/S)
 
 #**************************************************
 
-Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater="auto"){
+Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,
+                         calib_file="SAM.*AllCal.txt",
+                         ramses_cal=NULL,
+                         InWater=T){
   
-if (!file.exists(calib_file)){  
-  
-  #test 1 : avec pattern
-  calib_file_pattern<-calib_file
-  calib_file<-list.files(pattern = calib_file)[1]
-  
-  if (!file.exists(calib_file)){
-    cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
+if (is.null(ramses_cal)){
+  if (!file.exists(calib_file)){  
     
-    #test 2 : generic
-    calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
+    #test 1 : avec pattern
+    calib_file_pattern<-calib_file
+    calib_file<-list.files(pattern = calib_file)[1]
     
-    cat("!! Default Ramses calibration is used \n")
+    if (!file.exists(calib_file)){
+      cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
+      
+      #test 2 : generic
+      calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
+      
+      cat("!! Default Ramses calibration is used \n")
+    }
+    
   }
   
+  if (file.exists(calib_file)){
+    cat("Open RAMSES cal file: ",calib_file,"\n")
+    ramses_cal<-read.table(calib_file,header = T,sep="\t")
+  }
 }
   
-if (file.exists(calib_file)){
-  cat("Open RAMSES cal file: ",calib_file,"\n")
-  ramses_cal<-read.table(calib_file,header = T,sep="\t")
+  
+if (!is.null(ramses_cal)){
   
   sq<-seq(PixelStart,PixelStop,by=PixelBinning)
   
   wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})
   B0<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B0[c(sq[i],sq[i]+PixelBinning-1)])})
   B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
+  if (InWater){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+  } else {
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply in Air calibration \n")
+  }
   
   indDark<-ramses_cal$Wave == -1
   B0_Dark=mean(ramses_cal$B0[indDark],na.rm = T)
@@ -357,60 +373,18 @@ if (file.exists(calib_file)){
   
   ind<-c(grep("ramses_int_time",colnames(data)),grep("ramses_dark_count",colnames(data)),grep("ramses_raw_count",colnames(data)))
   
-  dataCal<-NULL
-  
-  if (InWater=="yes"){
-    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
-    cat("Ramses : apply in water calibration \n")
-    #Process calibration
-    dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
-    
-    sum_inAir=0
-  } 
-  
-  if (InWater=="no"){
-    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
-    cat("Ramses : apply in Air calibration \n")
-    
-    #Process calibration
-    dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
-    
-    sum_inAir=nrow(dataCal)
-  }
-  
-  if (InWater=="auto"){
-    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
-    Sair<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
-    cat("Ramses : apply auto in air calibration \n")
-    
-    #Process calibration in water
-    inAir<-data$PhaseName=="SUR"
-    dataCal<-t(apply(data[!inAir,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
-    
-    #Process calibration in air
-    sum_inAir<-sum(inAir)
-    cat("Data in air:",sum_inAir,"\n")
-    dataCal_air<-t(apply(data[inAir,ind],1,ra_single,B0=B0,B1=B1,S=Sair,B0_Dark,B1_Dark))
-    
-    dataCal<-rbind(dataCal,dataCal_air)
-  }
-  
-
+  #Process calibration
+  dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
   
   wave<-round(wave*100)/100
   colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
-  
-  #listOut
-  listOut<-list(dataCal=dataCal,calib_file=calib_file,InWater=InWater,sum_inAir=sum_inAir)
 }
 else {
   warning("Ramses, no calibration file found:",calib_file,"\n")
   dataCal<-NULL
-  #listOut
-  listOut<-list(dataCal=dataCal,calib_file=NULL,InWater=InWater,sum_inAir=NULL)
 }
   
-return(listOut) 
+return(dataCal) 
   
 }
 
@@ -419,11 +393,8 @@ return(listOut)
 # Compute IMU ######
 #*
 #**************************************************
-
-# Calcul le Heading a partir des donnees raw Mag
-# via Process_RawIMU
-# Inputs RawMag et calibration
-# Outputs Heading en degres
+# data<-dataprofile$data$wave
+# imu_cal<-Meta$SENSORS$SENSOR_IMU
 
 IMU_processHeading<-function(RawMag,imu_cal){
   
@@ -450,12 +421,6 @@ IMU_processHeading<-function(RawMag,imu_cal){
   
 }
 
-#**************************************************
-# Calcul le tilt et l'acceleration totale en fonction des 3 accelerations
-# via Process_RawIMU
-# Inputs RawAcc et calibration
-# Outputs tilt en degres et acceleration en g
-
 IMU_processAcc<-function(RawAcc,acc_cal){
   
   #Calibration et orientation
@@ -476,16 +441,6 @@ IMU_processAcc<-function(RawAcc,acc_cal){
   
 }
 
-#**************************************************
-# Calcul le heading, tilt et l'acceleration totale en fonction des 3 accelerations
-# appelee par cts5_ProcessData
-# Inputs : data=dataprofile$data$imu
-#         imu_cal=Meta$SENSORS$SENSOR_IMU 
-#
-# Outputs data avec heading,tilt,acceleration
-
-# data<-dataprofile$data$imu
-# imu_cal<-Meta$SENSORS$SENSOR_IMU
 Process_RawIMU<-function(data,imu_cal){
   heading<-NULL
   tilt<-NULL

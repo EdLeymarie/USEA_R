@@ -40,6 +40,7 @@ SensorType
 120 : imu
 121 : wave
 122 : fltrider
+123 : PAL
 }
 \examples{
 cts5_SensorTypeId("")

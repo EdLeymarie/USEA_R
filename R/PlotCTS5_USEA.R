@@ -1105,6 +1105,62 @@ PlotCompRad<-function(dataprofile){
   
 }
 
+#**************************************************
+#Plot PAL
+# data<-dataprofile$data$imu
+PlotPAL<-function(data,technical=TRUE,ZoneDepth=NULL){
+  
+  #Plot technical
+  if (technical){
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main="PAL")
+  }
+  
+  #Rain and Wind
+  if (("Rain" %in% colnames(data)) & ("Wind" %in% colnames(data))){
+    plot(data[,"Date"],data[,"Rain"],col="blue",xlab="time",ylab="Rain",type="b")
+    title(main="PAL - Rain&Wind")
+    par(new=TRUE)
+    plot(data[,"Date"],data[,"Wind"],col=2,type="b",
+         axes=FALSE,xlab="",ylab="")
+    axis(4,col=2,col.axis=2)
+  }
+  
+  #Spectres
+  indfreq<-grep("f_.*Hz",colnames(data))
+  if (length(indfreq)>1){
+    
+    freq<-colnames(data)[indfreq]
+    freq<-matrix(unlist(strsplit(freq,split="_")),ncol=2,byrow = T)[,2]
+    freq<-as.numeric(matrix(unlist(strsplit(freq,split="H")),ncol=2,byrow = T)[,1])
+    
+    #time
+    colpal<-rev(rainbow(length(freq),end=0.8))
+    plot(data[,"Date"],t(data[,indfreq[1]]),
+         xlab="date",ylab="acoustic Pressure",
+         ylim=c(min(data[,indfreq],na.rm = T),max(data[,indfreq],na.rm = T)),
+         type="l",col=colpal[1])
+    for (i in 2:length(freq)){
+      lines(data[,"Date"],t(data[,indfreq[i]]),type="l",col=colpal[i])
+    }
+    
+    #spectre
+    time_breaks <- pretty(data$Date, n = 50)
+    cs <- list(cols = tim.colors(length(time_breaks)-1),breaks = time_breaks,name = "time",unit = "(s)",labels = seq(1,length(time_breaks), 5))
+    cols = tim.colors(length(time_breaks)-1)[cut(data$Date,breaks = time_breaks)]
+      
+    matplot(freq,t(data[,indfreq]),lty=1,pch=0,type="l",
+            xlab="frequency (Hz)",ylab = "acoustic Pressure",
+            col=cols)
+      
+    #cs.draw(cs,horiz=T,width =  max(t(data[,indfreq]),na.rm = T)/2,pos= max(t(data[,indfreq]),na.rm = T),side = 1)
+      
+    
+  }
+  
+  
+}
 
 #**************************************************
 
@@ -1317,6 +1373,13 @@ if (!is.null(dataprofile)){
     data<-dataprofile$data$mpe
     try(PlotMPE(data,technical=technical,
             ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_17")))
+  }   
+  
+  #pal
+  if ("pal" %in% SensorsToPlot){  
+    data<-dataprofile$data$pal
+    try(PlotPAL(data,technical=technical,
+                ZoneDepth=NULL))
   }   
   
   #Plot RAD sensors together

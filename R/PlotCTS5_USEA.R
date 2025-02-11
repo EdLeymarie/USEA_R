@@ -1139,22 +1139,28 @@ PlotPAL<-function(data,technical=TRUE,ZoneDepth=NULL){
     colpal<-rev(rainbow(length(freq),end=0.8))
     plot(data[,"Date"],t(data[,indfreq[1]]),
          xlab="date",ylab="acoustic Pressure",
-         ylim=c(min(data[,indfreq],na.rm = T),max(data[,indfreq],na.rm = T)),
+         #ylim=c(min(data[,indfreq],na.rm = T),max(data[,indfreq],na.rm = T)),
+         ylim=c(60,max(data[,indfreq],na.rm = T)),
          type="l",col=colpal[1])
     for (i in 2:length(freq)){
       lines(data[,"Date"],t(data[,indfreq[i]]),type="l",col=colpal[i])
     }
+    legend("bottomleft",legend=colnames(data)[grep("f_.*Hz",colnames(data))],col=colpal,
+           ncol = 6,cex=0.6,bty = "n",lty=1)
     
     #spectre
-    time_breaks <- pretty(data$Date, n = 50)
-    cs <- list(cols = tim.colors(length(time_breaks)-1),breaks = time_breaks,name = "time",unit = "(s)",labels = seq(1,length(time_breaks), 5))
-    cols = tim.colors(length(time_breaks)-1)[cut(data$Date,breaks = time_breaks)]
+    dateMin<-as.numeric(data$Date)/60
+    dateMin<-dateMin-min(dateMin,na.rm = T)
+    
+    time_breaks <- pretty(dateMin, n = 50)
+    cs <- list(cols = tim.colors(length(time_breaks)-1),breaks = time_breaks,name = "time",unit = "(min)",labels = seq(1,length(time_breaks), 5))
+    cols = tim.colors(length(time_breaks)-1)[cut(dateMin,breaks = time_breaks)]
       
     matplot(freq,t(data[,indfreq]),lty=1,pch=0,type="l",
             xlab="frequency (Hz)",ylab = "acoustic Pressure",
             col=cols)
       
-    #cs.draw(cs,horiz=T,width =  max(t(data[,indfreq]),na.rm = T)/2,pos= max(t(data[,indfreq]),na.rm = T),side = 1)
+    cs.draw(cs,horiz=T)#,width =  max(t(data[,indfreq]),na.rm = T)/2,pos= max(t(data[,indfreq]),na.rm = T),side = 1)
       
     
   }

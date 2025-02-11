@@ -1181,16 +1181,24 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       coefs<-metadata$SENSOR_DO$SVU_FOIL_COEFF
       phasecoef0<-metadata$SENSOR_DO$PHASE_COEFF
     }
-      else {
-      cat("!! Warning : No DO calibration found \n")
+
+    if (length(coefs) == 0){
+      cat("!! Warning : No DO SVU_FOIL_COEFF calibration found \n")
       coefs<-NULL
       
       if (ProcessUncalibrated){
         cat("!! Default calibration is used \n")
         coefs <- c(5.6725661e-03,8.2915275e-05,1.0033795e-06,6.2236942e-02,-9.3470722e-05,-1.4554620e-02,1.2110645e-03) # From Henry
-        phasecoef0<-0
       }
+    }
       
+    if (length(phasecoef0) == 0){
+        cat("!! Warning : No DO PHASE_COEFF calibration found \n")
+        
+        if (ProcessUncalibrated){
+          cat("!! Default calibration is used \n")
+          phasecoef0<-0
+        }
     }
         
       if (!is.null(coefs)){

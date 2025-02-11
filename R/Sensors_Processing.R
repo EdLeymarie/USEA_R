@@ -286,17 +286,18 @@ Process_pH_SBE<-function(data,NumberPhase="ASC",k0=-1.392151,k2=-1.0798E-03,coef
 
 #**************************************************
 #*
-# Compute Ramses ######
+# Compute Ramses single spectra ######
 #* Input : X = c(ramses_int_time,ramses_dark_count, I) 
+#* where I is the spectra in count to be processed
 #* 
-#* Output : Physical units uW/cm2/nm
+#* Output : Physical units uW/cm2/nm vector with the same length than I
 #*
 #**************************************************
 
 ra_single<-function(x,B0,B1,S,B0_Dark,B1_Dark){
-t<-as.numeric(x[1])
-offset<-as.numeric(x[2])
-I<-x[-(1:2)]
+t<-as.numeric(x[1]) #Integration time
+offset<-as.numeric(x[2]) #Offset = Dark_average
+I<-x[-(1:2)] #count spectra
 
 #Etape1 Normalisation
 M<-I/65535
@@ -313,7 +314,7 @@ D<-C-offset
 #Etape3 Integration time normalisation
 E<-D*8192/t
 
-#Change to uW/cm2/nm
+#Change for uW/cm2/nm
 E<-E/10
   
 #Etape4 Sensitivity
@@ -323,49 +324,34 @@ return(E/S)
 
 #**************************************************
 
-Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,
-                         calib_file="SAM.*AllCal.txt",
-                         ramses_cal=NULL,
-                         InWater=T){
+Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater="auto"){
   
-if (is.null(ramses_cal)){
-  if (!file.exists(calib_file)){  
+if (!file.exists(calib_file)){  
+  
+  #test 1 : avec pattern
+  calib_file_pattern<-calib_file
+  calib_file<-list.files(pattern = calib_file)[1]
+  
+  if (!file.exists(calib_file)){
+    cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
     
-    #test 1 : avec pattern
-    calib_file_pattern<-calib_file
-    calib_file<-list.files(pattern = calib_file)[1]
+    #test 2 : generic
+    calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
     
-    if (!file.exists(calib_file)){
-      cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
-      
-      #test 2 : generic
-      calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
-      
-      cat("!! Default Ramses calibration is used \n")
-    }
-    
+    cat("!! Default Ramses calibration is used \n")
   }
   
-  if (file.exists(calib_file)){
-    cat("Open RAMSES cal file: ",calib_file,"\n")
-    ramses_cal<-read.table(calib_file,header = T,sep="\t")
-  }
 }
   
-  
-if (!is.null(ramses_cal)){
+if (file.exists(calib_file)){
+  cat("Open RAMSES cal file: ",calib_file,"\n")
+  ramses_cal<-read.table(calib_file,header = T,sep="\t")
   
   sq<-seq(PixelStart,PixelStop,by=PixelBinning)
   
   wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})
   B0<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B0[c(sq[i],sq[i]+PixelBinning-1)])})
   B1<-sapply(1:(length(sq)),function(i){mean(ramses_cal$B1[c(sq[i],sq[i]+PixelBinning-1)])})
-  if (InWater){
-    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
-  } else {
-    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
-    cat("Ramses : apply in Air calibration \n")
-  }
   
   indDark<-ramses_cal$Wave == -1
   B0_Dark=mean(ramses_cal$B0[indDark],na.rm = T)
@@ -373,18 +359,60 @@ if (!is.null(ramses_cal)){
   
   ind<-c(grep("ramses_int_time",colnames(data)),grep("ramses_dark_count",colnames(data)),grep("ramses_raw_count",colnames(data)))
   
-  #Process calibration
-  dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+  dataCal<-NULL
+  
+  if (InWater=="yes"){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply in water calibration \n")
+    #Process calibration
+    dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    
+    sum_inAir=0
+  } 
+  
+  if (InWater=="no"){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply in Air calibration \n")
+    
+    #Process calibration
+    dataCal<-t(apply(data[,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    
+    sum_inAir=nrow(dataCal)
+  }
+  
+  if (InWater=="auto"){
+    S<-sapply(1:(length(sq)),function(i){mean(ramses_cal$S[c(sq[i],sq[i]+PixelBinning-1)])})
+    Sair<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Sair[c(sq[i],sq[i]+PixelBinning-1)])})
+    cat("Ramses : apply auto in air calibration \n")
+    
+    #Process calibration in water
+    inAir<-data$PhaseName=="SUR"
+    dataCal<-t(apply(data[!inAir,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    
+    #Process calibration in air
+    sum_inAir<-sum(inAir)
+    cat("Data in air:",sum_inAir,"\n")
+    dataCal_air<-t(apply(data[inAir,ind],1,ra_single,B0=B0,B1=B1,S=Sair,B0_Dark,B1_Dark))
+    
+    dataCal<-rbind(dataCal,dataCal_air)
+  }
+  
+
   
   wave<-round(wave*100)/100
   colnames(dataCal)<-paste("ramses_sig",wave,sep="_")
+  
+  #listOut
+  listOut<-list(dataCal=dataCal,calib_file=calib_file,InWater=InWater,sum_inAir=sum_inAir)
 }
 else {
   warning("Ramses, no calibration file found:",calib_file,"\n")
   dataCal<-NULL
+  #listOut
+  listOut<-list(dataCal=dataCal,calib_file=NULL,InWater=InWater,sum_inAir=NULL)
 }
   
-return(dataCal) 
+return(listOut) 
   
 }
 
@@ -393,8 +421,11 @@ return(dataCal)
 # Compute IMU ######
 #*
 #**************************************************
-# data<-dataprofile$data$wave
-# imu_cal<-Meta$SENSORS$SENSOR_IMU
+
+# Calcul le Heading a partir des donnees raw Mag
+# via Process_RawIMU
+# Inputs RawMag et calibration
+# Outputs Heading en degres
 
 IMU_processHeading<-function(RawMag,imu_cal){
   
@@ -421,6 +452,12 @@ IMU_processHeading<-function(RawMag,imu_cal){
   
 }
 
+#**************************************************
+# Calcul le tilt et l'acceleration totale en fonction des 3 accelerations
+# via Process_RawIMU
+# Inputs RawAcc et calibration
+# Outputs tilt en degres et acceleration en g
+
 IMU_processAcc<-function(RawAcc,acc_cal){
   
   #Calibration et orientation
@@ -441,6 +478,16 @@ IMU_processAcc<-function(RawAcc,acc_cal){
   
 }
 
+#**************************************************
+# Calcul le heading, tilt et l'acceleration totale en fonction des 3 accelerations
+# appelee par cts5_ProcessData
+# Inputs : data=dataprofile$data$imu
+#         imu_cal=Meta$SENSORS$SENSOR_IMU 
+#
+# Outputs data avec heading,tilt,acceleration
+
+# data<-dataprofile$data$imu
+# imu_cal<-Meta$SENSORS$SENSOR_IMU
 Process_RawIMU<-function(data,imu_cal){
   heading<-NULL
   tilt<-NULL
@@ -470,3 +517,26 @@ Process_RawIMU<-function(data,imu_cal){
     
   return(data)
 }
+
+
+#**************************************************
+#*
+# Compute PAL ######
+#*
+#**************************************************
+# data<-dataprofile$data$pal
+
+wind_MaNystuen<-function(windcoef=c(-45.534,3.7163,-0.0984,0.0009)){
+  if (!is.null(data$f_8000Hz)){
+    SPL8<-data$f_8000Hz
+    wind<-windcoef[1]+windcoef[2]*SPL8+windcoef[3]*(SPL8)^2+windcoef[4]*(SPL8)^3
+  }
+}
+
+rain_YangJie<-function(raincoef=c(-255.6,15.839,-0.328,0.0023)){
+  if (!is.null(data$f_5000Hz)){
+    SPL5<-data$f_5000Hz
+    rain<-raincoef[1]+raincoef[2]*SPL5+raincoef[3]*(SPL5)^2+raincoef[4]*(SPL5)^3
+  }
+}
+

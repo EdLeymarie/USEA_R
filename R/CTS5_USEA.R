@@ -866,6 +866,12 @@ dataMerged<-NULL
 
 if (length(dataprofile$data)>0){
   
+  ## les donnees waves ne sont pas compatible avec le format
+  if ("wave" %in% names(dataprofile$data)){
+    dataprofile$data[["wave"]]<-NULL
+    warning("IMU wave data are not compatible with Ascii format. Data have been removed")
+  }
+  
   #change name of Ramses2
   if ("ramses2" %in% names(dataprofile$data)){
     colnames(dataprofile$data$ramses2)<-str_replace_all(colnames(dataprofile$data$ramses2),"ramses","ramses2")

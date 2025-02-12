@@ -526,17 +526,25 @@ Process_RawIMU<-function(data,imu_cal){
 #**************************************************
 # data<-dataprofile$data$pal
 
-wind_MaNystuen<-function(windcoef=c(-45.534,3.7163,-0.0984,0.0009)){
+# MaNystuen windcoef=c(-45.534,3.7163,-0.0984,0.0009)
+# Med windcoef=c(107.93,-3.683,0.03143,0)
+wind_PolySPL8<-function(data,windcoef=c(-45.534,3.7163,-0.0984,0.0009)){
+  wind<-NULL
   if (!is.null(data$f_8000Hz)){
     SPL8<-data$f_8000Hz
     wind<-windcoef[1]+windcoef[2]*SPL8+windcoef[3]*(SPL8)^2+windcoef[4]*(SPL8)^3
   }
+  
+  return(wind)
 }
 
-rain_YangJie<-function(raincoef=c(-255.6,15.839,-0.328,0.0023)){
+rain_PolySPL5<-function(data,raincoef=c(-255.6,15.839,-0.328,0.0023)){
+  rain<-NULL
   if (!is.null(data$f_5000Hz)){
     SPL5<-data$f_5000Hz
     rain<-raincoef[1]+raincoef[2]*SPL5+raincoef[3]*(SPL5)^2+raincoef[4]*(SPL5)^3
   }
+  
+  return(rain)
 }
 

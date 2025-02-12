@@ -1135,33 +1135,58 @@ PlotPAL<-function(data,technical=TRUE,ZoneDepth=NULL){
     freq<-matrix(unlist(strsplit(freq,split="_")),ncol=2,byrow = T)[,2]
     freq<-as.numeric(matrix(unlist(strsplit(freq,split="H")),ncol=2,byrow = T)[,1])
     
-    #time
-    colpal<-rev(rainbow(length(freq),end=0.8))
-    plot(data[,"Date"],t(data[,indfreq[1]]),
-         xlab="date",ylab="acoustic Pressure",
-         #ylim=c(min(data[,indfreq],na.rm = T),max(data[,indfreq],na.rm = T)),
-         ylim=c(60,max(data[,indfreq],na.rm = T)),
-         type="l",col=colpal[1])
-    for (i in 2:length(freq)){
-      lines(data[,"Date"],t(data[,indfreq[i]]),type="l",col=colpal[i])
-    }
-    legend("bottomleft",legend=colnames(data)[grep("f_.*Hz",colnames(data))],col=colpal,
-           ncol = 6,cex=0.6,bty = "n",lty=1)
+    # #time
+    # colpal<-rev(rainbow(length(freq),end=0.8))
+    # plot(data[,"Date"],t(data[,indfreq[1]]),
+    #      xlab="date",ylab="acoustic Pressure",
+    #      #ylim=c(min(data[,indfreq],na.rm = T),max(data[,indfreq],na.rm = T)),
+    #      ylim=c(60,max(data[,indfreq],na.rm = T)),
+    #      type="l",col=colpal[1])
+    # for (i in 2:length(freq)){
+    #   lines(data[,"Date"],t(data[,indfreq[i]]),type="l",col=colpal[i])
+    # }
+    # legend("bottomleft",legend=colnames(data)[grep("f_.*Hz",colnames(data))],col=colpal,
+    #        ncol = 6,cex=0.6,bty = "n",lty=1)
     
     #spectre
-    dateMin<-as.numeric(data$Date)/60
-    dateMin<-dateMin-min(dateMin,na.rm = T)
+    dateH<-as.numeric(data$Date)/3600
+    dateH<-dateH-min(dateH,na.rm = T)
     
-    time_breaks <- pretty(dateMin, n = 50)
-    cs <- list(cols = tim.colors(length(time_breaks)-1),breaks = time_breaks,name = "time",unit = "(min)",labels = seq(1,length(time_breaks), 5))
-    cols = tim.colors(length(time_breaks)-1)[cut(dateMin,breaks = time_breaks)]
+    time_breaks <- pretty(dateH, n = 50)
+    cs <- list(cols = tim.colors(length(time_breaks)-1),breaks = time_breaks,name = "time",unit = "(H)",labels = seq(1,length(time_breaks), 5))
+    cols = tim.colors(length(time_breaks)-1)[cut(dateH,breaks = time_breaks,include.lowest = T)]
+    
       
     matplot(freq,t(data[,indfreq]),lty=1,pch=0,type="l",
             xlab="frequency (Hz)",ylab = "acoustic Pressure",
+            log="x",
             col=cols)
       
-    cs.draw(cs,horiz=T)#,width =  max(t(data[,indfreq]),na.rm = T)/2,pos= max(t(data[,indfreq]),na.rm = T),side = 1)
+    # cs.draw(cs,horiz=T,side=1,width =  10000,pos= 15) #ne marche pas en log
+    indLegend<-seq(1,length(dateH),length.out=10)
+    legend("bottomleft",legend=paste("time (H):",round(dateH[indLegend])),lty=1,col=cols[indLegend],cex=0.6)
       
+    #temps frequence
+    DATAplot<-t(data[,indfreq])
+    ntime<-dim(DATAplot)[1]
+    nOctave<-length(freq)
+    
+    Rrange <- range(DATAplot, na.rm = T)
+    breaks <- pretty(DATAplot, n = 50)
+    cs <- list(cols = tim.colors(length(breaks) - 1),breaks = breaks,name = "",unit = "",labels = seq(1,length(breaks), 5))
+    cols <- cs.use(DATAplot, cs)
+    
+    timeV<-rep(dateH,each=nOctave)
+    freqV<-rep(freq,ntime)
+    
+    image(unique(timeV),1:nOctave,as.matrix(data[,indfreq]),col=tim.colors(50), xlab = "time (H)", ylab = "freq[Hz]")#,yaxt="n")
+    
+    cs.draw(cs,horiz=T,width = 0.05,pos=1,side = 1)
+    title(main="time frequency")
+    
+    ## Wind
+    wind<-wind_PolySPL8(data,windcoef=c(107.93,-3.683,0.03143,0))
+    plot(dateH,wind,type="l",col=1,xlab="time (H)",ylab="wind speed (m/s)",main="wind speed (m/s) from SPL 8kHz")
     
   }
   

@@ -1107,7 +1107,7 @@ PlotCompRad<-function(dataprofile){
 
 #**************************************************
 #Plot PAL
-# data<-dataprofile$data$imu
+# data<-dataprofile$data$pal
 PlotPAL<-function(data,technical=TRUE,ZoneDepth=NULL){
   
   #Plot technical
@@ -1172,20 +1172,59 @@ PlotPAL<-function(data,technical=TRUE,ZoneDepth=NULL){
     nOctave<-length(freq)
     
     Rrange <- range(DATAplot, na.rm = T)
-    breaks <- pretty(DATAplot, n = 50)
-    cs <- list(cols = tim.colors(length(breaks) - 1),breaks = breaks,name = "",unit = "",labels = seq(1,length(breaks), 5))
+    breaks <- pretty(DATAplot, n = 100)
+    cs <- list(cols = tim.colors(length(breaks) - 1),breaks = breaks,name = "",unit = "dB",labels = round(seq(1,length(breaks), length.out=10)))
     cols <- cs.use(DATAplot, cs)
     
     timeV<-rep(dateH,each=nOctave)
     freqV<-rep(freq,ntime)
     
-    image(unique(timeV),1:nOctave,as.matrix(data[,indfreq]),col=tim.colors(50), xlab = "time (H)", ylab = "freq[Hz]")#,yaxt="n")
+    image(unique(timeV),1:nOctave,as.matrix(data[,indfreq]),col=tim.colors(50), xlab = "time (H)", 
+          ylab = "freq[Hz]",yaxt="n")
+    
+    indOct<-seq(1,nOctave,length.out=9)
+    freqlab<-freq[indOct]
+    axis(side=2,at=indOct,labels=freqlab)
     
     cs.draw(cs,horiz=T,width = 0.05,pos=1,side = 1)
-    title(main="time frequency")
+    #title(main="time frequency")
+    
+    
+    ##Stationnarite
+    indst<-grep("st_",colnames(data))
+    if (length(indst)>0){
+      plot(NULL,NULL,xlim=range(dateH),ylim=c(1,4),lab=c(4,4,3),
+           xlab = "time (H)",ylab="stationnarity level",
+           main="Signal stationnarity on 4 bands")
+      for (s in 1:length(indst)){#st<-indst[1]
+        stV<-data[,indst[s]]+1
+        lines(dateH,stV,col=s)
+      }
+      legend("topleft",legend=colnames(data)[indst],lty=1,col=1:length(indst))
+      
+      plot(NULL,NULL,xlim=c(1,4),ylim=c(0,100),lab=c(4,4,3),
+           xlab = "stationnarity level",ylab="percentage of acquisitions",
+           main="percentage of acquisitions per stationnarity level")
+      
+      for (s in 1:length(indst)){#st<-indst[1]
+        stV<-table(data[,indst[s]])
+        fullV<-rep(0,4)
+        fullV[1:length(stV)]<-stV
+        fullV<-100*fullV/sum(fullV)
+        lines(1:4,fullV,col=s)
+      }
+      legend("topright",legend=colnames(data)[indst],lty=1,col=1:length(indst))
+      mtext(side=1,line=-10,adj=1,text="level 1 : 0.0 dB <= SD < 1.0 dB",cex=0.5)
+      mtext(side=1,line=-9,adj=1,text="level 2 : 1.0 dB <= SD < 3.0 dB",cex=0.5)
+      mtext(side=1,line=-8,adj=1,text="level 3 : 3.0 dB <= SD < 6.0 dB",cex=0.5)
+      mtext(side=1,line=-7,adj=1,text="level 4 : 6.0 dB <= SD               ",cex=0.5)
+      
+    }
     
     ## Wind
-    wind<-wind_PolySPL8(data,windcoef=c(107.93,-3.683,0.03143,0))
+    # MaNystuen windcoef=c(-45.534,3.7163,-0.0984,0.0009)
+    # Med windcoef=c(107.93,-3.683,0.03143,0) ## Rapport Pochi
+    wind<-wind_PolySPL8(data,windcoef=c(107.93,-3.683,0.03143,0)) 
     plot(dateH,wind,type="l",col=1,xlab="time (H)",ylab="wind speed (m/s)",main="wind speed (m/s) from SPL 8kHz")
     
   }

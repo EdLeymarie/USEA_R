@@ -1222,10 +1222,14 @@ PlotPAL<-function(data,technical=TRUE,ZoneDepth=NULL){
     }
     
     ## Wind
-    # MaNystuen windcoef=c(-45.534,3.7163,-0.0984,0.0009)
+    # Ma&Nystuen 2005 approx polynomiale sur 35-55
+    windcoef=c(-45.534,3.7163,-0.0984,0.0009)
+    # Nystuen 2015
+    #windcoef=c(2.0871,0.4904,-0.031,0.0005)
     # Med windcoef=c(107.93,-3.683,0.03143,0) ## Rapport Pochi
-    wind<-wind_PolySPL8(data,windcoef=c(107.93,-3.683,0.03143,0)) 
-    plot(dateH,wind,type="l",col=1,xlab="time (H)",ylab="wind speed (m/s)",main="wind speed (m/s) from SPL 8kHz")
+    wind <- 1.9438*wind_PolySPL8(data,windcoef=windcoef) #1.9438 m/s -> kts
+    plot(data$Date,wind,type="l",col=1,xlab="Date",ylab="wind speed (kts)",
+         main="wind speed (kts) from SPL 8kHz (Ma-Nystuen 2005)")
     
   }
   

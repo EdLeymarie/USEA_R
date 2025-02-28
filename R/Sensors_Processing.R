@@ -526,7 +526,8 @@ Process_RawIMU<-function(data,imu_cal){
 #**************************************************
 # data<-dataprofile$data$pal
 
-# MaNystuen windcoef=c(-45.534,3.7163,-0.0984,0.0009)
+# MaNystuen2005_CS windcoef=c(-45.534,3.7163,-0.0984,0.0009)
+# Nystuen2015_appendix windcoef=c(2.0871,0.4904,-0.031,0.0005)
 # Med windcoef=c(107.93,-3.683,0.03143,0) ## Rapport Pochi
 wind_PolySPL8<-function(data,windcoef=c(-45.534,3.7163,-0.0984,0.0009)){
   wind<-NULL

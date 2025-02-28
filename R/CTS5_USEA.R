@@ -976,6 +976,8 @@ return(dataMerged)
 #'
 cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   
+  PreviousProcessing<-dataprofile$processing #history of previous treatments
+  
   dataprofile$processing<-NULL
   
   ### ECO ####
@@ -1391,6 +1393,54 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       cat("Process Raw IMU \n")
       try(dataprofile$data$imu<-Process_RawIMU(data,metadata$SENSOR_IMU))
     }
+  })
+  
+  ### PAL ####
+  try(if ("pal" %in% names(dataprofile$data)){
+    
+    NormalisedData<-PreviousProcessing$PAL$Normalised
+    
+    if (is.null(NormalisedData)){
+      NormalisedData<-dataprofile$inifile$SENSOR_23$P58
+      dataprofile$processing$PAL$Normalised<-NormalisedData
+    }
+    
+    if (is.null(NormalisedData)) { 
+      NormalisedData<-FALSE
+    }
+    
+    if (!NormalisedData){
+      # coefs de normalisation
+      # mail Caroline Manier du 25/02/2025
+      
+      cat("Process PAL Normalization \n")
+      data<-dataprofile$data$pal
+      
+      indfreq<-grep("f_.*Hz",colnames(data))
+      if (length(indfreq)>1){
+        freq<-colnames(data)[indfreq]
+        freq<-matrix(unlist(strsplit(freq,split="_")),ncol=2,byrow = T)[,2]
+        freq<-as.numeric(matrix(unlist(strsplit(freq,split="H")),ncol=2,byrow = T)[,1])
+        
+        ##calcul des coefs de normalisation
+        freq_max <- freq * 2^(1 / 6)
+        freq_min <- freq * 2^(-1 / 6)
+        coeff <- 10*log10( freq_max - freq_min )
+        
+        for (f in 1:length(indfreq)){
+          data[,indfreq[f]]<-data[,indfreq[f]]-coeff[f]
+        }
+        
+        dataprofile$data$pal<-data
+        
+      }
+      
+      dataprofile$processing$PAL$Normalised<-TRUE
+      
+    }
+
+  
+
   })
   
   return(dataprofile)

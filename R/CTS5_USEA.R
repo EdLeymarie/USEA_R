@@ -1186,29 +1186,32 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
   try(if (("do" %in% names(dataprofile$data)) & ("sbe41" %in% names(dataprofile$data))) {
     if ("c1phase_deg" %in% colnames(dataprofile$data$do)){
       
-    if (is.list(metadata$SENSOR_DO)){
-      coefs<-metadata$SENSOR_DO$SVU_FOIL_COEFF
-      phasecoef0<-metadata$SENSOR_DO$PHASE_COEFF
-    }
-
-    if (length(coefs) == 0){
-      cat("!! Warning : No DO SVU_FOIL_COEFF calibration found \n")
       coefs<-NULL
+      phasecoef0<-NULL
       
-      if (ProcessUncalibrated){
-        cat("!! Default calibration is used \n")
-        coefs <- c(5.6725661e-03,8.2915275e-05,1.0033795e-06,6.2236942e-02,-9.3470722e-05,-1.4554620e-02,1.2110645e-03) # From Henry
+      if (is.list(metadata$SENSOR_DO)){
+        coefs<-metadata$SENSOR_DO$SVU_FOIL_COEFF
+        phasecoef0<-metadata$SENSOR_DO$PHASE_COEFF
       }
-    }
-      
-    if (length(phasecoef0) == 0){
-        cat("!! Warning : No DO PHASE_COEFF calibration found \n")
+  
+      if (length(coefs) == 0){
+        cat("!! Warning : No DO SVU_FOIL_COEFF calibration found \n")
+        coefs<-NULL
         
         if (ProcessUncalibrated){
           cat("!! Default calibration is used \n")
-          phasecoef0<-0
+          coefs <- c(5.6725661e-03,8.2915275e-05,1.0033795e-06,6.2236942e-02,-9.3470722e-05,-1.4554620e-02,1.2110645e-03) # From Henry
         }
-    }
+      }
+        
+      if (length(phasecoef0) == 0){
+          cat("!! Warning : No DO PHASE_COEFF calibration found \n")
+          
+          if (ProcessUncalibrated){
+            cat("!! Default calibration is used \n")
+            phasecoef0<-0
+          }
+      }
         
       if (!is.null(coefs)){
       #dataprofile$data$do[,"doxy_uncalibrated"]<-Process_DO_Bittig(C1phase=dataprofile$data$do[,"c1phase_deg"],C2phase=dataprofile$data$do[,"c2phase_deg"],temp=dataprofile$data$do[,"tempdoxy_degC"],Pres=dataprofile$data$do[,"Pressure_dbar"],

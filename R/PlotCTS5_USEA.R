@@ -1010,6 +1010,7 @@ PlotIMU<-function(data,technical=TRUE,ZoneDepth=NULL){
     # par(mar = c(0.1, 0.1, 0.1, 0.1),mgp=c(3,0.1,0))
     
     plot(data$tilt[ind],-data[ind,"Pressure_dbar"],type="l",col=1,ylim=c(-20,0),
+         xlab="Tilt",ylab="Depth",
          main="Tilt-Zoom")#cex=0.5,cex.axis=0.5,tcl=-0.1)
 
     # par(fig = oldpar$fig)
@@ -1017,7 +1018,8 @@ PlotIMU<-function(data,technical=TRUE,ZoneDepth=NULL){
     # par(mgp = oldpar$mgp)
     # par(mfrow = oldpar$mfrow,new=F)
     
-    plot(data$heading[ind],-data[ind,"Pressure_dbar"],type="l",col="blue",xlab="Tilt",ylab="Depth",main="Tilt")
+    plot(data$heading[ind],-data[ind,"Pressure_dbar"],type="l",col="blue",
+         xlab="Heading",ylab="Depth",main="Compas")
     plotDepthZones(ZoneDepth)
     
     

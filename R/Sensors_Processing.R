@@ -324,29 +324,37 @@ return(E/S)
 
 #**************************************************
 
-Process_Ramses<-function(data,PixelStart=1,PixelStop=200,PixelBinning=2,calib_file="SAM.*AllCal.txt",InWater="auto"){
+Process_Ramses<-function(data,PixelStart=1,PixelStop=200,
+                         PixelBinning=2,
+                         calib_file="SAM.*AllCal.txt",
+                         ramses_cal=NULL,
+                         InWater="auto"){
   
-if (!file.exists(calib_file)){  
-  
-  #test 1 : avec pattern
-  calib_file_pattern<-calib_file
-  calib_file<-list.files(pattern = calib_file)[1]
-  
-  if (!file.exists(calib_file)){
-    cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
+  if (is.null(ramses_cal)){
+    if (!file.exists(calib_file)){  
+      
+      #test 1 : avec pattern
+      calib_file_pattern<-calib_file
+      calib_file<-list.files(pattern = calib_file)[1]
+      
+      if (!file.exists(calib_file)){
+        cat("!! No Ramses calibration file for: ",calib_file_pattern,"\n")
+        
+        #test 2 : generic
+        calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
+        
+        cat("!! Default Ramses calibration is used \n")
+      }
+      
+    }
     
-    #test 2 : generic
-    calib_file<-list.files(pattern = "SAM.*AllCal.txt")[1]
-    
-    cat("!! Default Ramses calibration is used \n")
+    if (file.exists(calib_file)){
+      cat("Open RAMSES cal file: ",calib_file,"\n")
+      ramses_cal<-read.table(calib_file,header = T,sep="\t")
+    }
   }
   
-}
-  
-if (file.exists(calib_file)){
-  cat("Open RAMSES cal file: ",calib_file,"\n")
-  ramses_cal<-read.table(calib_file,header = T,sep="\t")
-  
+if (!is.null(ramses_cal)){
   sq<-seq(PixelStart,PixelStop,by=PixelBinning)
   
   wave<-sapply(1:(length(sq)),function(i){mean(ramses_cal$Wave[c(sq[i],sq[i]+PixelBinning-1)])})

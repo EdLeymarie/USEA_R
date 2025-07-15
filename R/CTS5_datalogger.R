@@ -140,3 +140,57 @@ return(logger)
 }
 
 
+##### donnees raw
+
+# filename="081_02_imu_raw.csv"
+# 
+# CycleNumber=81
+# 
+# PatternNumber=2
+# 
+# data.colnames<-c("Date","Temperature","RawAx","RawAy","RawAz",
+#                  "RawGx","RawGy","RawGz","RawMx","RawMy","RawMz")
+# 
+# MaxCol=length(data.colnames)
+# 
+# Data<-read.table(filename,header=FALSE,sep=";",dec=".",stringsAsFactors = FALSE,fill = TRUE,col.names = 1:MaxCol)
+# 
+# Dataclean<-NULL
+# 
+# colnames(Data)<-data.colnames
+# 
+# #Recherche des phases
+# ind<-grep("\\[",Data[,1])
+# ind<-c(ind,nrow(Data))
+# for (i in 1:(length(ind)-1)){
+#   datatemp<-Data[(ind[i]+1):(ind[i+1]),]
+#   # suppression des non numeriques
+#   datatemp<-datatemp[!is.na(datatemp[,2]),]
+#   
+#   if (nrow(datatemp)>0){
+#     
+#     # identification des phases
+#     if (Data[ind[i],1]=="[DESCENT]"){NumberPhase<-"DES"}
+#     if (Data[ind[i],1]=="[PARK]"){NumberPhase<-"PAR"}
+#     if (Data[ind[i],1]=="[DEEP_PROFILE]"){NumberPhase<-"DEE"}
+#     if (Data[ind[i],1]=="[SHORT_PARK]"){NumberPhase<-"SHP"}
+#     if (Data[ind[i],1]=="[ASCENT]"){NumberPhase<-"ASC"}
+#     if (Data[ind[i],1]=="[SURFACE]"){NumberPhase<-"SUR"}
+#     
+#     datatemp<-cbind(datatemp[,1],CycleNumber,PatternNumber,NumberPhase,as.character(filename),SensorType,datatemp[,-1])
+#     
+#     Dataclean<-rbind(Dataclean,datatemp)
+#   }
+#   
+# }
+# 
+# colnames(Dataclean)[c(1,5)]<-c("Date","filename")
+# 
+# dataprofile<-list()
+# 
+# dataprofile$data$imu<-Dataclean
+# 
+# dataprofile$data$imu<-Process_RawIMU(dataprofile$data$imu,Meta$SENSORS$SENSOR_IMU)
+# 
+# write.table(dataprofile$data$imu,file = "081_02_imu_raw_phy.csv",col.names = T,row.names = F,sep=";")
+# 

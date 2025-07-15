@@ -482,7 +482,7 @@ IMU_processAcc<-function(RawAcc,acc_cal){
   
   
   # On retourne le résultat
-  return( c(fTilt,fAccTot) )
+  return( c(fTilt,fAccTot,PhyAccx,PhyAccy,PhyAccz) )
   
 }
 
@@ -500,6 +500,9 @@ Process_RawIMU<-function(data,imu_cal){
   heading<-NULL
   tilt<-NULL
   acceleration<-NULL
+  PhyAccx<-NULL
+  PhyAccy<-NULL
+  PhyAccz<-NULL
   
   if (("ACCELEROMETER" %in% names(imu_cal)) & ("COMPASS" %in% names(imu_cal)) & ("MAGNETOMETER" %in% names(imu_cal))){
   
@@ -514,9 +517,12 @@ Process_RawIMU<-function(data,imu_cal){
       heading<-c(heading,fheading)
       tilt<-c(tilt,tempacc[1])
       acceleration<-c(acceleration,tempacc[2])
+      PhyAccx<-c(PhyAccx,tempacc[3])
+      PhyAccy<-c(PhyAccy,tempacc[4])
+      PhyAccz<-c(PhyAccz,tempacc[5])
     }
     
-    data<-cbind(data,heading,tilt,acceleration)
+    data<-cbind(data,heading,tilt,acceleration,PhyAccx,PhyAccy,PhyAccz)
   }
   else {
     warning("NO IMU calibration \n")

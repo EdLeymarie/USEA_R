@@ -285,7 +285,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
                           "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig",
-                          "mpe","ramses2","imu","wave","fltrider","pal")
+                          "mpe","ramses2","imu","wave","fltrider","pal","tridente")
 #' 
 
 #**************************************************
@@ -324,6 +324,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' 121 : wave
 #' 122 : fltrider
 #' 123 : PAL
+#' 124 : Tridente
 #' 
 #' @examples 
 #' cts5_SensorTypeId("")
@@ -337,7 +338,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern="",exact=F){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120,121,122,123)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120,121,122,123,124)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -656,6 +657,13 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
                        "f_20000Hz","f_25000Hz")
       
       # SensorType=123
+    }
+    
+    ##-17 Tridente 3 
+    if ((sensor == "tridente") & (Sensor_markup == 44)){
+      data.colnames<-c("Channel1","Channel2","Channel3")
+      
+      # SensorType=124
     }
     
     #****************************
@@ -1404,7 +1412,7 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     NormalisedData<-PreviousProcessing$PAL$Normalised
     
     if (is.null(NormalisedData)){
-      NormalisedData<-dataprofile$inifile$SENSOR_23$P58
+      NormalisedData<-(dataprofile$inifile$SENSOR_23$P58 == "True")
       dataprofile$processing$PAL$Normalised<-NormalisedData
     }
     
@@ -1440,6 +1448,8 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
       
       dataprofile$processing$PAL$Normalised<-TRUE
       
+    } else {
+      cat("PAL data already normalized \n")
     }
 
   

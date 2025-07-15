@@ -1239,6 +1239,74 @@ PlotPAL<-function(data,technical=TRUE,ZoneDepth=NULL){
 }
 
 #**************************************************
+#Plot Eco Standard 
+
+PlotTridente<-function(data,technical=TRUE,ZoneDepth=NULL){
+  
+  #Plot technical
+  if (technical){
+    
+    #Plot Chronologie
+    plot(data[,"Date"],-data[,"Pressure_dbar"],col=match(data[,"PhaseName"],unique(data[,"PhaseName"])),xlab="time",ylab="depth",type="b")
+    title(main=paste("Tridente",rev(data$date)[1],sep=" "))
+    ind<-which(data[,"PhaseName"] %in% c("PRE","DES"))
+    rangedescent<-range(data[ind,"Pressure_dbar"])
+    ind<-which(data[,"PhaseName"]=="ASC")
+    rangeascent<-range(data[ind,"Pressure_dbar"])
+    legend("bottomleft",legend=c(paste("Descent [",paste(format(rangedescent,digit=2),collapse=" - "),"]",sep=""),paste("Ascent [",paste(format(rangeascent,digit=2),collapse=" - "),"]",sep="")))
+    
+    plotDepthZones(ZoneDepth,x = range(data[,"Date"]))
+    
+    #Plot Ecart
+    ind<-which(data[,"PhaseName"] == "ASC")
+    if (length(ind)>2){  
+      depth<-data$Pressure_dbar[ind]
+      
+      delta<-depth[-length(depth)]-depth[-1]
+      plot(delta,-depth[-1],log="x",main="delta Tridente",xlab="delta [db]",ylab="depth [db]")
+      
+      plotDepthZones(ZoneDepth,x = c(min(delta[delta>0]),max(delta)))
+      
+    }
+    
+  }
+  
+  #Plot Channel1
+  Chla<-data[,"Channel1"]
+  if (sum(!is.na(Chla))>2){ 
+    plot(NULL,NULL,xlim=range(Chla,na.rm = TRUE, finite = TRUE),
+         ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="Channel1",ylab="depth")
+    for (i in unique(data[,"PhaseName"])){
+      lines(Chla[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    }
+    plotDepthZones(ZoneDepth)
+  }
+  
+  #Plot Channel2
+  bb<-data[,"Channel2"]
+  if (sum(!is.na(bb))>2){
+    plot(NULL,NULL,xlim=range(bb,na.rm = TRUE, finite = TRUE),
+         ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="Channel2",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(bb[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    }
+    plotDepthZones(ZoneDepth)
+  }
+  
+  #Plot Channel3
+  cdom<-data[,"Channel3"]
+  if (sum(!is.na(cdom))>2){
+    plot(NULL,NULL,xlim=range(cdom,na.rm = TRUE, finite = TRUE),
+         ylim=range(-data[,"Pressure_dbar"],na.rm = TRUE, finite = TRUE),xlab="Channel3",ylab="depth")
+    for (i in unique (data[,"PhaseName"])){
+      lines(cdom[data[,"PhaseName"]==i],-data[data[,"PhaseName"]==i,"Pressure_dbar"],col=match(i,unique(data[,"PhaseName"])))
+    }
+    plotDepthZones(ZoneDepth)
+  }
+
+}
+
+#**************************************************
 
 ## Concatenation plots
 
@@ -1336,6 +1404,15 @@ if (!is.null(dataprofile)){
       data<-dataprofile$data$eco
       try(PlotEcoStd(data,technical=technical,
                  ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_04")))
+    }
+  }
+  
+  #PlotEcoStd
+  if ("tridente" %in% SensorsToPlot){
+    if (ncol(dataprofile$data$tridente)>5){
+      data<-dataprofile$data$tridente
+      try(PlotTridente(data,technical=technical,
+                     ZoneDepth=FindZoneDepth(dataprofile$inifile,"SENSOR_23")))
     }
   }
   

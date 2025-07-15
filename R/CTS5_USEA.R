@@ -554,7 +554,7 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
     ##-11 Opus_lgt
     if (sensor == "opus_lgt"){
       data.colnames<-c("opus_spectrum_type","opus_lgt_averaging","opus_lgt_flash_count","opus_lgt_int_temp",
-                       "opus_N_channels",paste("opus_raw_count",1:250,sep=""))
+                       "opus_Lamp_Ref","opus_N_channels",paste("opus_output",1:250,sep=""))
       # SensorType=114
     }
     
@@ -1381,6 +1381,18 @@ cts5_ProcessData<-function(metadata,dataprofile,ProcessUncalibrated=F){
     }
     
   })
+  
+  ### OPUS ####
+  try(if ("opus_lgt" %in% names(dataprofile$data)) {
+    ## rename colnames
+    opus_N_channels<-dataprofile$data$opus_lgt$opus_N_channels[1]
+    colnames(dataprofile$data$opus_lgt)[11:(10+opus_N_channels)]<-paste("opus_FChannel_count",1:opus_N_channels,sep="")
+    
+    opus_B_channels<-dataprofile$data$opus_lgt[1,11+opus_N_channels]
+    colnames(dataprofile$data$opus_lgt)[11+opus_N_channels]<-"opus_B_channels"
+    colnames(dataprofile$data$opus_lgt)[(11+opus_N_channels+1):(11+opus_N_channels+opus_B_channels)]<-paste("opus_BChannel_count",1:opus_B_channels,sep="")
+    
+    })
   
   ### MPE ####
   try(if ("mpe" %in% names(dataprofile$data)) {

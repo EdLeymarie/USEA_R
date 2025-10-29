@@ -449,11 +449,11 @@ IMU_processHeading<-function(RawMag,imu_cal){
   PhyMagx=PhyMagx+compass_cal$hi1
   PhyMagy=PhyMagy+compass_cal$hi2
   
-  PhyMagx=PhyMagx*compass_cal$si11 + PhyMagy*compass_cal$si12
-  PhyMagy=PhyMagx*compass_cal$si21 + PhyMagy*compass_cal$si22
+  F_PhyMagx=PhyMagx*compass_cal$si11 + PhyMagy*compass_cal$si12
+  F_PhyMagy=PhyMagx*compass_cal$si21 + PhyMagy*compass_cal$si22
   
   # Calcul de l'angle
-  fHead = atan2(PhyMagy,PhyMagx)
+  fHead = atan2(F_PhyMagy,F_PhyMagx)
   
   # On retourne le résultat
   return( fHead *180.0 / pi )

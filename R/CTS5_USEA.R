@@ -285,7 +285,7 @@ cts5_decode<-function(floatname="",CycleNumber,PatternNumber=1,sensors=CTS5_supp
 #' @rawNamespace export(CTS5_supported_sensors)
 CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
                           "uvp6_lpm","uvp6_blk","uvp6_txo","ramses","opus_lgt","opus_blk","ext_trig",
-                          "mpe","ramses2","imu","wave","fltrider","pal","tridente")
+                          "mpe","ramses2","imu","wave","fltrider","pal","tridente","senso")
 #' 
 
 #**************************************************
@@ -325,6 +325,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 #' 122 : fltrider
 #' 123 : PAL
 #' 124 : Tridente
+#' 125 : senso
 #' 
 #' @examples 
 #' cts5_SensorTypeId("")
@@ -338,7 +339,7 @@ CTS5_supported_sensors<-c("sbe41","do","eco","ocr","crover","suna","sbeph",
 cts5_SensorTypeId<-function(pattern="",exact=F){
   
 # !!!! MUST be in the same order than CTS5_supported_sensors !!!!!
-SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120,121,122,123,124)
+SensorTypeId<-c(0,3,9,12,18,21,22,109,110,111,113,114,115,116,117,118,120,121,122,123,124,125)
 
 names(SensorTypeId)<-CTS5_supported_sensors
 
@@ -664,6 +665,13 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
       data.colnames<-c("Channel1","Channel2","Channel3")
       
       # SensorType=124
+    }
+    
+    ##-17 Senso 
+    if ((sensor == "senso") & (Sensor_markup == 47)){
+      data.colnames<-c("Count1","Count2","Count3")
+      
+      # SensorType=125
     }
     
     #****************************

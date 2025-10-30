@@ -42,6 +42,7 @@ SensorType
 122 : fltrider
 123 : PAL
 124 : Tridente
+125 : senso
 }
 \examples{
 cts5_SensorTypeId("")

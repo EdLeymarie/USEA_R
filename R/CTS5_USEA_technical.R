@@ -392,7 +392,8 @@ if (!is.null(dataprofile$technical) & (length(dataprofile$data)>0)){
   
   sensorList<-names(dataprofile$technical$DATA)
   
-  sensorList<-sensorList[!(sensorList %in% c("Upload","Pattern","Download"))]
+  sensorList<-sensorList[!(sensorList %in% c("Upload","Pattern","Download",
+                                             "SQ","Upload","Pattern"))]
     
   for (sensor in sensorList){ #sensor<-"SBE41"
     DataCount<-dataprofile$technical$DATA[[sensor]]$pts

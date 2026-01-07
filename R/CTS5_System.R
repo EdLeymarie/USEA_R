@@ -185,7 +185,7 @@ cts5_system_decode<-function(filename="",
   }
   #Linux / MacOS
   else {
-    ProgName="wine APMTDecrypt.exe"
+    ProgName="wine APMTDecryptConsole.exe"
     OSlabel=""
   }
   

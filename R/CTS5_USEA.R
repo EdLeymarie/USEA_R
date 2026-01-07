@@ -667,6 +667,15 @@ cts5_readcsv<-function(floatname="ffff",CycleNumber,PatternNumber=1,sensor="sbe4
       # SensorType=124
     }
     
+    ##-17 Tridente 9 
+    if ((sensor == "tridente") & (Sensor_markup == 45)){
+      data.colnames<-c("Channel1","Channel2","Channel3",
+                       "Channel1_median","Channel2_median","Channel3_median",
+                       "Channel1_sd","Channel2_sd","Channel3_sd")
+      
+      # SensorType=124
+    }
+    
     ##-17 Senso 
     if ((sensor == "senso") & (Sensor_markup == 47)){
       data.colnames<-c("Count1","Count2","Count3")

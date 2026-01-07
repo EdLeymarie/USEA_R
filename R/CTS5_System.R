@@ -978,9 +978,27 @@ return(Navdata)
   
 }
 
-##**************************************************
 
-# Sauvegarde des donnees navigation au format csv dans un fichier login_ccc_pp_trajectory.csv
+##**************************************************
+#' Sauvegarde des donnees navigation au format csv dans un fichier login_ccc_pp_trajectory.csv
+#' 
+#' @description
+#' Sauvegarde des donnees navigation au format csv dans un fichier login_ccc_pp_trajectory.csv
+#'
+#' @param login login of th float
+#' @param NavData NavData read from cts5_system_process
+#' @param split.file cut files in cycle and pattern
+#' @param show.PumpEV include Ev and Pump data
+#' 
+#' @examples 
+#' Navdata<-cts5_system_process(floatname = "3ab3")
+#' 
+#' Meta<-cts5_readMetaSensor()
+#' login<-Meta$TELECOM["Login"]
+#' 
+#' cts5_SaveToTrajFile(login,Navdata)
+#' 
+#' @export
 
 cts5_SaveToTrajFile<-function(login,NavData,split.file=TRUE,show.PumpEV=TRUE){
 Result<-cbind(NavData$DepthRecord[,1:4],0,0,NA,NA)

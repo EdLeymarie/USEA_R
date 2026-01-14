@@ -992,6 +992,7 @@ return(Navdata)
 #' 
 #' @examples 
 #' Navdata<-cts5_system_process(floatname = "3ab3")
+#' Navdata<-cts5_system_CutNavdata(Navdata,CycleNumber=12)
 #' 
 #' Meta<-cts5_readMetaSensor()
 #' login<-Meta$TELECOM["Login"]

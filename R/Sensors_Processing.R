@@ -427,9 +427,11 @@ if (!is.null(ramses_cal)){
     #Process calibration in air
     sum_inAir<-sum(inAir)
     cat("Data in air:",sum_inAir,"\n")
-    dataCal_air<-t(apply(data[inAir,ind],1,ra_single,B0=B0,B1=B1,S=Sair,B0_Dark,B1_Dark))
-    
-    dataCal<-rbind(dataCal,dataCal_air)
+    if (sum_inAir>0){
+      dataCal_air<-t(apply(data[inAir,ind],1,ra_single,B0=B0,B1=B1,S=Sair,B0_Dark,B1_Dark))
+      dataCal<-rbind(dataCal,dataCal_air)
+    }
+
   }
   
 

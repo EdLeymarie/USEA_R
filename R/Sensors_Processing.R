@@ -422,7 +422,10 @@ if (!is.null(ramses_cal)){
     
     #Process calibration in water
     inAir<-data$PhaseName=="SUR"
-    dataCal<-t(apply(data[!inAir,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    if (sum(!inAir)>0){
+      dataCal<-t(apply(data[!inAir,ind],1,ra_single,B0=B0,B1=B1,S=S,B0_Dark,B1_Dark))
+    }
+    
     
     #Process calibration in air
     sum_inAir<-sum(inAir)

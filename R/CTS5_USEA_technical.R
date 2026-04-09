@@ -672,6 +672,7 @@ return(result)
 
 #**************************************************
 list_time_as_character<-function(list){
+if (length(list)>0){
   for (i in 1:length(list)){
     
     if (inherits(list[[i]],what="POSIXlt")){
@@ -685,6 +686,7 @@ list_time_as_character<-function(list){
     
     
   }
+}
   
   return(list)
 }

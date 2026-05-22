@@ -114,233 +114,239 @@ cts5_readtechnical<-function(filename="",floatname="",CycleNumber,PatternNumber=
     
     ## 1: split [balise]
     ind<-grep("^\\[",data)
-    ind<-c(ind,length(data)+1)
-    
-    technical<-list()
-    technical$filename=filename
-    
-    technical$floatname=strsplit(filename,split="_")[[1]][1]
-    
-    for (i in 1:(length(ind)-1)){
-      balisename<-substr(data[ind[i]],2,nchar(data[ind[i]])-1)
-      technical[[balisename]]<-data[(ind[i]+1):(ind[i+1]-1)]
-    }
-    
-    ## 2: Analyse
-    
-    ## USER
-    if ("USER" %in% names(technical)){
-      technical$USER<-as.list(technical$USER)
-      for (i in 1:length(technical$USER)){
-        s<-technical$USER[[i]][1]
-        names(technical$USER)[i]<-split_One_Key(s)
-        technical$USER[[i]]<-split_One_value(s,value.as.numeric = F)
+    if (length(ind)>0){
+      
+      ind<-c(ind,length(data)+1)
+      
+      technical<-list()
+      technical$filename=filename
+      
+      technical$floatname=strsplit(filename,split="_")[[1]][1]
+      
+      for (i in 1:(length(ind)-1)){
+        balisename<-substr(data[ind[i]],2,nchar(data[ind[i]])-1)
+        technical[[balisename]]<-data[(ind[i]+1):(ind[i+1]-1)]
       }
-    }
     
-    ## SYSTEM
-    if ("SYSTEM" %in% names(technical)){
-      technical$SYSTEM<-as.list(technical$SYSTEM)
-      for (i in 1:length(technical$SYSTEM)){
-        s<-technical$SYSTEM[[i]][1]
-        names(technical$SYSTEM)[i]<-split_One_Key(s)
-        technical$SYSTEM[[i]]<-split_One_value(s)
+      ## 2: Analyse
+      
+      ## USER
+      if ("USER" %in% names(technical)){
+        technical$USER<-as.list(technical$USER)
+        for (i in 1:length(technical$USER)){
+          s<-technical$USER[[i]][1]
+          names(technical$USER)[i]<-split_One_Key(s)
+          technical$USER[[i]]<-split_One_value(s,value.as.numeric = F)
+        }
       }
-    }
     
-    ## GPS
-    if ("GPS" %in% names(technical)){
-      s<-technical$GPS
-      time<-paste(strsplit(strsplit(s,split="=")[[1]][2],split=" ")[[1]][1:2],collapse = " ")
-      time<-strptime(time,format = "%y-%m-%d %H:%M:%S",tz="UTC")
-      technical$GPS<-list(time=time)
-      technical$GPS[["lat (deg)"]]<-ConvDeg(strsplit(strsplit(s,split="=")[[1]][3],split=" ")[[1]][1])
-      technical$GPS[["lon (deg)"]]<-ConvDeg(strsplit(strsplit(s,split="=")[[1]][4],split=" ")[[1]][1])
-      technical$GPS[["Clock_drift"]]<-as.numeric(strsplit(strsplit(s,split="=")[[1]][5],split=" ")[[1]][1])
-    }
+      ## SYSTEM
+      if ("SYSTEM" %in% names(technical)){
+        technical$SYSTEM<-as.list(technical$SYSTEM)
+        for (i in 1:length(technical$SYSTEM)){
+          s<-technical$SYSTEM[[i]][1]
+          names(technical$SYSTEM)[i]<-split_One_Key(s)
+          technical$SYSTEM[[i]]<-split_One_value(s)
+        }
+      }
     
-    ## PROFILE
-    if ("PROFILE" %in% names(technical)){
-      technical$PROFILE<-as.list(technical$PROFILE)
-      ## traitement
-      for (i in 1:length(technical$PROFILE)){
-        s<-technical$PROFILE[[i]][1]
-       
-        s1<-strsplit(s,split = "=")[[1]][2]
-        s2<-paste(strsplit(s,split = "=")[[1]][-(1:2)],collapse = " ")
-        
-        #key
-        time<-paste(strsplit(s1,split = " ")[[1]][1:2],collapse = " ")
+      ## GPS
+      if ("GPS" %in% names(technical)){
+        s<-technical$GPS
+        time<-paste(strsplit(strsplit(s,split="=")[[1]][2],split=" ")[[1]][1:2],collapse = " ")
         time<-strptime(time,format = "%y-%m-%d %H:%M:%S",tz="UTC")
-        
-        key<-paste(strsplit(s1,split = " ")[[1]][-(1:2)],collapse = " ")
-        
-        names(technical$PROFILE)[i]<-key
-        
-        technical$PROFILE[[i]]<-list(time=time)
-        
-        if (!is.na(s2)){
-          technical$PROFILE[[i]]$value<-s2
-        }
-        
-        # traitement specifique
-        if (key %in% c("Flotation","Descent","Deep profile")){
-          technical$PROFILE[[i]]$volume<-as.numeric(strsplit(s2,split=" ")[[1]][1])
-          s3<-strsplit(s2,split=" ")[[1]][3]
-          technical$PROFILE[[i]]$Nvalve<-as.numeric(substr(s3,2,nchar(s3)-1))
-        }
-        
-        if (key == "First stabilization"){
-          technical$PROFILE[[i]]$value<-as.numeric(strsplit(s2,split=" ")[[1]][1])
-        }
-        
-        if (key %in% c("Park","Short Park")){
-          s3<-strsplit(s2,split=" ")[[1]][1]
-          technical$PROFILE[[i]]$MinDepth<-as.numeric(strsplit(s3,split="/")[[1]][1])
-          technical$PROFILE[[i]]$MaxDepth<-as.numeric(strsplit(s3,split="/")[[1]][2])
-          
-          s3<-strsplit(s2,split=" ")[[1]][3]
-          s3<-substr(s3,2,nchar(s3)-1)
-          s3<-strsplit(s3,split="/")[[1]]
-          technical$PROFILE[[i]]$Nvalve<-as.numeric(s3[1])
-          technical$PROFILE[[i]]$Npump<-as.numeric(s3[2])
-          
-          
-        }
-        
-        if (key %in% c("Ascent")){
-          technical$PROFILE[[i]]$volume<-as.numeric(strsplit(s2,split=" ")[[1]][1])
-          s3<-strsplit(s2,split=" ")[[1]][3]
-          s3<-substr(s3,2,nchar(s3)-1)
-          technical$PROFILE[[i]]$Npump<-as.numeric(strsplit(s3,split="/")[[1]][1])
-          technical$PROFILE[[i]]$Npump_takeoff<-as.numeric(strsplit(s3,split="/")[[1]][2])
-          technical$PROFILE[[i]]$from<-as.numeric(strsplit(s2,split=" ")[[1]][5])
-        }
+        technical$GPS<-list(time=time)
+        technical$GPS[["lat (deg)"]]<-ConvDeg(strsplit(strsplit(s,split="=")[[1]][3],split=" ")[[1]][1])
+        technical$GPS[["lon (deg)"]]<-ConvDeg(strsplit(strsplit(s,split="=")[[1]][4],split=" ")[[1]][1])
+        technical$GPS[["Clock_drift"]]<-as.numeric(strsplit(strsplit(s,split="=")[[1]][5],split=" ")[[1]][1])
       }
-    }
     
-    ## DATA
-    if ("DATA" %in% names(technical)){
-      technical$DATA<-as.list(technical$DATA)
-      ## traitement
-      for (i in 1:length(technical$DATA)){
-        s<-technical$DATA[[i]][1]
-        
-        key<-strsplit(s,split = "=")[[1]][1]
-        s2<-strsplit(s,split = "=")[[1]][2]
-        
-        # pour la key Download, il peut y avoir plusieurs entres !
-        if (!key %in% names(technical$DATA)){
-          names(technical$DATA)[i]<-key
-        }
-        
-        if (key == "Upload"){
-          s3<-strsplit(s2,split=" ")[[1]]
-          technical$DATA[[i]]<-list(volume=as.numeric(s3[1]))
-          technical$DATA[[i]]$Nfiles<-as.numeric(s3[4])
-          technical$DATA[[i]]$speed<-as.numeric(s3[7])
-          technical$DATA[[i]]$Nsessions<-as.numeric(s3[10])
-        }
-        
-        if (key == "Download"){
-          
-          if (!is.list(technical$DATA$Download)){
-            technical$DATA$Download<-list()
-          }
-          
-          if (sum(grep("command file",s2))>0){
-            s3<-strsplit(s2,split=" ")[[1]]
-            technical$DATA$Download$cmd_accepted=as.numeric(substr(s3[3],2,10))
-            technical$DATA$Download$cmd_refused<-as.numeric(s3[5])
-            technical$DATA$Download$cmd_unknown<-as.numeric(s3[7])
-          }
-          
-          if (sum(grep("script file",s2))>0){
-            s3<-strsplit(s2,split=" ")[[1]]
-            technical$DATA$Download$script=1
-          }
-          
-          if (sum(grep("configuration file",s2))>0){
-            s3<-strsplit(s2,split=" ")[[1]]
-            technical$DATA$Download$configuration=1
-          }
-          
-          
-        }
-        
-        if (key == "Pattern"){
-          technical$DATA[[i]]<-as.numeric(strsplit(s2,split=" ")[[1]][1])
-        }
-        
-        if (!(key %in% c("Upload","Pattern","Download"))){
-          technical$DATA[[i]]<-list(pts=as.numeric(strsplit(strsplit(s2,split=" ")[[1]][1],split="\\/")[[1]]))
-          technical$DATA[[i]]$TotalPts=sum(technical$DATA[[i]]$pts)
-        }
-      }
-      
-      
-      ## Elimination des elements sans nom
-      technical$DATA[is.na(names(technical$DATA))]<-NULL
-      
-    }
-    
-    ## POWER
-    if ("POWER" %in% names(technical)){
-      technical$POWER<-as.list(technical$POWER)
-      ## traitement
-      for (i in 1:length(technical$POWER)){
-        s<-technical$POWER[[i]][1]
-        
-        key<-split_One_Key(s)
-        
-        names(technical$POWER)[i]<-split_One_Key(s)
-        
-        if (!(key %in% c("EV/Pump (cs)"))){
-          technical$POWER[[i]]<-split_One_value(s)
-        }
-        
-        if (key %in% c("EV/Pump (cs)")){
-          technical$POWER[[i]]<-as.numeric(strsplit(strsplit(strsplit(s,split="=")[[1]][2],split=" ")[[1]][1],split="\\/")[[1]])
-        }
-        
-        
-      }
-    }
-    
-    
-    ## Sensor
-    SensorTag<-c("SENSOR_DO","SENSOR_OCR","SENSOR_ECO","SENSOR_SBEPH","SENSOR_SUNA","SENSOR_UVP6")
-    for (j in 1:length(SensorTag)){
-      itag<-grep(SensorTag[j],names(technical))[1]
-      if (!is.na(itag)){
-        technical[[itag]]<-as.list(technical[[itag]])
-        
+      ## PROFILE
+      if ("PROFILE" %in% names(technical)){
+        technical$PROFILE<-as.list(technical$PROFILE)
         ## traitement
-        for (i in 1:length(technical[[itag]])){
-          s<-technical[[itag]][[i]][1]
+        for (i in 1:length(technical$PROFILE)){
+          s<-technical$PROFILE[[i]][1]
+         
+          s1<-strsplit(s,split = "=")[[1]][2]
+          s2<-paste(strsplit(s,split = "=")[[1]][-(1:2)],collapse = " ")
+          
+          #key
+          time<-paste(strsplit(s1,split = " ")[[1]][1:2],collapse = " ")
+          time<-strptime(time,format = "%y-%m-%d %H:%M:%S",tz="UTC")
+          
+          key<-paste(strsplit(s1,split = " ")[[1]][-(1:2)],collapse = " ")
+          
+          names(technical$PROFILE)[i]<-key
+          
+          technical$PROFILE[[i]]<-list(time=time)
+          
+          if (!is.na(s2)){
+            technical$PROFILE[[i]]$value<-s2
+          }
+          
+          # traitement specifique
+          if (key %in% c("Flotation","Descent","Deep profile")){
+            technical$PROFILE[[i]]$volume<-as.numeric(strsplit(s2,split=" ")[[1]][1])
+            s3<-strsplit(s2,split=" ")[[1]][3]
+            technical$PROFILE[[i]]$Nvalve<-as.numeric(substr(s3,2,nchar(s3)-1))
+          }
+          
+          if (key == "First stabilization"){
+            technical$PROFILE[[i]]$value<-as.numeric(strsplit(s2,split=" ")[[1]][1])
+          }
+          
+          if (key %in% c("Park","Short Park")){
+            s3<-strsplit(s2,split=" ")[[1]][1]
+            technical$PROFILE[[i]]$MinDepth<-as.numeric(strsplit(s3,split="/")[[1]][1])
+            technical$PROFILE[[i]]$MaxDepth<-as.numeric(strsplit(s3,split="/")[[1]][2])
+            
+            s3<-strsplit(s2,split=" ")[[1]][3]
+            s3<-substr(s3,2,nchar(s3)-1)
+            s3<-strsplit(s3,split="/")[[1]]
+            technical$PROFILE[[i]]$Nvalve<-as.numeric(s3[1])
+            technical$PROFILE[[i]]$Npump<-as.numeric(s3[2])
+            
+            
+          }
+          
+          if (key %in% c("Ascent")){
+            technical$PROFILE[[i]]$volume<-as.numeric(strsplit(s2,split=" ")[[1]][1])
+            s3<-strsplit(s2,split=" ")[[1]][3]
+            s3<-substr(s3,2,nchar(s3)-1)
+            technical$PROFILE[[i]]$Npump<-as.numeric(strsplit(s3,split="/")[[1]][1])
+            technical$PROFILE[[i]]$Npump_takeoff<-as.numeric(strsplit(s3,split="/")[[1]][2])
+            technical$PROFILE[[i]]$from<-as.numeric(strsplit(s2,split=" ")[[1]][5])
+          }
+        }
+      }
+    
+      ## DATA
+      if ("DATA" %in% names(technical)){
+        technical$DATA<-as.list(technical$DATA)
+        ## traitement
+        for (i in 1:length(technical$DATA)){
+          s<-technical$DATA[[i]][1]
           
           key<-strsplit(s,split = "=")[[1]][1]
           s2<-strsplit(s,split = "=")[[1]][2]
           
-          names(technical[[itag]])[i]<-key
-          technical[[itag]][[i]]<-s2
-          
-          
-          #traitement particuliers
-          if (length(grep("Channel",key))==1){
-            technical[[itag]][[i]]<-as.numeric(strsplit(s2,split="\\/")[[1]])
+          # pour la key Download, il peut y avoir plusieurs entres !
+          if (!key %in% names(technical$DATA)){
+            names(technical$DATA)[i]<-key
           }
           
-          if (length(grep("Counters",key))==1){
-            technical[[itag]][[i]]<-as.numeric(strsplit(s2,split="\\/")[[1]])
+          if (key == "Upload"){
+            s3<-strsplit(s2,split=" ")[[1]]
+            technical$DATA[[i]]<-list(volume=as.numeric(s3[1]))
+            technical$DATA[[i]]$Nfiles<-as.numeric(s3[4])
+            technical$DATA[[i]]$speed<-as.numeric(s3[7])
+            technical$DATA[[i]]$Nsessions<-as.numeric(s3[10])
           }
           
-          if (length(grep("Power supply",key))==1){
-            technical[[itag]][[i]]<-as.numeric(strsplit(substr(s2,1,nchar(s2)-2),split="V\\/")[[1]])
+          if (key == "Download"){
+            
+            if (!is.list(technical$DATA$Download)){
+              technical$DATA$Download<-list()
+            }
+            
+            if (sum(grep("command file",s2))>0){
+              s3<-strsplit(s2,split=" ")[[1]]
+              technical$DATA$Download$cmd_accepted=as.numeric(substr(s3[3],2,10))
+              technical$DATA$Download$cmd_refused<-as.numeric(s3[5])
+              technical$DATA$Download$cmd_unknown<-as.numeric(s3[7])
+            }
+            
+            if (sum(grep("script file",s2))>0){
+              s3<-strsplit(s2,split=" ")[[1]]
+              technical$DATA$Download$script=1
+            }
+            
+            if (sum(grep("configuration file",s2))>0){
+              s3<-strsplit(s2,split=" ")[[1]]
+              technical$DATA$Download$configuration=1
+            }
+            
+            
           }
+          
+          if (key == "Pattern"){
+            technical$DATA[[i]]<-as.numeric(strsplit(s2,split=" ")[[1]][1])
+          }
+          
+          if (!(key %in% c("Upload","Pattern","Download"))){
+            technical$DATA[[i]]<-list(pts=as.numeric(strsplit(strsplit(s2,split=" ")[[1]][1],split="\\/")[[1]]))
+            technical$DATA[[i]]$TotalPts=sum(technical$DATA[[i]]$pts)
+          }
+        }
+        
+        
+        ## Elimination des elements sans nom
+        technical$DATA[is.na(names(technical$DATA))]<-NULL
+        
+      }
+    
+      ## POWER
+      if ("POWER" %in% names(technical)){
+        technical$POWER<-as.list(technical$POWER)
+        ## traitement
+        for (i in 1:length(technical$POWER)){
+          s<-technical$POWER[[i]][1]
+          
+          key<-split_One_Key(s)
+          
+          names(technical$POWER)[i]<-split_One_Key(s)
+          
+          if (!(key %in% c("EV/Pump (cs)"))){
+            technical$POWER[[i]]<-split_One_value(s)
+          }
+          
+          if (key %in% c("EV/Pump (cs)")){
+            technical$POWER[[i]]<-as.numeric(strsplit(strsplit(strsplit(s,split="=")[[1]][2],split=" ")[[1]][1],split="\\/")[[1]])
+          }
+          
           
         }
       }
+    
+      ## Sensor
+      SensorTag<-c("SENSOR_DO","SENSOR_OCR","SENSOR_ECO","SENSOR_SBEPH","SENSOR_SUNA","SENSOR_UVP6")
+      for (j in 1:length(SensorTag)){
+        itag<-grep(SensorTag[j],names(technical))[1]
+        if (!is.na(itag)){
+          technical[[itag]]<-as.list(technical[[itag]])
+          
+          ## traitement
+          for (i in 1:length(technical[[itag]])){
+            s<-technical[[itag]][[i]][1]
+            
+            key<-strsplit(s,split = "=")[[1]][1]
+            s2<-strsplit(s,split = "=")[[1]][2]
+            
+            names(technical[[itag]])[i]<-key
+            technical[[itag]][[i]]<-s2
+            
+            
+            #traitement particuliers
+            if (length(grep("Channel",key))==1){
+              technical[[itag]][[i]]<-as.numeric(strsplit(s2,split="\\/")[[1]])
+            }
+            
+            if (length(grep("Counters",key))==1){
+              technical[[itag]][[i]]<-as.numeric(strsplit(s2,split="\\/")[[1]])
+            }
+            
+            if (length(grep("Power supply",key))==1){
+              technical[[itag]][[i]]<-as.numeric(strsplit(substr(s2,1,nchar(s2)-2),split="V\\/")[[1]])
+            }
+            
+          }
+        }
+      }
+    }
+    else {
+      cat(filename,": file empty or not a technical file","\n")
+      technical<-NULL
     }
   }
   else {
@@ -764,49 +770,50 @@ cts5_readalltech<-function(pattern=".*_technical.*.txt",filenames=NULL,CycleNumb
       #cat("open:",filename,"\n")
       dataTech<-cts5_readtechnical(filename)
       
-      dataTech<-list_time_as_character(dataTech)
-      
-      dataTech<-c(as.numeric(strsplit(filename,split="_")[[1]][2:3]),
-                  unlist(dataTech))
-      
-      dataTech<-as.data.frame(t(dataTech),stringsAsFactors = F)
-      
-      names(dataTech)[1:2]<-c("Cycle_Number","Pattern_Number")
-      
-      #Forcage du nom Alarm a Alarm1
-      ind<-names(dataTech) == "ALARM"
-      if (sum(ind)==1){
-        names(dataTech)[ind]<-"ALARM1"
-      }
-      
-      if (is.null(result)){
-        result<-dataTech
-      }
-      else {
+      if(!is.null(dataTech)){
         
-        ### New list of names
-        if (! all(names(dataTech) %in% names(result))){
-          NewNames<-unique(c(names(result),names(dataTech)))
-          
-          #agrandissement de result
-          temp<-matrix("",nrow=dim(result)[1],ncol=length(NewNames))
-          colnames(temp)<-NewNames
-          temp<-data.frame(temp,stringsAsFactors = F,check.names =F)
-          
-          temp[,names(temp) %in% names(result)]<-result[match(names(temp)[names(temp) %in% names(result)],names(result))]
-          
-          result<-temp
-          
+        dataTech<-list_time_as_character(dataTech)
+        
+        dataTech<-c(as.numeric(strsplit(filename,split="_")[[1]][2:3]),
+                    unlist(dataTech))
+        
+        dataTech<-as.data.frame(t(dataTech),stringsAsFactors = F)
+        
+        names(dataTech)[1:2]<-c("Cycle_Number","Pattern_Number")
+        
+        #Forcage du nom Alarm a Alarm1
+        ind<-names(dataTech) == "ALARM"
+        if (sum(ind)==1){
+          names(dataTech)[ind]<-"ALARM1"
         }
-      
-        # Merge avec dataTech
-        dataTechtoMerge<-rep("",times=length(result[1,]))
-        names(dataTechtoMerge)<-names(result)
-        dataTechtoMerge[names(dataTechtoMerge) %in% names(dataTech)] <- dataTech[match(names(dataTechtoMerge)[names(dataTechtoMerge) %in% names(dataTech)],names(dataTech))]
-        result<-rbind(result,dataTechtoMerge)
+        
+        if (is.null(result)){
+          result<-dataTech
+        }
+        else {
           
-  
-          
+          ### New list of names
+          if (! all(names(dataTech) %in% names(result))){
+            NewNames<-unique(c(names(result),names(dataTech)))
+            
+            #agrandissement de result
+            temp<-matrix("",nrow=dim(result)[1],ncol=length(NewNames))
+            colnames(temp)<-NewNames
+            temp<-data.frame(temp,stringsAsFactors = F,check.names =F)
+            
+            temp[,names(temp) %in% names(result)]<-result[match(names(temp)[names(temp) %in% names(result)],names(result))]
+            
+            result<-temp
+            
+          }
+        
+          # Merge avec dataTech
+          dataTechtoMerge<-rep("",times=length(result[1,]))
+          names(dataTechtoMerge)<-names(result)
+          dataTechtoMerge[names(dataTechtoMerge) %in% names(dataTech)] <- dataTech[match(names(dataTechtoMerge)[names(dataTechtoMerge) %in% names(dataTech)],names(dataTech))]
+          result<-rbind(result,dataTechtoMerge)
+
+        }
       }
       
     }

@@ -1808,6 +1808,11 @@ cts5_readIni<-function(inifilename="",floatname="",CycleNumber,PatternNumber=1,O
           }
         }
         
+        #remove sensitive
+        if ("IRIDIUM_RUDICS" %in% names(inifile)){
+          inifile$IRIDIUM_RUDICS$P2<-""
+        }
+        
         return(inifile)
       }
     }
